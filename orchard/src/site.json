@@ -3,8 +3,8 @@
   "file": "site/aerial.jpg",
   "gridM": 0.2,
   "originPx": [
-   0,
-   1250
+   199,
+   1850
   ]
  },
  "cameraPresets": {
@@ -51,11 +51,11 @@
   "encoding": "uint16 millimetres above hmin",
   "file": "site/heightmap.png",
   "gridM": 0.25,
-  "hmax": 122.901,
-  "hmin": 111.428,
+  "hmax": 122.403,
+  "hmin": 111.582,
   "originPx": [
-   0,
-   1000
+   160,
+   1480
   ]
  },
  "localAxes": {
@@ -380,9 +380,9 @@
   }
  ],
  "window": {
-  "eMax": 455500.0,
-  "eMin": 455000.0,
-  "nMax": 5426750.0,
-  "nMin": 5426300.0
+  "eMax": 455320.0,
+  "eMin": 455040.0,
+  "nMax": 5426630.0,
+  "nMin": 5426410.0
  }
 }

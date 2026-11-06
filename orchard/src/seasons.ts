@@ -32,6 +32,27 @@ export function nearestSeason(day: number): SeasonDef {
 }
 
 /**
+ * Grass height factor (0..1) for a day of year, per the user's description:
+ * growth starts late February, higher through spring, peak in early summer,
+ * mowed in late August, slight regrowth in autumn, very low in winter
+ * (sometimes snow-covered — see snowAmount).
+ */
+export function grassHeight(day: number): number {
+  if (day < 40) return 0.1; // winter
+  if (day < 52) return 0.1 + ((day - 40) / 12) * 0.05; // growth starting late Feb
+  if (day < 150) {
+    const t = (day - 52) / 98; // spring growth -> 0.85 by end of May
+    return 0.12 + t * t * (3 - 2 * t) * 0.73;
+  }
+  if (day < 230) return 0.85 + ((day - 150) / 80) * 0.15; // peak 1.0 by mid July
+  if (day < 238) return 1.0; // full height until the mow
+  if (day < 246) return 1.0 - ((day - 238) / 8) * 0.88; // mowed late August -> 0.12
+  if (day < 300) return 0.12 + ((day - 246) / 54) * 0.18; // slight autumn regrowth
+  if (day < 340) return 0.3 - ((day - 300) / 40) * 0.18; // late fall down to 0.12
+  return 0.1; // winter
+}
+
+/**
  * Patchy snow amount (0..1) for a day of year, calibrated on the
  * 2021-01-17 reference photo (thin, patchy blanket, grass poking through):
  * full around mid January, fading out towards March / late autumn.

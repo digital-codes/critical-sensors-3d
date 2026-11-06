@@ -31,7 +31,8 @@ renders the whole scene mirrored.
 Outputs:
 
 - `public/site/heightmap.png` — 16-bit PNG, heights in millimetres above
-  `hmin`, from a 500x450 m window of the DGM 0.25 m raster
+  `hmin`, from a 280x220 m window (orchard + surroundings, 10-m snapped)
+  of the DGM 0.25 m raster
   (EPSG:25832 / UTM32N)
 - `public/site/aerial.jpg` — RGB crop of the DOP20 RGBI (2024) orthophoto
   window, 0.2 m grid, draped over the terrain

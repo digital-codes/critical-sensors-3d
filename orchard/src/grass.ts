@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import site from './site';
 import { getHeightSampler, X_MIN, Z_MIN, WIN_W, WIN_D } from './terrain';
-import { nearestSeason, snowAmount, type SeasonKey } from './seasons';
+import { nearestSeason, snowAmount, grassHeight, type SeasonKey } from './seasons';
 import { getFootprintRects } from './structures';
 
 interface SiteTree {
@@ -118,18 +118,21 @@ export async function createGrass(): Promise<Grass> {
   }
 
   const uTime = { value: 0 };
+  const uHeight = { value: 1 };
   const material = new THREE.MeshLambertMaterial({ side: THREE.DoubleSide });
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = uTime;
+    shader.uniforms.uHeight = uHeight;
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float uTime;')
+      .replace('#include <common>', '#include <common>\nuniform float uTime;\nuniform float uHeight;')
       .replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
         #ifdef USE_INSTANCING
           vec3 iPos = vec3(instanceMatrix[3][0], instanceMatrix[3][1], instanceMatrix[3][2]);
-          float sway = sin(uTime * 1.5 + iPos.x * 0.5 + iPos.z * 0.3) * 0.06 * uv.y;
+          float sway = sin(uTime * 1.5 + iPos.x * 0.5 + iPos.z * 0.3) * 0.06 * uv.y * uHeight;
           transformed.x += sway;
+          transformed.y *= uHeight;
         #endif`,
       );
   };
@@ -180,6 +183,8 @@ export async function createGrass(): Promise<Grass> {
     setSeason(day: number): SeasonKey {
       const key = nearestSeason(day).key;
       material.color.setHex(SEASON_TINT[key]);
+      // seasonal height: growth/mow curve (vertex-shader uniform)
+      uHeight.value = grassHeight(day);
       // snowy lawn: blades fade toward off-white with the snow amount
       const snow = snowAmount(day);
       if (snow > 0) material.color.lerp(SNOW_TINT, snow * 0.85);

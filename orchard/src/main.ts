@@ -46,10 +46,9 @@ async function main(): Promise<void> {
   scene.background = new THREE.Color(skyColor);
   scene.fog = new THREE.Fog(skyColor, 400, 1600);
 
-  // soft overcast lighting; sun direction ~SE to match the August DOP shadows
+  // soft overcast lighting; the sun's midday elevation follows the season
   scene.add(new THREE.HemisphereLight(0xe8eef2, 0x62604e, 1.0));
   const sun = new THREE.DirectionalLight(0xffffff, 0.7);
-  sun.position.set(150, 250, -100);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
   sun.shadow.camera.left = -90;
@@ -60,6 +59,22 @@ async function main(): Promise<void> {
   sun.shadow.camera.far = 600;
   sun.shadow.bias = -0.0005;
   scene.add(sun);
+  scene.add(sun.target);
+
+  // Midday sun over the orchard (lat ~49 N): azimuth due south (+z), the
+  // elevation follows the solar declination of the day — high in summer,
+  // low in winter, so the generated trees' shadows lengthen and swing with
+  // the season instead of the baked-in DOP shadows.
+  function updateSun(day: number): void {
+    const lat = 48.9899;
+    const decl = 23.44 * Math.sin((2 * Math.PI * (day + 284)) / 365); // deg
+    const alt = ((90 - lat + decl) * Math.PI) / 180; // rad above horizon
+    const cx = 10, cy = 117, cz = 0; // orchard centre
+    const R = 400;
+    sun.position.set(cx, cy + Math.sin(alt) * R, cz + Math.cos(alt) * R);
+    sun.target.position.set(cx, cy, cz);
+    sun.intensity = 0.3 + 0.5 * Math.sin(alt);
+  }
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   scene.add(new THREE.AmbientLight(0xffffff, 0.25));
@@ -102,6 +117,7 @@ async function main(): Promise<void> {
   grass.setSeason(Number(seasonInput?.value ?? 190));
   terrain.setSnow(snowAmount(Number(seasonInput?.value ?? 190)));
   structures.setSnow(snowAmount(Number(seasonInput?.value ?? 190)));
+  updateSun(Number(seasonInput?.value ?? 190));
 
   createComparePanel(renderer, rig, seasonInput);
 
@@ -143,6 +159,7 @@ async function main(): Promise<void> {
     grass.setSeason(day);
     terrain.setSnow(snowAmount(day));
     structures.setSnow(snowAmount(day));
+    updateSun(day);
     if (seasonValue) {
       seasonValue.textContent = `Tag ${day} (${monthDay(day)})${
         orchard ? ` · ${labelFor(orchard.setSeason(day))}` : ''

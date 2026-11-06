@@ -22,6 +22,7 @@ from datetime import date
 import numpy as np
 from PIL import Image
 from pyproj import Transformer
+from scipy import ndimage as ndi
 
 Image.MAX_IMAGE_PIXELS = None
 
@@ -41,8 +42,10 @@ OUT_PUBLIC = os.path.join(REPO, "orchard", "public", "site")
 OUT_SRC = os.path.join(REPO, "orchard", "src")
 
 ORIGIN_LAT, ORIGIN_LON = 48.98990, 8.38730
-WIN_E_MIN, WIN_E_MAX = 455000.0, 455500.0
-WIN_N_MIN, WIN_N_MAX = 5426300.0, 5426750.0
+# Simulation area: the orchard plus its surroundings (parking/railway/paths),
+# ~like the user's reference framing; bounds snapped to full 10 m.
+WIN_E_MIN, WIN_E_MAX = 455040.0, 455320.0   # 280 m east-west
+WIN_N_MIN, WIN_N_MAX = 5426410.0, 5426630.0  # 220 m south-north
 
 LICENCE_LGL = "Datenlizenz Deutschland - Namensnennung - 2.0 (https://www.govdata.de/dl-de/by-2-0)"
 LICENCE_OSM = "(c) OpenStreetMap contributors (ODbL), osm.org/copyright"
@@ -122,6 +125,45 @@ def main():
     if dx1 > dop.size[0] or dy1 > dop.size[1]:
         sys.exit("dop window exceeds tile: %s" % ((dx0, dx1, dy0, dy1),))
     crop = dop.crop((dx0, dy0, dx1, dy1)).convert("RGB")
+
+    # ---- remove baked-in shadows + ground-painted crowns inside the orchard ----
+    # The Aug-2024 DOP carries the real trees' shadows (and their crowns)
+    # painted onto the meadow. Inside the orchard polygon the generated 3D
+    # trees replace them, so flatten all large dark features there to the
+    # surrounding grass tone (illumination-division shadow removal), keeping
+    # fine texture. Outside the polygon the DOP stays untouched.
+    ae = np.asarray(crop, dtype=np.float32)
+    r_, g_, b_ = ae[..., 0], ae[..., 1], ae[..., 2]
+    grey = 0.299 * r_ + 0.587 * g_ + 0.114 * b_
+    # lawn mask: green-dominant pixels in the orchard's local bounding box
+    e0_local_, n0_local_ = e0_local, n0_local
+    E = dop_tfw["E"] + np.arange(dx0, dx1) * dop_tfw["A"]
+    N = dop_tfw["N"] - np.arange(dy0, dy1) * dop_tfw["A"]
+    lx = np.round(E - e0_local_, 3)
+    lz = np.round(n0_local_ - N, 3)  # +z = south
+    MX, MZ = np.meshgrid(lx, lz)
+    in_orchard = (MX > -45) & (MX < 85) & (MZ > -70) & (MZ < 50)
+    lawn = (g_ > r_ + 8) & (g_ > b_ + 8) & (g_ > 60) & (g_ < 210) & in_orchard
+    # target tone = median lawn colour; everything darker than ~80 % of it
+    # (baked shadows, painted crowns) that sits on/near the lawn is flattened
+    # too — the generated 3D trees replace all of that vegetation
+    C = np.array(
+        [np.median(ae[..., c][lawn]) for c in range(3)], dtype=np.float32
+    )
+    c_grey = float(0.299 * C[0] + 0.587 * C[1] + 0.114 * C[2])
+    dark = grey < c_grey * 0.82
+    near_lawn = ndi.binary_dilation(lawn, iterations=30)
+    mask = (lawn | (dark & near_lawn)) & in_orchard
+    mask = ndi.binary_dilation(mask, iterations=4)
+    # normalize each masked pixel toward the lawn tone, keeping a quarter of
+    # the local detail so the lawn does not look flat-painted
+    low = np.maximum(ndi.gaussian_filter(ae, 3.0), 12.0)
+    norm = np.clip(ae / low, 0.6, 1.5)
+    flat = C[None, None, :] * (0.75 + 0.25 * norm)
+    alpha = ndi.gaussian_filter(mask.astype(np.float32), 4.0)[..., None]
+    ae = ae * (1.0 - alpha) + flat * alpha
+    crop = Image.fromarray(ae.astype(np.uint8))
+
     ae_path = os.path.join(OUT_PUBLIC, "aerial.jpg")
     crop.save(ae_path, quality=85)
 
@@ -136,6 +178,11 @@ def main():
     for i, el in enumerate(sorted(osm["elements"], key=lambda e: e["id"])):
         e, n = utm(el["lat"], el["lon"])
         x, z = to_local(e, n)
+        # keep only trees inside the simulation window (5 m margin)
+        if not (WIN_E_MIN - 5 <= e <= WIN_E_MAX + 5):
+            continue
+        if not (WIN_N_MIN - 5 <= n <= WIN_N_MAX + 5):
+            continue
         trees.append({
             "id": "osm%d" % el["id"],
             "source": "OSM node %d" % el["id"],
