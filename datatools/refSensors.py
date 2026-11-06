@@ -38,7 +38,8 @@ sources = [
 {"data":"temp","name":"TT_TU","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/recent/stundenwerte_TU_04177_akt.zip"},
 {"data":"hum","name":"RF_TU","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/recent/stundenwerte_TU_04177_akt.zip"},
 {"data":"light","name":"SD_SO","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/sun/recent/stundenwerte_SD_04177_akt.zip"},
-{"data":"pres","name":"  P0","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/pressure/recent/stundenwerte_P0_04177_akt.zip"}
+{"data":"pres","name":"  P0","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/pressure/recent/stundenwerte_P0_04177_akt.zip"},
+{"data":"wind","name":"   F","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/wind/recent/stundenwerte_FF_04177_akt.zip"}
 ]
 
 dwd = pd.DataFrame()
@@ -48,7 +49,9 @@ def extract(s,data):
     df["date"] = df.MESS_DATUM.apply(d)
     #df.drop(columns=["MESS_DATUM","STATIONS_ID","QN_9","eor"],inplace=True)
     df.drop(df.loc[df.date < "2020-10-01 00:00:00"].index,inplace=True)
-    df.rename(columns={s["name"]:s["data"]},inplace=True)
+    # DWD pads some column names with spaces ("   F") - tolerate both
+    col = s["name"] if s["name"] in df.columns else s["name"].strip()
+    df.rename(columns={col:s["data"]},inplace=True)
     df.reset_index(inplace=True)
     if s["data"] == "light":
         df.light = df.light / 60 * 100
@@ -59,7 +62,7 @@ def extract(s,data):
 scriptDir = os.path.dirname(os.path.abspath(__file__))
 icosCitationFile = os.path.join(scriptDir, "ICOS-CITATION.txt")
 
-def updateIcosCitation(dobjUri,fileName):
+def updateIcosCitation(dobjUri,fileName,outFile=None):
     objHash = dobjUri.rstrip("/").split("/")[-1]
     url = "https://meta.icos-cp.eu/objects/%s/%s.json" % (objHash,fileName)
     objJson = None
@@ -92,13 +95,18 @@ def updateIcosCitation(dobjUri,fileName):
         citation = "%s (%s). %s, ICOS RI" % (authors,year,title)
 
     print("citation: ",citation)
-    with open(icosCitationFile,"w") as f:
+    if outFile is None:
+        outFile = icosCitationFile
+    with open(outFile,"w") as f:
         f.write(citation + "\n")
         f.write("PID: " + pid + "\n")
         f.write("Landing page: https://meta.icos-cp.eu/objects/" + objHash + "\n")
         f.write("Licence: ICOS RI, licensed under CC BY 4.0 (https://www.icos-cp.eu/data-services/about-data-portal/data-license)\n")
 
-def getIcos(spec,height,expectedColumns):
+def getIcos(spec,height,expectedColumns,citFile=None):
+    """height: exact sampling height as string (e.g. "30"), or None to
+    auto-pick the LOWEST available sampling height at the station (the
+    latest object per height, then the smallest height)."""
     query1 = """
     prefix cpmeta: <http://meta.icos-cp.eu/ontologies/cpmeta/>
     prefix prov: <http://www.w3.org/ns/prov#>
@@ -118,16 +126,29 @@ def getIcos(spec,height,expectedColumns):
                     cpmeta:hasSamplingHeight ?samplingHeight
             ]
             FILTER NOT EXISTS {[] cpmeta:isNextVersionOf ?dobj}
-            FILTER( ?samplingHeight = " """
+    """
+    queryHeight = """    FILTER( ?samplingHeight = " """
 
     query3 = """ "^^xsd:float)
-            FILTER(?station = <http://meta.icos-cp.eu/resources/stations/AS_KIT>)
+    """
+    queryTail = """    FILTER(?station = <http://meta.icos-cp.eu/resources/stations/AS_KIT>)
     }
     order by desc(?timeEnd)
-    limit 1
     """
-
-    query = "".join([query1,spec,query2,height,query3])
+    if height is not None:
+        # exact level: keep limit 1 (newest object at that height);
+        # LIMIT is a solution modifier and must follow all filters
+        queryTail += """    limit 1
+    """
+    # height == None -> no height FILTER at all; queryHeight/query3 carry the
+    # two halves of the height literal and must be skipped in that case
+    query = "".join([
+        query1, spec, query2,
+        queryHeight if height is not None else "",
+        height if height is not None else "",
+        query3 if height is not None else "",
+        queryTail,
+    ])
     print("query:",query)
     result = meta.sparql_select(query)
     bindings = result.bindings
@@ -135,15 +156,29 @@ def getIcos(spec,height,expectedColumns):
 
     if not bindings:
         raise SystemExit("no data object found for",spec)
-    dobjUri = bindings[0]["dobj"].uri
+
+    if height is None:
+        # lowest available level: newest object per sampling height,
+        # then the smallest height (binding order is desc(timeEnd))
+        latest = {}
+        for b in bindings:
+            h = float(b["samplingHeight"].value)
+            if h not in latest:
+                latest[h] = b["dobj"].uri
+        height = min(latest)
+        print("available sampling heights:",sorted(latest))
+        print("lowest level:",height,"m")
+        dobjUri = latest[height]
+    else:
+        dobjUri = bindings[0]["dobj"].uri
     print("dobj: ",dobjUri)
 
     dobjMeta = meta.get_dobj_meta(dobjUri)
     fileName = dobjMeta.fileName
     print("fileName: ",fileName)
 
-    # citation (also writes ICOS-CITATION.txt)
-    updateIcosCitation(dobjUri,fileName)
+    # citation (writes the ICOS-CITATION file for this object)
+    updateIcosCitation(dobjUri,fileName,citFile)
 
     # get the data
     columns = data.get_columns_as_arrays(dobjMeta)
@@ -181,6 +216,11 @@ for s in sources:
 # excluded/missing light channel becomes NULL in the database
 if "light" not in dwd.columns:
     dwd["light"] = float("nan")
+# excluded/missing wind channel (DWD FF) becomes NULL as well;
+# icosWind stays the ICOS ERIC reference (AS_KIT lowest level, currently
+# empty at the source - KIT does not populate WS in the NRT meteo product)
+if "wind" not in dwd.columns:
+    dwd["wind"] = float("nan")
 
 
 
@@ -214,6 +254,7 @@ if len(dwd[dwd.date >= limit]) < 1:
 
     dwd = meteo.copy()
     dwd["light"] = 0  # no light from kit
+    dwd["wind"] = float("nan")  # no wind from kit (NRT meteo WS empty)
 
 #print(dwd)
 
@@ -289,6 +330,16 @@ icos.to_csv(fn)
 if args.csv:
     print("wrote",fn)
 
+# ICOS ERIC meteo at the LOWEST available sampling height at AS_KIT:
+# air temperature (AT), relative humidity (RH), wind speed (WS) as extra
+# reference columns next to the DWD temp/hum (distinct column names)
+icosMeteoCitationFile = os.path.join(scriptDir,"ICOS-CITATION-METEO.txt")
+meteoLow = getIcos("http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject",None,
+                   ["TIMESTAMP","AT","RH","WS"],citFile=icosMeteoCitationFile)
+meteoLow.rename(columns={"TIMESTAMP":"date","AT":"icosTemp","RH":"icosHum","WS":"icosWind"},inplace=True)
+meteoLow.drop(index=meteoLow.loc[meteoLow.date < "2020-10-01 00:00:00"].index,inplace=True)
+meteoLow.reset_index(drop=True,inplace=True)
+
 #print(icos)
 
 
@@ -300,6 +351,10 @@ if args.csv:
 ref = dwd.merge(icos,on="date")
 # or out join => max number of rows with NaNs
 # ref = dwd.merge(icos,on="date",how="outer").fillna(0)
+
+# left join for the meteo columns: keep all CO2 rows even where the meteo
+# NRT product lags behind
+ref = ref.merge(meteoLow,on="date",how="left")
 
 # adjust timezone and DST
 ref["date"] += pd.Timedelta(hours=1)
@@ -371,6 +426,15 @@ if len(df) > 0:
 ref.reset_index(inplace=True)
 print("Adding data: ",len(ref))
 
+# the new ICOS meteo columns may not exist in an older table - add them
+# idempotently before appending
+existingCols = {c["name"] for c in inspect(engine).get_columns("sensors")}
+with engine.begin() as conn:
+    for col in ("icosTemp","icosHum","icosWind","wind"):
+        if col not in existingCols:
+            print("ALTER TABLE sensors ADD COLUMN",col)
+            conn.exec_driver_sql("ALTER TABLE sensors ADD COLUMN %s FLOAT" % col)
+
 # create new table from the dataframe
 ref.to_sql(
     "sensors",
@@ -392,7 +456,11 @@ ref.to_sql(
         "pkt":Integer,
         "raw":String(50),
         "pres":Float,
-        "rep":SmallInteger
+        "rep":SmallInteger,
+        "icosTemp":Float,
+        "icosHum":Float,
+        "icosWind":Float,
+        "wind":Float
         }
 )
 # close
