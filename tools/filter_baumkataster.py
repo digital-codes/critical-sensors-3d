@@ -63,6 +63,32 @@ def size_class(circ):
     return "large"
 
 
+# Realistic target heights (m), calibrated against ground photos
+# 20261022_125925/125923: meadow fruit trees ~4-6 m (about half the house
+# height), street/edge trees 12-18 m reaching above the eaves, conifers
+# 15-20 m. Height scales with trunk circumference within each group.
+FRUIT_GENERA = ("malus", "pyrus", "prunus", "juglans", "nuyes", "corylus",
+                "cornus", "sambucus", "crataegus")
+CONIFER_GENERA = ("picea", "pinus", "abies", "larix", "pseudotsuga", "taxus")
+
+
+def height_for(sci, circ):
+    g = (sci or "").split()[0].lower() if sci else ""
+    try:
+        c = float(circ)
+    except (TypeError, ValueError):
+        c = 1.2
+    c = max(0.15, min(c, 2.6))
+    if g in CONIFER_GENERA:
+        return round(12.0 + 3.0 * c, 1)          # 12-20 m
+    if g in FRUIT_GENERA or g in ("", "unbekannt"):
+        # orchard fruit trees stay low regardless of a thick old trunk
+        return round(4.2 + 1.1 * c, 1)           # 4.4-7.0 m
+    # open-grown broadleaf (oak, linden, ash, birch, hornbeam, maple...):
+    # circumference is the best size proxy
+    return round(5.5 + 4.6 * c, 1)               # ~6-17.5 m
+
+
 def main():
     tr = Transformer.from_crs("EPSG:4326", "EPSG:25832", always_xy=True)
     e0, n0 = tr.transform(ORIGIN_LON, ORIGIN_LAT)
@@ -120,6 +146,7 @@ def main():
             "x": x, "z": z,
             "trunkCircumference": circ,
             "sizeClass": sc,
+            "heightM": height_for(name_sci, circ),
             "speciesBase": preset_for(name_sci, sc),
             "zone": zone,
             "seed": (int(lat * 1e6) ^ int(lon * 1e6)) % 100000,

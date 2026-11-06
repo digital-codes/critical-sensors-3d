@@ -233,6 +233,7 @@ def main():
                 "x": t["x"], "z": t["z"],
                 "trunkCircumference": t["trunkCircumference"],
                 "sizeClass": t["sizeClass"],
+                "heightM": t.get("heightM"),
                 "speciesBase": t["speciesBase"],
                 "seed": t["seed"],
             })

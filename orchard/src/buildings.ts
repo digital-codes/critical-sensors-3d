@@ -39,7 +39,6 @@ export interface CityBuildings {
   group: THREE.Group;
 }
 
-const WALL_TINT = 0xb0aa9c; // multiplier over the aerial map: darker walls
 const ROOF_TINT = 0xffffff; // roofs take the DOP pixels as-is
 
 // triangulate one LoD2 surface polygon in 3D. Strategy: find the face
@@ -136,17 +135,43 @@ export async function createBuildings(): Promise<CityBuildings> {
 
   const group = new THREE.Group();
   group.name = 'city-buildings';
-  // aerial image as shared texture: roofs show the exact DOP pixels of the
-  // real roofs (seamless with the terrain), walls get the nadir smear,
-  // tinted darker so they read as facades
+  // aerial image as shared texture for ROOFS: they show the exact DOP
+  // pixels of the real roofs (seamless with the terrain beneath)
   const aerialTex = new THREE.TextureLoader().load('/' + site.aerial.file);
   aerialTex.colorSpace = THREE.SRGBColorSpace;
-  const wallMat = new THREE.MeshLambertMaterial({
-    map: aerialTex, color: WALL_TINT, side: THREE.DoubleSide,
-  });
   const roofMat = new THREE.MeshLambertMaterial({
     map: aerialTex, color: ROOF_TINT, side: THREE.DoubleSide,
   });
+  // WALLS: a nadir DOP carries no facade pixels, so sample colours would be
+  // arbitrary. Facade palette from the ground photos 20261022_125925/23
+  // (St.-Florian-Straße row): yellow-ochre, white/cream, light grey, one
+  // green house; weighted by how often each appears there.
+  const FACADES: Array<[number, number]> = [
+    [0xeae5d9, 4], // white / cream plaster - most common
+    [0xd9b35c, 2], // yellow-ochre ("Sonnengelb")
+    [0xd8d5ce, 2], // light grey
+    [0x9aa88a, 1], // sage green
+  ];
+  const facadeTotal = FACADES.reduce((s, f) => s + f[1], 0);
+  const facadeMatCache = new Map<string, THREE.MeshLambertMaterial>();
+  const facadeMat = (id: string): THREE.MeshLambertMaterial => {
+    let m = facadeMatCache.get(id);
+    if (m) return m;
+    let h = 0;
+    for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+    let pick = h % facadeTotal;
+    let col = FACADES[0][0];
+    for (const [c, w] of FACADES) {
+      if (pick < w) {
+        col = c;
+        break;
+      }
+      pick -= w;
+    }
+    m = new THREE.MeshLambertMaterial({ color: col, side: THREE.DoubleSide });
+    facadeMatCache.set(id, m);
+    return m;
+  };
 
   let placed = 0;
   for (const b of asset.buildings) {
@@ -161,7 +186,9 @@ export async function createBuildings(): Promise<CityBuildings> {
       if (surf.type === 'GroundSurface') continue; // terrain covers it
       const geo = surfaceGeometry(surf, dy);
       if (!geo) continue;
-      const mesh = new THREE.Mesh(geo, surf.type === 'RoofSurface' ? roofMat : wallMat);
+      const mesh = new THREE.Mesh(
+        geo, surf.type === 'RoofSurface' ? roofMat : facadeMat(b.id),
+      );
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       if (surf.type === 'RoofSurface') hasRoof = true;

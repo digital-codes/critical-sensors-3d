@@ -9,12 +9,15 @@ interface SiteTree {
   x: number;
   z: number;
   sizeClass: string;
+  /** calibrated real height (m) from tools/filter_baumkataster.py */
+  heightM?: number;
   speciesBase: string;
   seed: number;
 }
 
 type BarkMaps = TreeOptions['bark']['maps'];
 
+// fallback for OSM trees without a calibrated height (m)
 const SIZE_SCALE: Record<string, number> = {
   small: 4.5,
   medium: 6.0,
@@ -82,7 +85,9 @@ export async function createOrchard(
     const presetJson = structuredClone(TreePreset[entry.speciesBase]) as TreeOptions;
     const presetLeafCount = presetJson.leaves.count;
     const y = getHeight(entry.x, entry.z);
-    const targetHeight = SIZE_SCALE[entry.sizeClass] ?? 6.0;
+    // calibrated height (photo-based, see filter_baumkataster.height_for)
+    // with the old size-class scale as OSM fallback
+    const targetHeight = entry.heightM ?? SIZE_SCALE[entry.sizeClass] ?? 6.0;
 
     for (const season of SEASONS) {
       const t = new Tree();

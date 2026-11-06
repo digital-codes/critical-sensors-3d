@@ -10,6 +10,7 @@
   "z": -76.13,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Aspen Medium",
   "zone": "adjacent",
   "seed": 1964
@@ -25,6 +26,7 @@
   "z": -82.216,
   "trunkCircumference": "2.2",
   "sizeClass": "large",
+  "heightM": 15.6,
   "speciesBase": "Oak Large",
   "zone": "adjacent",
   "seed": 82445
@@ -40,6 +42,7 @@
   "z": -3.385,
   "trunkCircumference": "1.2",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "adjacent",
   "seed": 82713
@@ -55,6 +58,7 @@
   "z": -31.797,
   "trunkCircumference": "1.2",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "adjacent",
   "seed": 86463
@@ -70,6 +74,7 @@
   "z": -35.27,
   "trunkCircumference": "1.2",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "adjacent",
   "seed": 86525
@@ -85,6 +90,7 @@
   "z": -27.559,
   "trunkCircumference": "1.1",
   "sizeClass": "medium",
+  "heightM": 10.6,
   "speciesBase": "Oak Medium",
   "zone": "adjacent",
   "seed": 82549
@@ -100,6 +106,7 @@
   "z": -51.734,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 84400
@@ -115,6 +122,7 @@
   "z": -44.427,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 83895
@@ -130,6 +138,7 @@
   "z": 35.955,
   "trunkCircumference": "1.1",
   "sizeClass": "medium",
+  "heightM": 10.6,
   "speciesBase": "Aspen Medium",
   "zone": "adjacent",
   "seed": 975
@@ -145,6 +154,7 @@
   "z": -52.045,
   "trunkCircumference": "1.1",
   "sizeClass": "medium",
+  "heightM": 10.6,
   "speciesBase": "Aspen Medium",
   "zone": "adjacent",
   "seed": 84288
@@ -160,6 +170,7 @@
   "z": 33.592,
   "trunkCircumference": "1.4",
   "sizeClass": "medium",
+  "heightM": 11.9,
   "speciesBase": "Ash Medium",
   "zone": "core",
   "seed": 85149
@@ -175,6 +186,7 @@
   "z": -74.11,
   "trunkCircumference": "2.2",
   "sizeClass": "large",
+  "heightM": 15.6,
   "speciesBase": "Oak Large",
   "zone": "adjacent",
   "seed": 83291
@@ -190,6 +202,7 @@
   "z": -52.191,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "adjacent",
   "seed": 84436
@@ -205,6 +218,7 @@
   "z": 32.143,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 86112
@@ -220,6 +234,7 @@
   "z": -64.475,
   "trunkCircumference": "2.1",
   "sizeClass": "large",
+  "heightM": 15.2,
   "speciesBase": "Oak Large",
   "zone": "core",
   "seed": 83355
@@ -235,6 +250,7 @@
   "z": 2.258,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "adjacent",
   "seed": 86253
@@ -250,6 +266,7 @@
   "z": 37.018,
   "trunkCircumference": "1.1",
   "sizeClass": "medium",
+  "heightM": 10.6,
   "speciesBase": "Aspen Medium",
   "zone": "core",
   "seed": 85141
@@ -265,6 +282,7 @@
   "z": 37.159,
   "trunkCircumference": "1.1",
   "sizeClass": "medium",
+  "heightM": 10.6,
   "speciesBase": "Aspen Medium",
   "zone": "core",
   "seed": 85266
@@ -280,6 +298,7 @@
   "z": 41.722,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 86412
@@ -295,6 +314,7 @@
   "z": 18.365,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 85534
@@ -310,6 +330,7 @@
   "z": 24.721,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 86286
@@ -325,6 +346,7 @@
   "z": -47.049,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 84000
@@ -340,6 +362,7 @@
   "z": -63.057,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 83441
@@ -355,6 +378,7 @@
   "z": -22.251,
   "trunkCircumference": "1.1",
   "sizeClass": "medium",
+  "heightM": 10.6,
   "speciesBase": "Aspen Medium",
   "zone": "core",
   "seed": 84832
@@ -370,6 +394,7 @@
   "z": -70.394,
   "trunkCircumference": "2.2",
   "sizeClass": "large",
+  "heightM": 15.6,
   "speciesBase": "Oak Large",
   "zone": "adjacent",
   "seed": 83320
@@ -385,6 +410,7 @@
   "z": 36.393,
   "trunkCircumference": "1.4",
   "sizeClass": "medium",
+  "heightM": 11.9,
   "speciesBase": "Ash Medium",
   "zone": "core",
   "seed": 84519
@@ -400,6 +426,7 @@
   "z": -1.542,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Aspen Medium",
   "zone": "core",
   "seed": 84551
@@ -415,6 +442,7 @@
   "z": -59.31,
   "trunkCircumference": "1.1",
   "sizeClass": "medium",
+  "heightM": 5.4,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 83070
@@ -430,6 +458,7 @@
   "z": -73.802,
   "trunkCircumference": "2.2",
   "sizeClass": "large",
+  "heightM": 15.6,
   "speciesBase": "Oak Large",
   "zone": "adjacent",
   "seed": 83312
@@ -445,6 +474,7 @@
   "z": 46.471,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Aspen Medium",
   "zone": "adjacent",
   "seed": 871
@@ -460,6 +490,7 @@
   "z": -84.128,
   "trunkCircumference": "1.4",
   "sizeClass": "medium",
+  "heightM": 11.9,
   "speciesBase": "Ash Medium",
   "zone": "adjacent",
   "seed": 84192
@@ -475,6 +506,7 @@
   "z": -80.65,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Aspen Medium",
   "zone": "adjacent",
   "seed": 84187
@@ -490,6 +522,7 @@
   "z": -75.83,
   "trunkCircumference": "2.1",
   "sizeClass": "large",
+  "heightM": 15.2,
   "speciesBase": "Aspen Large",
   "zone": "adjacent",
   "seed": 82663
@@ -505,6 +538,7 @@
   "z": 43.123,
   "trunkCircumference": "2.1",
   "sizeClass": "large",
+  "heightM": 15.2,
   "speciesBase": "Aspen Large",
   "zone": "core",
   "seed": 84762
@@ -520,6 +554,7 @@
   "z": -58.144,
   "trunkCircumference": "2.1",
   "sizeClass": "large",
+  "heightM": 15.2,
   "speciesBase": "Aspen Large",
   "zone": "adjacent",
   "seed": 1836
@@ -535,6 +570,7 @@
   "z": -37.801,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Aspen Medium",
   "zone": "adjacent",
   "seed": 82501
@@ -550,6 +586,7 @@
   "z": 36.557,
   "trunkCircumference": "1.1",
   "sizeClass": "medium",
+  "heightM": 10.6,
   "speciesBase": "Aspen Medium",
   "zone": "adjacent",
   "seed": 84995
@@ -565,6 +602,7 @@
   "z": -4.041,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 85259
@@ -580,6 +618,7 @@
   "z": 8.628,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 85898
@@ -595,6 +634,7 @@
   "z": -1.104,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 85136
@@ -610,6 +650,7 @@
   "z": -6.604,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 85528
@@ -625,6 +666,7 @@
   "z": -66.107,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 5.5,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 82638
@@ -640,6 +682,7 @@
   "z": -50.259,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 5.5,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 82899
@@ -655,6 +698,7 @@
   "z": -56.916,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 5.5,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 82736
@@ -670,6 +714,7 @@
   "z": 7.993,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 85062
@@ -685,6 +730,7 @@
   "z": -46.273,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 5.5,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 82780
@@ -700,6 +746,7 @@
   "z": 8.293,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 85582
@@ -715,6 +762,7 @@
   "z": 18.354,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 85962
@@ -730,6 +778,7 @@
   "z": 3.415,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 85911
@@ -745,6 +794,7 @@
   "z": -12.049,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 85636
@@ -760,6 +810,7 @@
   "z": 0.149,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 85770
@@ -775,6 +826,7 @@
   "z": 24.699,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 84854
@@ -790,6 +842,7 @@
   "z": -22.746,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 85563
@@ -805,6 +858,7 @@
   "z": 10.454,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 85786
@@ -820,6 +874,7 @@
   "z": -50.779,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 5.5,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 82776
@@ -835,6 +890,7 @@
   "z": -40.099,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 5.5,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 82812
@@ -850,6 +906,7 @@
   "z": -37.984,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 5.5,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 82925
@@ -865,6 +922,7 @@
   "z": 17.114,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 85155
@@ -880,6 +938,7 @@
   "z": -14.273,
   "trunkCircumference": "",
   "sizeClass": "medium",
+  "heightM": 11.0,
   "speciesBase": "Oak Medium",
   "zone": "core",
   "seed": 85250
