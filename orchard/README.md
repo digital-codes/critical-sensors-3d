@@ -144,9 +144,8 @@ Inputs: `geoimages/` (LGL-BW DGM/DOP GeoTIFFs + world files),
   Namensnennung 2.0 (dl-de/by-2-0).
 - Tree register: Baumkataster Stadt Karlsruhe, CC BY 4.0, via Code for
   Karlsruhe.
-- LoD2 buildings: Stadt Karlsruhe 3D-Gebäudemodelle
-  (geoportal.karlsruhe.de/3d/karlsruhe_3d/) — licence to be confirmed,
-  likely dl-de/by-2-0 like the city's other geodata.
+- LoD2 buildings: 3D-Gebäudemodell der Stadt Karlsruhe, CC BY 4.0
+  (https://transparenz.karlsruhe.de/dataset/3d-gebaudemodell-der-stadt-karlsruhe).
 - Tree/structure fallback positions: © OpenStreetMap contributors (ODbL).
 - ez-tree: MIT.
 
