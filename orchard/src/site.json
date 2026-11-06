@@ -69,6 +69,13 @@
   "utmE": 455176.632,
   "utmN": 5426513.864
  },
+ "snowNoise": {
+  "file": "site/snow_noise.png",
+  "note": "tileable Perlin (ideas/perlin/repeat.py); mean 0.462 std 0.145",
+  "octaves": 4,
+  "period": 8,
+  "sizePx": 256
+ },
  "sources": [
   {
    "file": "geoimages/dgm025_32_455_5426_2_bw/dgm025_32_455_5426_1_bw_2022.tif",

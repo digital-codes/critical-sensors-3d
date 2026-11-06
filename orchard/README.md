@@ -56,6 +56,13 @@ via Overpass/API).
   generate ~10–15 m trees).
 - 4 season variants per tree, selected via a day-of-year slider (0–364);
   winter renders bare — verified against the reference photos.
+- Seasonal grass height (growth from late Feb, peak early summer, mowed
+  late Aug, low winter) and a seasonal midday sun (solar declination), so
+  the generated trees cast the only, season-correct shadows.
+- Winter snow as irregular Perlin patches (tileable noise tile from
+  `ideas/perlin/repeat.py`, `public/site/snow_noise.png`), confined to the
+  orchard polygon (soft-edged meadow bbox); calibrated on the 2021-01-17
+  reference photo. Grass blades follow the same polygon gate per instance.
 - 3 stylized wooden Hocksitzcafe structures at their true meadow-centre
   positions (measured from the Aug-2024 DOP spots; the OSM ways with the
   same ids are garden sheds east of the orchard and are NOT used for

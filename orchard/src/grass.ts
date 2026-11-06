@@ -149,6 +149,10 @@ export async function createGrass(): Promise<Grass> {
   const cA = new THREE.Color(0x6a8f3c);
   const cB = new THREE.Color(0x9ab04a);
   const c = new THREE.Color();
+  // per-instance data for setSeason: position (x,z) and the random colour
+  // variation applied at placement (instanceColor holds variation x tint)
+  const bladePos = new Float32Array(COUNT * 2);
+  const bladeVar = new Float32Array(COUNT * 3);
 
   let placed = 0;
   let attempts = 0;
@@ -167,6 +171,11 @@ export async function createGrass(): Promise<Grass> {
     mesh.setMatrixAt(placed, m);
     c.copy(cA).lerp(cB, Math.random());
     mesh.setColorAt(placed, c);
+    bladePos[placed * 2] = x;
+    bladePos[placed * 2 + 1] = z;
+    bladeVar[placed * 3] = c.r;
+    bladeVar[placed * 3 + 1] = c.g;
+    bladeVar[placed * 3 + 2] = c.b;
     placed++;
   }
   // shrink the instance buffer to what actually got placed
@@ -175,6 +184,15 @@ export async function createGrass(): Promise<Grass> {
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   console.info(`grass: ${placed} blades on ${lawnCells} lawn cells (${Math.round((100 * lawnCells) / (MASK_W * MASK_H))}% of window)`);
 
+  // The terrain shader gates snow to the orchard polygon (same soft box);
+  // the blades must follow: snow tint only inside the orchard bbox, while
+  // lawns/gardens outside stay in the plain seasonal colour.
+  const insideOrchard = (x: number, z: number): boolean =>
+    x > -48 && x < 88 && z > -73 && z < 53;
+  const plainTint = new THREE.Color();
+  const snowyTint = new THREE.Color();
+  const tint = new THREE.Color();
+
   return {
     mesh,
     update(elapsedTime: number): void {
@@ -182,12 +200,23 @@ export async function createGrass(): Promise<Grass> {
     },
     setSeason(day: number): SeasonKey {
       const key = nearestSeason(day).key;
-      material.color.setHex(SEASON_TINT[key]);
+      const snow = snowAmount(day);
       // seasonal height: growth/mow curve (vertex-shader uniform)
       uHeight.value = grassHeight(day);
-      // snowy lawn: blades fade toward off-white with the snow amount
-      const snow = snowAmount(day);
-      if (snow > 0) material.color.lerp(SNOW_TINT, snow * 0.85);
+      // material stays white - all tinting is per-instance so the snow can
+      // be constrained to the orchard polygon
+      plainTint.setHex(SEASON_TINT[key]);
+      snowyTint.copy(plainTint).lerp(SNOW_TINT, snow * 0.85);
+      for (let i = 0; i < placed; i++) {
+        tint.copy(
+          snow > 0.001 && insideOrchard(bladePos[i * 2], bladePos[i * 2 + 1])
+            ? snowyTint
+            : plainTint,
+        );
+        c.set(bladeVar[i * 3], bladeVar[i * 3 + 1], bladeVar[i * 3 + 2]).multiply(tint);
+        mesh.setColorAt(i, c);
+      }
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       return key;
     },
   };

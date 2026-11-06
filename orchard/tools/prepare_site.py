@@ -167,6 +167,21 @@ def main():
     ae_path = os.path.join(OUT_PUBLIC, "aerial.jpg")
     crop.save(ae_path, quality=85)
 
+    # ---- tileable Perlin snow-patch texture (ideas/perlin/repeat.py) ----
+    # Seamless multi-octave noise tile sampled by the terrain shader for the
+    # winter snow patches - replaces the old sin-grid mask that read as a
+    # checkerboard. Period 8 over 256 px + 4 octaves gives blobs from ~3 m
+    # to ~30 m without an obvious repeat.
+    sys.path.insert(0, os.path.join(REPO, "ideas", "perlin"))
+    from repeat import tileable_perlin_2d
+
+    sn_arr = tileable_perlin_2d(width=256, height=256, period=8, octaves=4)
+    sn_norm = (sn_arr - sn_arr.min()) / (float(np.ptp(sn_arr)) + 1e-9)
+    snow_noise_path = os.path.join(OUT_PUBLIC, "snow_noise.png")
+    Image.fromarray((sn_norm * 255).astype(np.uint8), mode="L").save(snow_noise_path)
+    sn_mean = float(sn_norm.mean())
+    sn_std = float(sn_norm.std())
+
     def dop_px_to_local(px, py):
         e = dop_tfw["E"] + px * dop_tfw["A"]
         n = dop_tfw["N"] - py * dop_tfw["A"]
@@ -271,6 +286,9 @@ def main():
                       "originPx": [x0, y0], "gridM": dgm_tfw["A"]},
         "aerial": {"file": "site/aerial.jpg", "gridM": dop_tfw["A"],
                    "originPx": [dx0, dy0]},
+        "snowNoise": {"file": "site/snow_noise.png", "sizePx": 256,
+                      "period": 8, "octaves": 4,
+                      "note": "tileable Perlin (ideas/perlin/repeat.py); mean %.3f std %.3f" % (sn_mean, sn_std)},
         "trees": trees,
         "structures": structures,
         "cameraPresets": {
