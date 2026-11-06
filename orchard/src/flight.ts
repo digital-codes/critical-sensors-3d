@@ -37,12 +37,13 @@ const WAYPOINTS: Array<[number, number, number]> = [
   [6, 13.5, 40],    // south meadow, ends above open grass (clear of row+trees)
 ];
 const DURATION_S = 36; // ~4 m/s glide
-const BOB_AMP_M = 0.45; // wing-beat
-const BOB_HZ = 1.4;
+const BOB_AMP_M = 0.35; // wing-beat (vertical float; target rides along, so no pitch wobble)
+const BOB_HZ = 0.9;
 const SWAY_AMP_M = 0.5; // slow lateral drift
 const SWAY_HZ = 0.11;
-const LOOK_AHEAD = 0.08; // fraction of the whole path the bird looks toward
+const LOOK_AHEAD_M = 12; // gaze anchored this far ahead along the path tangent
 const LOOK_DIP_M = 2.5;  // slight downward gaze, keeps the horizon in frame
+const YAW_TAU_S = 2.0;   // gaze inertia: the heading lags the tangent like a banking bird
 
 export async function createBirdFlight(
   rig: CameraRig,
@@ -53,12 +54,17 @@ export async function createBirdFlight(
     x, terrain(x, z) + clearance, z,
   ));
   const path = new THREE.CatmullRomCurve3(pts, false, 'centripetal', 0.5);
-  // look targets: slightly ahead of the position, dipping toward the ground
-  // so the bird reads as gliding downward-outward rather than level-staring
-  // the bird looks toward a point AHEAD on its own path, dipped slightly
-  // downward - keeps the horizon in frame and reads as gliding
+  // The bird aims along its own path tangent, a fixed distance ahead. The
+  // target is defined RELATIVE to the camera position, so wing-beat bob and
+  // lateral sway translate the view without rotating it: yaw follows the
+  // curve smoothly instead of swinging with every beat. Near the end the
+  // tangent extrapolates past the path end, keeping the heading constant
+  // through arrival (a clamped ahead-point used to whip the yaw around).
   function lookFor(s: number, out: THREE.Vector3): THREE.Vector3 {
-    path.getPointAt(Math.min(0.999, s + LOOK_AHEAD), out);
+    const sc = Math.min(0.999, s);
+    path.getPointAt(sc, out);
+    path.getTangentAt(sc, tmpTangent);
+    out.addScaledVector(tmpTangent, LOOK_AHEAD_M);
     out.y -= LOOK_DIP_M;
     return out;
   }
@@ -68,18 +74,26 @@ export async function createBirdFlight(
   let cancelOnPointer: (() => void) | null = null;
   const dom: HTMLElement = rig.controls.domElement ?? document.body;
   const tmpLook = new THREE.Vector3();
+  const tmpTangent = new THREE.Vector3();
 
-  function apply(u01: number): void {
+  function apply(u01: number, dt = 0): void {
     // smoothstep over the whole flight: gentle take-off and arrival
     const s = THREE.MathUtils.smoothstep(THREE.MathUtils.clamp(u01, 0, 1), 0, 1);
-    const pos = path.getPointAt(Math.min(0.999, s));
-    const look = lookFor(s, tmpLook);
+    const sc = Math.min(0.999, s);
+    const pos = path.getPointAt(sc);
+    path.getTangentAt(sc, tmpTangent);
+    // banked gaze: low-pass the flight direction so sharp path corners turn
+    // into gradual heading changes (per-frame lerp from the time constant;
+    // a direct seek snaps so poses stay deterministic)
+    if (!gazeDir.lengthSq() || dt <= 0) gazeDir.copy(tmpTangent);
+    else gazeDir.lerp(tmpTangent, 1 - Math.exp(-dt / YAW_TAU_S)).normalize();
+    const look = tmpLook.copy(pos).addScaledVector(gazeDir, LOOK_AHEAD_M);
+    look.y -= LOOK_DIP_M;
     // wing-beat + sway, phase-locked to flight time
     const bob = Math.sin(progress * BOB_HZ * 2 * Math.PI) * BOB_AMP_M;
     const sway = Math.sin(progress * SWAY_HZ * 2 * Math.PI) * SWAY_AMP_M;
     // sway perpendicular to the flight direction (horizontal)
-    const dir = path.getTangentAt(Math.min(0.999, s));
-    const side = new THREE.Vector3(-dir.z, 0, dir.x).normalize();
+    const side = new THREE.Vector3(-tmpTangent.z, 0, tmpTangent.x).normalize();
     rig.camera.position.copy(pos).addScaledVector(side, sway);
     rig.camera.position.y += bob;
     rig.controls.target.copy(look);
@@ -99,12 +113,14 @@ export async function createBirdFlight(
   function start(): void {
     progress = 0;
     active = true;
+    gazeDir.set(0, 0, 0); // re-anchor the banked gaze at take-off
     rig.controls.enabled = false;
     cancelOnPointer = () => stop();
     dom.addEventListener('pointerdown', cancelOnPointer, { once: true });
   }
 
   let paused = false;
+  const gazeDir = new THREE.Vector3();
 
   return {
     get active(): boolean {
@@ -128,11 +144,11 @@ export async function createBirdFlight(
       if (!active || paused) return;
       progress += dt;
       if (progress >= DURATION_S) {
-        apply(1);
+        apply(1, dt);
         stop();
         return;
       }
-      apply(progress / DURATION_S);
+      apply(progress / DURATION_S, dt);
     },
   };
 }
