@@ -100,7 +100,24 @@ async function main(): Promise<void> {
   });
 
   const grass: Grass = await createGrass();
+  (window as unknown as Record<string, unknown>).__buildId = 'v3magenta-20261106';
   scene.add(grass.mesh);
+  // hand the lawn mask to the terrain so winter snow covers exactly the
+  // grass region (same cells the blades are placed on)
+  const lm = grass.getLawnMask();
+  // RGBA so each 250 px row stays 4-byte aligned (RedFormat rows of 250 B
+  // need unpackAlignment tricks); luminance replicated into all channels
+  const maskData = new Uint8Array(lm.w * lm.h * 4);
+  for (let k = 0; k < lm.w * lm.h; k++) {
+    const v = lm.data[k] ? 255 : 0;
+    maskData[k * 4] = v;
+    maskData[k * 4 + 1] = v;
+    maskData[k * 4 + 2] = v;
+    maskData[k * 4 + 3] = 255;
+  }
+  const maskTex = new THREE.DataTexture(maskData, lm.w, lm.h, THREE.RGBAFormat, THREE.UnsignedByteType);
+  maskTex.needsUpdate = true;
+  terrain.setSnowMask(maskTex);
   // debug/testing hook: direct access to the snow-driven scene parts
   (window as unknown as Record<string, unknown>).__scene3 = { terrain, grass, structures };
 

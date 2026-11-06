@@ -28,6 +28,9 @@ export interface Grass {
   mesh: THREE.InstancedMesh;
   update(elapsedTime: number): void;
   setSeason(day: number): SeasonKey;
+  /** The mown-lawn mask (row 0 = north, i = west->east) so other components
+   * (terrain snow) can gate to exactly the grass region. */
+  getLawnMask(): { data: Uint8Array; w: number; h: number };
 }
 
 export async function createGrass(): Promise<Grass> {
@@ -119,21 +122,32 @@ export async function createGrass(): Promise<Grass> {
 
   const uTime = { value: 0 };
   const uHeight = { value: 1 };
-  const material = new THREE.MeshLambertMaterial({ side: THREE.DoubleSide });
+  // Transparency: blades fade out toward their base (terrain shows through)
+  // and stay nearly opaque at the tip - softens the mass so the trees read
+  // against it instead of drowning in the grass.
+  const material = new THREE.MeshLambertMaterial({ side: THREE.DoubleSide, transparent: true });
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = uTime;
     shader.uniforms.uHeight = uHeight;
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float uTime;\nuniform float uHeight;')
+      .replace('#include <common>', '#include <common>\nuniform float uTime;\nuniform float uHeight;\nvarying vec2 vBladeUv;')
       .replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
+        vBladeUv = uv;
         #ifdef USE_INSTANCING
           vec3 iPos = vec3(instanceMatrix[3][0], instanceMatrix[3][1], instanceMatrix[3][2]);
           float sway = sin(uTime * 1.5 + iPos.x * 0.5 + iPos.z * 0.3) * 0.06 * uv.y * uHeight;
           transformed.x += sway;
           transformed.y *= uHeight;
         #endif`,
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec2 vBladeUv;')
+      .replace(
+        '#include <map_fragment>',
+        `#include <map_fragment>
+        diffuseColor.a *= mix(0.45, 0.95, vBladeUv.y);`,
       );
   };
 
@@ -146,12 +160,11 @@ export async function createGrass(): Promise<Grass> {
   const up = new THREE.Vector3(0, 1, 0);
   const s = new THREE.Vector3();
   const p = new THREE.Vector3();
-  const cA = new THREE.Color(0x6a8f3c);
-  const cB = new THREE.Color(0x9ab04a);
+  const cA = new THREE.Color(0x5f7f36);
+  const cB = new THREE.Color(0x86984a);
   const c = new THREE.Color();
-  // per-instance data for setSeason: position (x,z) and the random colour
-  // variation applied at placement (instanceColor holds variation x tint)
-  const bladePos = new Float32Array(COUNT * 2);
+  // per-instance random colour variation applied at placement
+  // (instanceColor holds variation x seasonal/snow tint)
   const bladeVar = new Float32Array(COUNT * 3);
 
   let placed = 0;
@@ -163,7 +176,7 @@ export async function createGrass(): Promise<Grass> {
     const z = zMin + Math.random() * (zMax - zMin);
     if (!isLawnAt(x, z)) continue;
     if (nearTree(x, z) || inStructure(x, z)) continue;
-    const h = 0.25 + Math.random() * 0.65;
+    const h = 0.22 + Math.random() * 0.55;
     p.set(x, getHeight(x, z), z);
     q.setFromAxisAngle(up, Math.random() * Math.PI * 2);
     s.set(0.8 + Math.random() * 0.5, h, 1);
@@ -171,8 +184,6 @@ export async function createGrass(): Promise<Grass> {
     mesh.setMatrixAt(placed, m);
     c.copy(cA).lerp(cB, Math.random());
     mesh.setColorAt(placed, c);
-    bladePos[placed * 2] = x;
-    bladePos[placed * 2 + 1] = z;
     bladeVar[placed * 3] = c.r;
     bladeVar[placed * 3 + 1] = c.g;
     bladeVar[placed * 3 + 2] = c.b;
@@ -184,14 +195,9 @@ export async function createGrass(): Promise<Grass> {
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   console.info(`grass: ${placed} blades on ${lawnCells} lawn cells (${Math.round((100 * lawnCells) / (MASK_W * MASK_H))}% of window)`);
 
-  // The terrain shader gates snow to the orchard polygon (same soft box);
-  // the blades must follow: snow tint only inside the orchard bbox, while
-  // lawns/gardens outside stay in the plain seasonal colour.
-  const insideOrchard = (x: number, z: number): boolean =>
-    x > -48 && x < 88 && z > -73 && z < 53;
-  const plainTint = new THREE.Color();
-  const snowyTint = new THREE.Color();
-  const tint = new THREE.Color();
+  // Snow extent: the terrain gates snow to this lawn mask (via
+  // getLawnMask) intersected with the same padded tree bounds as the
+  // placement below - so snow covers exactly the region where blades grow.
 
   return {
     mesh,
@@ -203,21 +209,19 @@ export async function createGrass(): Promise<Grass> {
       const snow = snowAmount(day);
       // seasonal height: growth/mow curve (vertex-shader uniform)
       uHeight.value = grassHeight(day);
-      // material stays white - all tinting is per-instance so the snow can
-      // be constrained to the orchard polygon
-      plainTint.setHex(SEASON_TINT[key]);
-      snowyTint.copy(plainTint).lerp(SNOW_TINT, snow * 0.85);
+      // material stays white - all tinting is per-instance. Every blade sits
+      // on a lawn cell by construction, so the snow tint (the terrain gates
+      // to the same lawn mask) applies to all of them.
+      const tint = new THREE.Color(SEASON_TINT[key]).lerp(SNOW_TINT, snow * 0.85);
       for (let i = 0; i < placed; i++) {
-        tint.copy(
-          snow > 0.001 && insideOrchard(bladePos[i * 2], bladePos[i * 2 + 1])
-            ? snowyTint
-            : plainTint,
-        );
         c.set(bladeVar[i * 3], bladeVar[i * 3 + 1], bladeVar[i * 3 + 2]).multiply(tint);
         mesh.setColorAt(i, c);
       }
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       return key;
+    },
+    getLawnMask(): { data: Uint8Array; w: number; h: number } {
+      return { data: lawn, w: MASK_W, h: MASK_H };
     },
   };
 }
