@@ -53,9 +53,14 @@ via Overpass/API).
 - 3 stylized wooden Hocksitzcafe structures placed on their OSM footprints.
 - ~90k instanced grass blades with wind sway.
 - Overcast sky dome with procedural clouds.
-- Camera presets: **Südende** (classic photo spot at the south tree line) and
-  **Erhöht** (elevated 2026 view, ~15 m up on the east side); heights are
-  sampled from the heightmap.
+- Camera presets matching the real photo vantages: **Südende** (south-west,
+  ground level, looking north-east — the classic weekly-photo spot),
+  **Erhöht** (same axis, ~5.5 m up — the slightly elevated 2026 shots) and
+  **Nordwest** (meadow NW corner, ~5 m up, looking south-east at the
+  Hocksitzcafe — photo 20261022_125920); heights are sampled from the
+  heightmap. Note: hedges/rows are painted on the terrain texture, so very
+  low oblique views from outside the meadow read them edge-on — stay inside
+  the meadow boundary for ground-level shots.
 - Compare mode (**Vergleich**): 9 reference photos (weekly photos from the
   old site + 2026 photos, indexed in `src/photos.json` with day-of-year and
   camera preset) side by side with the live render, including a canvas

@@ -65,6 +65,8 @@ async function main(): Promise<void> {
   scene.add(new THREE.AmbientLight(0xffffff, 0.25));
 
   const rig = createCameraRig(renderer.domElement, window.innerWidth / window.innerHeight);
+  // debug/testing hook: lets tooling move the camera programmatically
+  (window as unknown as Record<string, unknown>).__rig = rig;
 
   const terrain = await createTerrain();
   scene.add(terrain.mesh);

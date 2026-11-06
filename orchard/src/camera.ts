@@ -14,10 +14,21 @@ interface Preset {
   lookAt: number[];
 }
 
-const PRESETS: Record<string, Preset> = {
-  southEnd: { label: 'Südende', ...site.cameraPresets.southEnd },
-  elevated: { label: 'Erhöht', ...site.cameraPresets.elevated },
+const PRESET_LABELS: Record<string, string> = {
+  southEnd: 'Südende',
+  erhoeht: 'Erhöht',
+  nordwest: 'Nordwest',
 };
+
+// Presets come from site.json so the pipeline can define the real photo
+// vantages (southEnd/erhoeht/nordwest). 'elevated' is kept as an alias for
+// 'erhoeht' for older photos.json references.
+const PRESETS: Record<string, Preset> = Object.fromEntries(
+  Object.entries(site.cameraPresets).map(([name, p]) => [
+    name === 'elevated' ? 'elevated' : name,
+    { label: PRESET_LABELS[name] ?? name, ...p },
+  ]),
+);
 
 export function createCameraRig(dom: HTMLElement, aspect: number): CameraRig {
   const camera = new THREE.PerspectiveCamera(55, aspect, 0.5, 4000);

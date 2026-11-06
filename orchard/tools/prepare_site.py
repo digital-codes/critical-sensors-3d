@@ -169,17 +169,27 @@ def main():
         px = max(0, min(win.shape[1] - 1, px))
         return round(float(win[py, px]), 3)
 
-    # southEnd: ground-level at the south tree line looking north across the cluster
-    # (anchor on the trees themselves - the window extends far beyond the meadow)
+    # Photo vantage presets (match the real photos):
+    # - old weekly photos (2020-2022): from the SOUTH-WEST, ground level,
+    #   looking NORTH-EAST across the orchard
+    # - 2026 photos: slightly elevated (~5 m, above the south hedge) looking
+    #   north-east ('erhoeht'), and from the NORTH-WEST hedge looking
+    #   south-east at the Hocksitzcafe ('nordwest', photo 20261022_125920)
     tree_xs = [t["x"] for t in trees]
     tree_zs = [t["z"] for t in trees]
-    sx = round(min(tree_xs) + 18.0, 3)
-    sz = round(min(tree_zs) - 16.0, 3)
+    sx = round(min(tree_xs) - 22.0, 3)
+    sz = round(min(tree_zs) - 18.0, 3)
     sy = height_at_local(sx, sz) + 1.5
-    # elevated: east side, ~22 m up, close enough that trees read as crowns
-    cx, cz = to_local(e0_local, n0_local)
-    ex, ez = to_local(e0_local + 85.0, n0_local + 14.0)
-    ey = height_at_local(ex, ez) + 22.0
+    sx_look, sz_look = round(min(tree_xs) + 25.0, 3), round(max(tree_zs) + 5.0, 3)
+    # erhoeht: ~5.5 m above ground, a bit further south, same NE view axis
+    ex, ez = round(min(tree_xs) - 30.0, 3), round(min(tree_zs) - 30.0, 3)
+    ey = height_at_local(ex, ez) + 5.5
+    # nordwest: inside the meadow's NW corner, ~5 m up, looking SE at the
+    # towers (photo 20261022_125920: hedge in the foreground, towers mid-frame)
+    nw_x, nw_z = round(min(tree_xs) - 25.0, 3), round(max(tree_zs) - 5.0, 3)
+    nw_y = height_at_local(nw_x, nw_z) + 5.0
+    tw_x = round(sum(tree_xs) / len(tree_xs), 3)
+    tw_z = round(sum(tree_zs) / len(tree_zs), 3)
 
     site = {
         "generatedAt": date.today().isoformat(),
@@ -197,8 +207,9 @@ def main():
         "trees": trees,
         "structures": structures,
         "cameraPresets": {
-            "southEnd": {"position": [sx, sy, sz], "lookAt": [cx, height_at_local(cx, cz) + 2.0, cz]},
-            "elevated": {"position": [ex, ey, ez], "lookAt": [cx, height_at_local(cx, cz) + 1.0, cz]},
+            "southEnd": {"position": [sx, sy, sz], "lookAt": [sx_look, height_at_local(sx_look, sz_look) + 2.0, sz_look]},
+            "erhoeht": {"position": [ex, ey, ez], "lookAt": [sx_look, height_at_local(sx_look, sz_look) + 2.0, sz_look]},
+            "nordwest": {"position": [nw_x, nw_y, nw_z], "lookAt": [tw_x, height_at_local(tw_x, tw_z) + 2.0, tw_z]},
         },
         "sources": [
             {"file": "geoimages/dgm025_32_455_5426_2_bw/dgm025_32_455_5426_1_bw_2022.tif",
