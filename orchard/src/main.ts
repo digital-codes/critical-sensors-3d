@@ -10,6 +10,7 @@ import { createSky, type Sky } from './sky';
 import site from './site';
 import { createComparePanel } from './compare';
 import { createBirdFlight } from './flight';
+import { createCameraUI } from './cameraui';
 
 const MONTHS = [
   'Jan',
@@ -144,6 +145,7 @@ async function main(): Promise<void> {
   updateSun(Number(seasonInput?.value ?? 190));
 
   createComparePanel(renderer, rig, seasonInput);
+  createCameraUI(rig);
 
   // "Vogelflug": bird's-eye flight from the elevated NE tree over the
   // orchard; cancels on user interaction, hands the camera back to OrbitControls

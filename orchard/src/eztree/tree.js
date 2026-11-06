@@ -438,7 +438,9 @@ export class Tree extends THREE.Group {
             branch.segmentCount,
           ),
         );
-      } else {
+      } else if (this.options.leaves.count > 0) {
+        // terminal twig tip leaf - only when the tree carries leaves at all
+        // (count 0 = bare winter variant must not grow tip tufts)
         this.#recordLeaf(lastSection.origin, lastSection.orientation);
       }
     }

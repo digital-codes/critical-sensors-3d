@@ -38,8 +38,8 @@ export function nearestSeason(day: number): SeasonDef {
  * (sometimes snow-covered — see snowAmount).
  */
 export function grassHeight(day: number): number {
-  if (day < 40) return 0.1; // winter
-  if (day < 52) return 0.1 + ((day - 40) / 12) * 0.05; // growth starting late Feb
+  if (day < 40) return 0.02; // winter: blades vanish under the snow
+  if (day < 52) return 0.02 + ((day - 40) / 12) * 0.08; // growth starting late Feb
   if (day < 150) {
     const t = (day - 52) / 98; // spring growth -> 0.85 by end of May
     return 0.12 + t * t * (3 - 2 * t) * 0.73;
@@ -48,8 +48,8 @@ export function grassHeight(day: number): number {
   if (day < 238) return 1.0; // full height until the mow
   if (day < 246) return 1.0 - ((day - 238) / 8) * 0.88; // mowed late August -> 0.12
   if (day < 300) return 0.12 + ((day - 246) / 54) * 0.18; // slight autumn regrowth
-  if (day < 340) return 0.3 - ((day - 300) / 40) * 0.18; // late fall down to 0.12
-  return 0.1; // winter
+  if (day < 340) return 0.3 - ((day - 300) / 40) * 0.25; // late fall down to 0.05
+  return 0.02; // winter
 }
 
 /**
