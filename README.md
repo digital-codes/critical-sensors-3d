@@ -50,6 +50,8 @@ python3 orchard/tools/prepare_site.py
 ## Not in git (on purpose)
 
 - `datatools/icosAuth.txt`, `oldwww/icosAuth.txt`, `oldwww/config.ini` — **credentials** (ICOS account cheatsheet / site DB config).
+  Committed **templates** with the required structure (placeholders only, no real values):
+  `datatools/icosAuth.template.txt`, `oldwww/config.ini.template` — copy to the real filename and fill in.
 - `datatools/dburl.txt`, `datatools/ref_*.csv` — DB password / generated output.
 - `geoimages/**.tif`, `**.tfw` — 227 MB of open geodata, re-downloadable.
 - `newimages/` — 135 MB of original 2026 photos.

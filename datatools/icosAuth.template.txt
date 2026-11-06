@@ -1,0 +1,42 @@
+Template for datatools/icosAuth.txt (NOT in git when real) — the ICOS login
+cheatsheet. Copy to datatools/icosAuth.txt and fill in your real values.
+
+How the pipeline uses it: refSensors.py itself does NOT read this file. It
+reads the cpauth token config at ~/.icoscp/cpauthToken_auth_conf.json
+(auto-refreshing). This cheatsheet documents how to create that config:
+log in once at the ICOS cpauth service with your account, receive the
+AuthToken JSON, and save it to the config path below.
+
+Structure (line numbers match the real cheatsheet):
+
+ 1  ICOS account:      <your-icos-account@example.org>
+ 2
+ 3  Password:          <password — possibly URL-encoded>
+ 4  Notes:             <e.g. URL-encoding hints>
+ 5
+ 6
+ 7  Login endpoint:    <cpauth-login-url>
+ 8
+ 9  # Endpoints used:
+10  <login curl example with credentials placeholders>
+11
+12  Config path:       ~/.icoscp/cpauthToken_auth_conf.json
+13  auth, meta, data = <three service base URLs, space separated>
+14  # what each service is for (auth = login, meta = SPARQL/metadata,
+15  # data = binary object download)
+16
+17
+18  <comment: how the token config file should look>
+19
+20  AuthToken file contents (JSON structure, replace <> only):
+21  {
+22    "AuthToken": {
+23      "user_id": <user id>,
+24      "<token field>": <token string>,
+25      "<remaining fields>": <as delivered by cpauth>
+26    }
+27  }
+28  auth, meta, data = <repeat of service URLs, as stored in the config>
+29
+30  AuthToken(user_id=<...>, <...554-char token structure as delivered...>)
+31  <notes on expiry / refresh behaviour>
