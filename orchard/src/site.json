@@ -7,6 +7,10 @@
    1850
   ]
  },
+ "buildingsLod2": {
+  "file": "site/buildings_lod2.json",
+  "note": "LoD2 city buildings around the window (tools/convert_cityjson.py), see sources"
+ },
  "cameraPresets": {
   "erhoeht": {
    "lookAt": [
@@ -102,6 +106,11 @@
    "file": ".cache/opencode/baumkataster_selected.json",
    "licence": "CC BY 4.0 (Stadt Karlsruhe / Code for Karlsruhe)",
    "role": "orchard tree positions + species (Baumkataster Karlsruhe, https://codeforkarlsruhe.github.io/baumkataster/, Stadt Karlsruhe tree register)"
+  },
+  {
+   "file": "/mnt_ai/data/odd26/ka3d/hauenstein-20260127/CityJSON/gebaeude_lod2_455000_5426000.json",
+   "licence": "Stadt Karlsruhe 3D-Gebäudemodelle (geoportal.karlsruhe.de) - licence to be confirmed",
+   "role": "3D building models LoD2 (CityJSON 1.0.1, EPSG:25832) via tools/convert_cityjson.py -> site/buildings_lod2.json"
   },
   {
    "file": ".cache/opencode/osm_orchard_nodes.json",

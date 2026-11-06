@@ -5,6 +5,7 @@ import { createOrchard, type Orchard } from './trees';
 import { nearestSeason, snowAmount } from './seasons';
 import { createStructures } from './structures';
 import { createGrass, type Grass } from './grass';
+import { createBuildings } from './buildings';
 import { createSky, type Sky } from './sky';
 import site from './site';
 import { createComparePanel } from './compare';
@@ -103,6 +104,12 @@ async function main(): Promise<void> {
   const grass: Grass = await createGrass();
   (window as unknown as Record<string, unknown>).__buildId = 'v3magenta-20261106';
   scene.add(grass.mesh);
+
+  const buildings = await createBuildings();
+  scene.add(buildings.group);
+  // debug/testing hook: direct access to the snow-driven scene parts
+  (window as unknown as Record<string, unknown>).__scene3 =
+    { terrain, grass, structures, buildings };
   // hand the lawn mask to the terrain so winter snow covers exactly the
   // grass region (same cells the blades are placed on)
   const lm = grass.getLawnMask();
@@ -119,8 +126,6 @@ async function main(): Promise<void> {
   const maskTex = new THREE.DataTexture(maskData, lm.w, lm.h, THREE.RGBAFormat, THREE.UnsignedByteType);
   maskTex.needsUpdate = true;
   terrain.setSnowMask(maskTex);
-  // debug/testing hook: direct access to the snow-driven scene parts
-  (window as unknown as Record<string, unknown>).__scene3 = { terrain, grass, structures };
 
   // season UI (hidden until the orchard is ready)
   const seasonInput = document.getElementById('dayofyear') as HTMLInputElement | null;

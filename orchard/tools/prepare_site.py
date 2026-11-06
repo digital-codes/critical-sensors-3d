@@ -340,6 +340,9 @@ def main():
                              "shadow-flattened aerial - that tints paths green); "
                              "drives grass placement and the terrain snow gate, "
                              "so paths/trails stay bare in winter"},
+        "buildingsLod2": {"file": "site/buildings_lod2.json",
+                          "note": "LoD2 city buildings around the window "
+                                  "(tools/convert_cityjson.py), see sources"},
         "snowNoise": {"file": "site/snow_noise.png", "sizePx": 256,
                       "period": 8, "octaves": 4,
                       "note": "tileable Perlin (ideas/perlin/repeat.py); mean %.3f std %.3f" % (sn_mean, sn_std)},
@@ -362,6 +365,12 @@ def main():
                      "https://codeforkarlsruhe.github.io/baumkataster/, "
                      "Stadt Karlsruhe tree register)",
              "licence": "CC BY 4.0 (Stadt Karlsruhe / Code for Karlsruhe)"},
+            {"file": "/mnt_ai/data/odd26/ka3d/hauenstein-20260127/CityJSON/"
+                     "gebaeude_lod2_455000_5426000.json",
+             "role": "3D building models LoD2 (CityJSON 1.0.1, EPSG:25832) via "
+                     "tools/convert_cityjson.py -> site/buildings_lod2.json",
+             "licence": "Stadt Karlsruhe 3D-Gebäudemodelle (geoportal.karlsruhe.de) "
+                        "- licence to be confirmed"},
             {"file": ".cache/opencode/osm_orchard_nodes.json",
              "role": "orchard tree positions (fallback)", "licence": LICENCE_OSM},
             {"file": ".cache/opencode/osm_ways.json",
