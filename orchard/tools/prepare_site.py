@@ -48,10 +48,13 @@ LICENCE_LGL = "Datenlizenz Deutschland - Namensnennung - 2.0 (https://www.govdat
 LICENCE_OSM = "(c) OpenStreetMap contributors (ODbL), osm.org/copyright"
 
 # Hocksitzcafe structures: OSM way id -> (height estimate m, note)
+# Vantage notes: photo 20261022_125920 is taken from the NORTH-EAST (east
+# tower 124028005 = LEFT tower there); photo 20261028_163922 from the SOUTH
+# (left=west 124028004, middle 124028003, right=east 124028005, heights).
 STRUCTURES = {
-    124028003: {"heightEst": 3.5, "note": "wooden frame tower with ladder element, purple fabric (photo 20261022_125920)"},
-    124028004: {"heightEst": 3.0, "note": "boxier frame with top railing and blue tarp awning (photo 20261022_125920)"},
-    124028005: {"heightEst": 2.5, "note": "smaller frame at south meadow edge (photos 20261022_*)"},
+    124028003: {"heightEst": 4.0, "note": "roofed platform tower: deck ~2.5 m, slat railing, dark shed roof, blue tarp awning (visible from S and NE), table beneath (NE photo right tower / south photo middle)"},
+    124028004: {"heightEst": 3.4, "note": "deck ~2.0 m, cream vertical fabric strips on the SOUTH face, lighter timber (south photo left tower)"},
+    124028005: {"heightEst": 4.6, "note": "tallest: two-level platform, slat railing, purple fabric valance over the top crossbeam (south side), ladder on WEST side, diagonal bracing, bench beneath (south photo right tower / NE photo left tower)"},
 }
 # Species mix per tree, deterministic from OSM node id
 SPECIES_CYCLE = ["Oak Medium", "Oak Small", "Aspen Medium", "Oak Medium", "Bush 2"]
