@@ -6,6 +6,7 @@ import { nearestSeason, snowAmount } from './seasons';
 import { createStructures } from './structures';
 import { createGrass, type Grass } from './grass';
 import { createSky, type Sky } from './sky';
+import site from './site';
 import { createComparePanel } from './compare';
 
 const MONTHS = [
@@ -144,11 +145,13 @@ async function main(): Promise<void> {
   }).then((o) => {
     orchard = o;
     scene.add(o.group);
+    (window as unknown as Record<string, unknown>).__scene3 =
+      { ...(window as unknown as Record<string, unknown>).__scene3 as object, orchard: o };
     o.group.traverse((obj) => {
       if ((obj as THREE.Mesh).isMesh) obj.castShadow = true;
     });
     if (progressEl) {
-      progressEl.textContent = `18 Bäume generiert (4 Jahreszeiten-Varianten)`;
+      progressEl.textContent = `${site.trees.length} Bäume generiert (4 Jahreszeiten-Varianten)`;
     }
     if (seasonPanel) seasonPanel.style.display = '';
     if (seasonValue && seasonInput) {

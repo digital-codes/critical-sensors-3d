@@ -187,27 +187,52 @@ def main():
         n = dop_tfw["N"] - py * dop_tfw["A"]
         return to_local(e, n)
 
-    # ---- trees from OSM ----
-    osm = json.load(open(OSM_TREES))
+    # ---- trees: Baumkataster Karlsruhe (preferred) or OSM fallback ----
+    # The Baumkataster selection (tools/filter_baumkataster.py) carries the
+    # real municipal tree register positions in the Katzenwedelwiese (stadtteil
+    # 13) with species + trunk circumference; the renderer only uses
+    # position/size/preset, so species fidelity is informational.
     trees = []
-    for i, el in enumerate(sorted(osm["elements"], key=lambda e: e["id"])):
-        e, n = utm(el["lat"], el["lon"])
-        x, z = to_local(e, n)
-        # keep only trees inside the simulation window (5 m margin)
-        if not (WIN_E_MIN - 5 <= e <= WIN_E_MAX + 5):
-            continue
-        if not (WIN_N_MIN - 5 <= n <= WIN_N_MAX + 5):
-            continue
-        trees.append({
-            "id": "osm%d" % el["id"],
-            "source": "OSM node %d" % el["id"],
-            "lat": round(el["lat"], 7),
-            "lon": round(el["lon"], 7),
-            "x": x, "z": z,
-            "sizeClass": ["small", "medium", "large"][i % 3],
-            "speciesBase": SPECIES_CYCLE[i % len(SPECIES_CYCLE)],
-            "seed": el["id"] % 100000,
-        })
+    bk_path = os.path.join(REPO, ".cache", "opencode", "baumkataster_selected.json")
+    if os.path.exists(bk_path):
+        bk = json.load(open(bk_path))
+        for t in bk:
+            if t["zone"] not in ("core", "south"):
+                continue  # model the meadow + the south boundary only
+            trees.append({
+                "id": t["id"],
+                "source": t["source"],
+                "nameDe": t["nameDe"],
+                "nameSci": t["nameSci"],
+                "lat": round(t["lat"], 7),
+                "lon": round(t["lon"], 7),
+                "x": t["x"], "z": t["z"],
+                "trunkCircumference": t["trunkCircumference"],
+                "sizeClass": t["sizeClass"],
+                "speciesBase": t["speciesBase"],
+                "seed": t["seed"],
+            })
+        print("trees: %d from Baumkataster (core + south)" % len(trees))
+    else:
+        osm = json.load(open(OSM_TREES))
+        for i, el in enumerate(sorted(osm["elements"], key=lambda e: e["id"])):
+            e, n = utm(el["lat"], el["lon"])
+            x, z = to_local(e, n)
+            # keep only trees inside the simulation window (5 m margin)
+            if not (WIN_E_MIN - 5 <= e <= WIN_E_MAX + 5):
+                continue
+            if not (WIN_N_MIN - 5 <= n <= WIN_N_MAX + 5):
+                continue
+            trees.append({
+                "id": "osm%d" % el["id"],
+                "source": "OSM node %d" % el["id"],
+                "lat": round(el["lat"], 7),
+                "lon": round(el["lon"], 7),
+                "x": x, "z": z,
+                "sizeClass": ["small", "medium", "large"][i % 3],
+                "speciesBase": SPECIES_CYCLE[i % len(SPECIES_CYCLE)],
+                "seed": el["id"] % 100000,
+            })
 
     # ---- structures ----
     # The OSM ways 124028003/4/5 are mapped inside the PRIVATE GARDEN area at
@@ -303,8 +328,13 @@ def main():
              "role": "adjacent DGM tile (unused, window inside tile 455_5426)", "licence": LICENCE_LGL},
             {"file": "geoimages/dop20rgbi_32_455_5426_2_bw/dop20rgbi_32_455_5426_1_bw_2024.tif",
              "role": "aerial texture 0.2 m RGBI (2024-08-22)", "licence": LICENCE_LGL},
+            {"file": ".cache/opencode/baumkataster_selected.json",
+             "role": "orchard tree positions + species (Baumkataster Karlsruhe, "
+                     "https://codeforkarlsruhe.github.io/baumkataster/, "
+                     "Stadt Karlsruhe tree register)",
+             "licence": "CC BY 4.0 (Stadt Karlsruhe / Code for Karlsruhe)"},
             {"file": ".cache/opencode/osm_orchard_nodes.json",
-             "role": "orchard tree positions", "licence": LICENCE_OSM},
+             "role": "orchard tree positions (fallback)", "licence": LICENCE_OSM},
             {"file": ".cache/opencode/osm_ways.json",
              "role": "Hocksitzcafe structure footprints", "licence": LICENCE_OSM},
         ],
