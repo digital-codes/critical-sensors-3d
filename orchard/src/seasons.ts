@@ -30,3 +30,17 @@ export function nearestSeason(day: number): SeasonDef {
   }
   return best;
 }
+
+/**
+ * Patchy snow amount (0..1) for a day of year, calibrated on the
+ * 2021-01-17 reference photo (thin, patchy blanket, grass poking through):
+ * full around mid January, fading out towards March / late autumn.
+ */
+export function snowAmount(day: number): number {
+  let dist = Math.abs(day - 17);
+  dist = Math.min(dist, 365 - dist); // wrap around New Year
+  if (dist <= 20) return 1;
+  if (dist >= 60) return 0;
+  const t = (dist - 20) / 40; // 0..1 across the fade
+  return 1 - t * t * (3 - 2 * t); // smoothstep fade
+}

@@ -70,6 +70,8 @@ export function getFootprintRects(): FootprintRect[] {
 
 export interface Structures {
   group: THREE.Group;
+  /** toggle the thin snow caps on the towers (patchy winter snow) */
+  setSnow(v: number): void;
 }
 
 export async function createStructures(): Promise<Structures> {
@@ -79,6 +81,18 @@ export async function createStructures(): Promise<Structures> {
 
   const wood = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
   const cream = new THREE.MeshLambertMaterial({ color: 0xd8cfae, side: THREE.DoubleSide });
+  const snowMat = new THREE.MeshLambertMaterial({ color: 0xe8edf2 });
+  const snowCaps: THREE.Mesh[] = [];
+
+  /** thin white slab lying flat at height y (a dusting of snow) */
+  function snowCap(w: number, d: number, y: number): THREE.Mesh {
+    const m = boxM(w, 0.04, d, snowMat);
+    m.position.y = y;
+    m.visible = false;
+    m.castShadow = false;
+    snowCaps.push(m);
+    return m;
+  }
 
   function box(w: number, h: number, d: number): THREE.Mesh {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wood);
@@ -214,6 +228,7 @@ export async function createStructures(): Promise<Structures> {
       roof.position.y = H - 0.32;
       roof.rotation.z = 0.07; // slight tilt
       g.add(roof);
+      g.add(snowCap(L + 0.55, W + 0.55, H - 0.27));
       // blue tarp awning: railing top on the SE (+x/+z) side sloping down-out
       g.add(tarpQuad(DECK + 0.55, 0.55, rect.halfLen + 0.02, rect.halfLen + 1.4, rect.halfWid * 0.85, 0x3f6f96));
       // picnic-style table beneath the deck
@@ -277,7 +292,12 @@ export async function createStructures(): Promise<Structures> {
         const topB = box(L + 0.15, 0.1, 0.12);
         topB.position.set(0, H - 0.05, sz * rect.halfWid);
         g.add(topB);
+        const cap = snowCap(L + 0.2, 0.18, H + 0.01); // dusting on beam
+        cap.position.z = sz * rect.halfWid;
+        g.add(cap);
       }
+      // dusting on the lower step platform
+      g.add(snowCap(L * 0.6, W * 0.6, H * 0.26 + 0.03));
       // ladder on the WEST (-x) side, up to the deck
       ladder(g, -rect.halfLen - 0.1, rect.halfWid, DECK + 0.3);
       // purple fabric valance over the top crossbeam, hanging on the south side
@@ -331,6 +351,7 @@ export async function createStructures(): Promise<Structures> {
       const topB = box(L + 0.15, 0.08, 0.1);
       topB.position.set(0, H - 0.04, rect.halfWid);
       g.add(topB);
+      g.add(snowCap(L + 0.25, W + 0.25, H + 0.01));
     } else {
       // fallback: simple 4-post frame with crossbeam (unused with the three
       // measured towers, kept as a safe default)
@@ -351,5 +372,11 @@ export async function createStructures(): Promise<Structures> {
     group.add(g);
   }
 
-  return { group };
+  return {
+    group,
+    setSnow(v: number): void {
+      const on = v > 0.4;
+      for (const cap of snowCaps) cap.visible = on;
+    },
+  };
 }

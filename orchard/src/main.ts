@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { createTerrain } from './terrain';
 import { createCameraRig } from './camera';
 import { createOrchard, type Orchard } from './trees';
-import { nearestSeason } from './seasons';
+import { nearestSeason, snowAmount } from './seasons';
 import { createStructures } from './structures';
 import { createGrass, type Grass } from './grass';
 import { createSky, type Sky } from './sky';
@@ -86,6 +86,8 @@ async function main(): Promise<void> {
 
   const grass: Grass = await createGrass();
   scene.add(grass.mesh);
+  // debug/testing hook: direct access to the snow-driven scene parts
+  (window as unknown as Record<string, unknown>).__scene3 = { terrain, grass, structures };
 
   // season UI (hidden until the orchard is ready)
   const seasonInput = document.getElementById('dayofyear') as HTMLInputElement | null;
@@ -98,6 +100,8 @@ async function main(): Promise<void> {
     seasonValue.textContent = `Tag ${day} (${monthDay(day)})`;
   }
   grass.setSeason(Number(seasonInput?.value ?? 190));
+  terrain.setSnow(snowAmount(Number(seasonInput?.value ?? 190)));
+  structures.setSnow(snowAmount(Number(seasonInput?.value ?? 190)));
 
   createComparePanel(renderer, rig, seasonInput);
 
@@ -116,7 +120,8 @@ async function main(): Promise<void> {
     if (seasonPanel) seasonPanel.style.display = '';
     if (seasonValue && seasonInput) {
       const day = Number(seasonInput.value);
-      seasonValue.textContent = `Tag ${day} (${monthDay(day)}) · ${labelFor(o.activeSeason)}`;
+      // sync the tree season with the slider so day 0 labels "Winter"
+      seasonValue.textContent = `Tag ${day} (${monthDay(day)}) · ${labelFor(o.setSeason(day))}`;
     }
   });
 
@@ -136,6 +141,8 @@ async function main(): Promise<void> {
   seasonInput?.addEventListener('input', () => {
     const day = Number(seasonInput.value);
     grass.setSeason(day);
+    terrain.setSnow(snowAmount(day));
+    structures.setSnow(snowAmount(day));
     if (seasonValue) {
       seasonValue.textContent = `Tag ${day} (${monthDay(day)})${
         orchard ? ` · ${labelFor(orchard.setSeason(day))}` : ''

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import site from './site';
 import { getHeightSampler, X_MIN, Z_MIN, WIN_W, WIN_D } from './terrain';
-import { nearestSeason, type SeasonKey } from './seasons';
+import { nearestSeason, snowAmount, type SeasonKey } from './seasons';
 import { getFootprintRects } from './structures';
 
 interface SiteTree {
@@ -11,6 +11,8 @@ interface SiteTree {
 
 const COUNT = 90000;
 const BLADE_W = 0.085;
+// off-white the grass blades fade toward under patchy snow
+const SNOW_TINT = new THREE.Color(0xdfe4e8);
 // mown-lawn mask resolution (cells across the 500x450 m window, ~2 m/cell)
 const MASK_W = 250;
 const MASK_H = 225;
@@ -178,6 +180,9 @@ export async function createGrass(): Promise<Grass> {
     setSeason(day: number): SeasonKey {
       const key = nearestSeason(day).key;
       material.color.setHex(SEASON_TINT[key]);
+      // snowy lawn: blades fade toward off-white with the snow amount
+      const snow = snowAmount(day);
+      if (snow > 0) material.color.lerp(SNOW_TINT, snow * 0.85);
       return key;
     },
   };

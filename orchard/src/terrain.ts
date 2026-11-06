@@ -154,6 +154,8 @@ export interface Terrain {
   mesh: THREE.Mesh;
   /** local metres (x east, z south) -> absolute height in metres */
   heightAt(x: number, z: number): number;
+  /** patchy winter snow amount 0..1 (day-of-year driven) */
+  setSnow(v: number): void;
 }
 
 /** Shared height field, loaded once and reused by terrain mesh + tree placement. */
@@ -220,8 +222,38 @@ export async function createTerrain(): Promise<Terrain> {
   // image row 0 = north; +z = south => v grows southward with flipY disabled
   tex.flipY = false;
 
-  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex }));
-  return { mesh, heightAt };
+  // Patchy winter snow: blends the aerial toward an off-white blanket with
+  // low-frequency gaps (grass poking through), calibrated on the
+  // 2021-01-17 reference photo. Driven by the day-of-year slider.
+  const snowUniform = { value: 0 };
+  const mat = new THREE.MeshLambertMaterial({ map: tex });
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.snowAmount = snowUniform;
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float snowAmount;')
+      .replace(
+        '#include <map_fragment>',
+        `#include <map_fragment>
+        if (snowAmount > 0.001) {
+          vec2 muv = vMapUv;
+          float sn = sin(muv.x * 80.0) * sin(muv.y * 70.0)
+                  + 0.5 * sin(muv.x * 23.0 + 1.7) * sin(muv.y * 19.0 + 4.2);
+          float snowPatch = smoothstep(-0.3, 0.7, sn);
+          float lum = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+          vec3 snowCol = vec3(0.80, 0.84, 0.88) * (0.72 + 0.28 * lum);
+          diffuseColor.rgb = mix(diffuseColor.rgb, snowCol, snowAmount * snowPatch);
+        }`,
+      );
+  };
+
+  const mesh = new THREE.Mesh(geo, mat);
+  return {
+    mesh,
+    heightAt,
+    setSnow(v: number): void {
+      snowUniform.value = v;
+    },
+  };
 }
 
 function clamp(v: number, lo: number, hi: number): number {
