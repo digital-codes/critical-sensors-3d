@@ -1,0 +1,385 @@
+{
+ "aerial": {
+  "file": "site/aerial.jpg",
+  "gridM": 0.2,
+  "originPx": [
+   0,
+   1250
+  ]
+ },
+ "cameraPresets": {
+  "elevated": {
+   "lookAt": [
+    0.0,
+    114.204,
+    0.0
+   ],
+   "position": [
+    85.0,
+    141.515,
+    14.0
+   ]
+  },
+  "southEnd": {
+   "lookAt": [
+    0.0,
+    115.204,
+    0.0
+   ],
+   "position": [
+    24.183,
+    116.08,
+    -38.677
+   ]
+  }
+ },
+ "crs": "EPSG:25832",
+ "generatedAt": "2026-11-06",
+ "heightmap": {
+  "encoding": "uint16 millimetres above hmin",
+  "file": "site/heightmap.png",
+  "gridM": 0.25,
+  "hmax": 122.901,
+  "hmin": 111.428,
+  "originPx": [
+   0,
+   1000
+  ]
+ },
+ "localAxes": {
+  "x": "easting (m)",
+  "y": "height (m)",
+  "z": "northing (m)"
+ },
+ "origin": {
+  "lat": 48.9899,
+  "lon": 8.3873,
+  "utmE": 455176.632,
+  "utmN": 5426513.864
+ },
+ "sources": [
+  {
+   "file": "geoimages/dgm025_32_455_5426_2_bw/dgm025_32_455_5426_1_bw_2022.tif",
+   "licence": "Datenlizenz Deutschland - Namensnennung - 2.0 (https://www.govdata.de/dl-de/by-2-0)",
+   "role": "terrain heights 0.25 m"
+  },
+  {
+   "file": "geoimages/dgm025_32_455_5426_2_bw/dgm025_32_456_5427_1_bw_2022.tif",
+   "licence": "Datenlizenz Deutschland - Namensnennung - 2.0 (https://www.govdata.de/dl-de/by-2-0)",
+   "role": "adjacent DGM tile (unused, window inside tile 455_5426)"
+  },
+  {
+   "file": "geoimages/dop20rgbi_32_455_5426_2_bw/dop20rgbi_32_455_5426_1_bw_2024.tif",
+   "licence": "Datenlizenz Deutschland - Namensnennung - 2.0 (https://www.govdata.de/dl-de/by-2-0)",
+   "role": "aerial texture 0.2 m RGBI (2024-08-22)"
+  },
+  {
+   "file": ".cache/opencode/osm_orchard_nodes.json",
+   "licence": "(c) OpenStreetMap contributors (ODbL), osm.org/copyright",
+   "role": "orchard tree positions"
+  },
+  {
+   "file": ".cache/opencode/osm_ways.json",
+   "licence": "(c) OpenStreetMap contributors (ODbL), osm.org/copyright",
+   "role": "Hocksitzcafe structure footprints"
+  }
+ ],
+ "structures": [
+  {
+   "footprint": [
+    [
+     39.702,
+     -27.602
+    ],
+    [
+     38.21,
+     -33.004
+    ],
+    [
+     33.559,
+     -31.732
+    ],
+    [
+     35.044,
+     -26.33
+    ],
+    [
+     39.702,
+     -27.602
+    ]
+   ],
+   "heightEst": 3.5,
+   "id": "osmway124028003",
+   "note": "wooden frame tower with ladder element, purple fabric (photo 20261022_125920)",
+   "osmWay": 124028003,
+   "x": 37.243,
+   "z": -29.254
+  },
+  {
+   "footprint": [
+    [
+     38.369,
+     -5.979
+    ],
+    [
+     44.348,
+     -7.595
+    ],
+    [
+     45.434,
+     -3.59
+    ],
+    [
+     39.455,
+     -1.975
+    ],
+    [
+     38.369,
+     -5.979
+    ]
+   ],
+   "heightEst": 3.0,
+   "id": "osmway124028004",
+   "note": "boxier frame with top railing and blue tarp awning (photo 20261022_125920)",
+   "osmWay": 124028004,
+   "x": 41.195,
+   "z": -5.024
+  },
+  {
+   "footprint": [
+    [
+     -32.66,
+     -0.125
+    ],
+    [
+     -34.198,
+     0.632
+    ],
+    [
+     -35.603,
+     -2.192
+    ],
+    [
+     -33.337,
+     -3.311
+    ],
+    [
+     -32.66,
+     -0.125
+    ]
+   ],
+   "heightEst": 2.5,
+   "id": "osmway124028005",
+   "note": "smaller frame at south meadow edge (photos 20261022_*)",
+   "osmWay": 124028005,
+   "x": -33.692,
+   "z": -1.024
+  }
+ ],
+ "trees": [
+  {
+   "id": "osm1861382004",
+   "lat": 48.9902787,
+   "lon": 8.3876365,
+   "seed": 82004,
+   "sizeClass": "small",
+   "source": "OSM node 1861382004",
+   "speciesBase": "Oak Medium",
+   "x": 24.957,
+   "z": 41.899
+  },
+  {
+   "id": "osm1861382009",
+   "lat": 48.9902897,
+   "lon": 8.3880679,
+   "seed": 82009,
+   "sizeClass": "medium",
+   "source": "OSM node 1861382009",
+   "speciesBase": "Oak Small",
+   "x": 56.526,
+   "z": 42.868
+  },
+  {
+   "id": "osm11843200385",
+   "lat": 48.9901065,
+   "lon": 8.3875,
+   "seed": 385,
+   "sizeClass": "large",
+   "source": "OSM node 11843200385",
+   "speciesBase": "Aspen Medium",
+   "x": 14.817,
+   "z": 22.837
+  },
+  {
+   "id": "osm11843200386",
+   "lat": 48.9900001,
+   "lon": 8.3875028,
+   "seed": 386,
+   "sizeClass": "small",
+   "source": "OSM node 11843200386",
+   "speciesBase": "Oak Medium",
+   "x": 14.926,
+   "z": 11.008
+  },
+  {
+   "id": "osm11843200387",
+   "lat": 48.9900292,
+   "lon": 8.3876539,
+   "seed": 387,
+   "sizeClass": "medium",
+   "source": "OSM node 11843200387",
+   "speciesBase": "Bush 2",
+   "x": 26.006,
+   "z": 14.154
+  },
+  {
+   "id": "osm11843200388",
+   "lat": 48.9899064,
+   "lon": 8.3876068,
+   "seed": 388,
+   "sizeClass": "large",
+   "source": "OSM node 11843200388",
+   "speciesBase": "Oak Medium",
+   "x": 22.45,
+   "z": 0.53
+  },
+  {
+   "id": "osm11843200389",
+   "lat": 48.9898609,
+   "lon": 8.387385,
+   "seed": 389,
+   "sizeClass": "small",
+   "source": "OSM node 11843200389",
+   "speciesBase": "Oak Small",
+   "x": 6.183,
+   "z": -4.397
+  },
+  {
+   "id": "osm11843200390",
+   "lat": 48.9897908,
+   "lon": 8.3874418,
+   "seed": 390,
+   "sizeClass": "medium",
+   "source": "OSM node 11843200390",
+   "speciesBase": "Aspen Medium",
+   "x": 10.276,
+   "z": -12.223
+  },
+  {
+   "id": "osm11843200391",
+   "lat": 48.9898272,
+   "lon": 8.3875458,
+   "seed": 391,
+   "sizeClass": "large",
+   "source": "OSM node 11843200391",
+   "speciesBase": "Oak Medium",
+   "x": 17.917,
+   "z": -8.238
+  },
+  {
+   "id": "osm11843200392",
+   "lat": 48.989698,
+   "lon": 8.3876761,
+   "seed": 392,
+   "sizeClass": "small",
+   "source": "OSM node 11843200392",
+   "speciesBase": "Bush 2",
+   "x": 27.333,
+   "z": -22.677
+  },
+  {
+   "id": "osm11843200393",
+   "lat": 48.9897626,
+   "lon": 8.3876983,
+   "seed": 393,
+   "sizeClass": "medium",
+   "source": "OSM node 11843200393",
+   "speciesBase": "Oak Medium",
+   "x": 29.015,
+   "z": -15.509
+  },
+  {
+   "id": "osm11843200394",
+   "lat": 48.9897435,
+   "lon": 8.387525,
+   "seed": 394,
+   "sizeClass": "large",
+   "source": "OSM node 11843200394",
+   "speciesBase": "Oak Small",
+   "x": 16.32,
+   "z": -17.53
+  },
+  {
+   "id": "osm11843200395",
+   "lat": 48.9902384,
+   "lon": 8.3877385,
+   "seed": 395,
+   "sizeClass": "small",
+   "source": "OSM node 11843200395",
+   "speciesBase": "Aspen Medium",
+   "x": 32.383,
+   "z": 37.359
+  },
+  {
+   "id": "osm11843200396",
+   "lat": 48.9902275,
+   "lon": 8.3877884,
+   "seed": 396,
+   "sizeClass": "medium",
+   "source": "OSM node 11843200396",
+   "speciesBase": "Oak Medium",
+   "x": 36.023,
+   "z": 36.118
+  },
+  {
+   "id": "osm11843200397",
+   "lat": 48.9901738,
+   "lon": 8.387751,
+   "seed": 397,
+   "sizeClass": "large",
+   "source": "OSM node 11843200397",
+   "speciesBase": "Bush 2",
+   "x": 33.239,
+   "z": 30.171
+  },
+  {
+   "id": "osm11843200398",
+   "lat": 48.990162,
+   "lon": 8.38783,
+   "seed": 398,
+   "sizeClass": "small",
+   "source": "OSM node 11843200398",
+   "speciesBase": "Oak Medium",
+   "x": 39.008,
+   "z": 28.812
+  },
+  {
+   "id": "osm11843200399",
+   "lat": 48.9901475,
+   "lon": 8.3878979,
+   "seed": 399,
+   "sizeClass": "medium",
+   "source": "OSM node 11843200399",
+   "speciesBase": "Oak Small",
+   "x": 43.962,
+   "z": 27.16
+  },
+  {
+   "id": "osm11843200400",
+   "lat": 48.9896988,
+   "lon": 8.3874681,
+   "seed": 400,
+   "sizeClass": "large",
+   "source": "OSM node 11843200400",
+   "speciesBase": "Aspen Medium",
+   "x": 12.117,
+   "z": -22.465
+  }
+ ],
+ "window": {
+  "eMax": 455500.0,
+  "eMin": 455000.0,
+  "nMax": 5426750.0,
+  "nMin": 5426300.0
+ }
+}

@@ -1,0 +1,6 @@
+icoscp-core
+pandas
+numpy
+requests
+sqlalchemy
+pymysql

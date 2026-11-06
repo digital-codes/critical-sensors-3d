@@ -1,0 +1,22 @@
+get mohave from githup 
+
+install :
+
+
+sudo dnf install woff woff2 woffTools.noarch woff2-tools.x86_64
+sudo dnf install  ttfautohint
+
+pip3 install --user fontmake
+pip3 install --user gftools
+
+
+build.sh (mohave)
+
+output is in fonts/vs/static
+
+create woff
+for i in *.ttf; do sfnt2woff $i ; done
+
+and woff2
+for i in *.ttf; do woff2_compress $i ; done
+

@@ -1,0 +1,48 @@
+# --- credentials & secrets: NEVER commit ---
+datatools/icosAuth.txt
+oldwww/icosAuth.txt
+oldwww/config.ini
+datatools/dburl.txt
+*.token
+*auth_conf.json
+
+# --- generated test/measurement output ---
+co2_*.csv
+ref_*.csv
+
+# --- bulk imagery: keep out of git ---
+oldwww/img/
+orchard/public/photos/
+orchard/screenshots/
+orchard/public/textures/bark/*
+!orchard/public/textures/bark/Bark001_1K-JPG/
+!orchard/public/textures/bark/Bark002_1K-JPG/
+
+# --- regenerable / generated output ---
+datatools/ref_*.csv
+node_modules/
+dist/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# --- large raw geodata (re-downloadable from LGL-BW open data) ---
+geoimages/**/*.tif
+geoimages/**/*.tfw
+geoimages/**/*.aux.xml
+
+# --- large original photos (downscaled copies committed under orchard/public/photos) ---
+newimages/
+
+# --- caches (keep the small OSM snapshots referenced by site.json) ---
+.cache/*
+!.cache/opencode/
+.cache/opencode/*
+!.cache/opencode/*.json
+
+# --- upstream repo internals (source itself IS committed) ---
+ideas/ez-tree/.git/
+ideas/ez-tree/node_modules/
+ideas/ez-tree/.cache/

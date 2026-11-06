@@ -1,0 +1,8 @@
+"Global GHG concentration data for CMIP6 historical runs, March 2017",
+"Reference: Malte Meinshausen, Elisabeth Vogel, Alexander Nauels, Katja Lorbacher, Nicolai Meinshausen, David M. Etheridge, Paul J. Fraser, Stephen A. Montzka, Peter J. Rayner, Cathy M. Trudinger, Paul B. Krummel, Urs Beyerle, Josep G. Canadell, John S. Daniel, Ian G. Enting, Rachel M. Law, Chris R. Lunder, Simon O’Doherty, Ron G. Prinn, Stefan Reimann, Mauro Rubino, Guus J.M. Velders, Martin K. Vollmer, Ray H.J. Wang, Ray Weiss, Historical greenhouse gas concentrations for climate modelling (CMIP6), GMD Special Issue, http://www.geosci-model-dev.net/special_issue590.html",
+Creation date: 02Jul2016_142118,
+"Contact: M.Meinshausen, malte.meinshausen@unimelb.edu.au, Tel: +61 3 90356760, The University of Melbourne & Potsdam Institute for Climate Impact Research",
+Assimilated datasources: NOAA and/or AGAGE station data in combination with multiple literature studies. See description in reference.,
+Time resolution: Annual Average concentrations,
+More info: www.climatecollege.unimelb.edu.au/cmip6,
+UNITS:,ppm

@@ -1,0 +1,6 @@
+[submodule "ideas/ez-tree"]
+	path = ideas/ez-tree
+	url = https://github.com/dgreenheck/ez-tree.git
+[submodule "ideas/imgsmear"]
+	path = ideas/imgsmear
+	url = https://github.com/digital-codes/imgsmear.git

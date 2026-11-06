@@ -1,0 +1,7 @@
+wiese sichtbar z.B. in dop20rgbi_32_455_5426_1_bw_2024.tif 
+
+openstreetmap
+https://www.openstreetmap.org/query?lat=48.989976&lon=8.387600#map=19/48.990008/8.387847
+https://www.openstreetmap.org/node/11804686686
+https://www.openstreetmap.org/node/11843200388
+https://www.openstreetmap.org/node/11843200387

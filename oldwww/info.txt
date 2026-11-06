@@ -1,0 +1,27 @@
+Zum Kunstwerk von Stéphane Verlet-Bottéro in der virtuellen »Critical Zones«-Ausstellung
+https://critical-zones.zkm.de/#!/detail:notes-towards-a-permacirular-museum
+
+film
+https://zkm.de/media/video/i6848_20_XXX_E_VX_AB_Baumschnittkurs_Impressionen_V3_360p.mp4
+
+
+https://c3js.org/samples/api_axis_label.html
+
+correlations
+crosscorrelation
+
+
+
+ZKM; STephane:
+Kann man über den ökologischen Fußabdruck einer Ausstellung nachdenken? Der erste Schritt des Projekts ist die Kartierung des Treibhauseffekts der Ausstellung, angefangen von den Reisen der KünstlerInnen bis hin zu Fluorkohlenwasserstoff-Lecks im Kühlsystem des ZKM | Karlsruhe. Der zweite Schritt besteht in der Ausführung einer Reihe von Arbeiten im Bereich der Umweltsanierung, beispielsweise der Pflege einer verlassenen Streuobstwiese in der Nähe des ZKM – ein Beispiel für einen Hotspot der Biodiversität und eine verschwindende Form traditioneller Agroforstwirtschaft. In Video-Interviews wird erörtert, wie kulturelle Institutionen sich unabhängig von fossiler Energieversorgung machen könnten. Workshops zu Nachhaltigkeitsverpflichtungen des ZKM gipfeln in einem öffentlichen Treffen der MuseumskuratorInnen, AktivistInnen und KünstlerInnen, die eine Revolution in der Produktion und Zirkulation von Kunst im Neuen Klimaregime anregen.
+
+Die digitale Version von Notes Towards a Permacircular Museum nutzt die Möglichkeit des horizontalen Scrollen, um verschiedene Notizen des Künstlers miteinander zu verbinden, die Materialien zum thematischen Schwerpunkt aufzeigen. Neben einigen Video-Interviews verweisen Links auf verschiedene Projekte und Initiativen, die sich mit dem ökologischen Fußabdruck von Ausstellungen, Nachhaltigkeit in Museen und vertiefender Literatur beschäftigen. Für den Zeitraum der Ausstellung werden hier weitere Notizen mit relevanten Beispielen ergänzt.
+
+------------------------------------
+Ausstellungsräume, ob real oder virtuell, entbehren meist einer Verbindung zur natürlichen Umgebung. Dies ist besonders
+ bedauerlich, wenn die Ausstellungsthematik die Beobachtung der Natur einschließt.
+Das Projekt "Critical-Sensors" versucht hier eine Verbindung zu schaffen. Sensoren werden in der natürlichen Umgebung installiert, die Umweltdaten vor Ort regelmäßig aufzeichnen und auf einer Webseite sichtbar machen. Die Webseite wird in der physischen und der digitalen Ausstellung angezeigt und schafft damit den Gegebenheiten der Natur Präsenz.
+Neben den Umweltdaten werden auch technische Daten der Messanordnung aufgezeichnet, übertragen und neben den Umweltdaten dargestellt.
+Wöchentliche Fotos machen den Wandel der Natur sichtbar und lassen sich den veränderten Messwerten zuordnen.
+Auf der Webseite werden eine Reihe von typischen wissenschaftlichen Visualisierungsmethoden eingesetzt. Die Sensordaten, die Technik der Sensoren sowie die Programmierung der Webseite sind über frei zugängliche Portale für alle verfügbar. Die Nutzer werden eingeladen, die Daten selbst auszuwerten und eigene Interpretationen über "Pull-Requests" zur Verfügung zu stellen.
+

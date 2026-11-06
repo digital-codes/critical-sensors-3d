@@ -1,0 +1,29 @@
+/* latin */
+@font-face {
+  font-family: 'Mohave';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Mohave Italic'), local('Mohave-Italic'), url(url('../fonts/Mohave/Mohave-Italic.woff') format('woff');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Mohave';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Mohave Regular'), local('Mohave-Regular'), url(url('../fonts/Mohave/Mohave-Regular.woff') format('woff');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Mohave';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Mohave Bold'), local('Mohave-Bold'), url(url('../fonts/Mohave/Mohave-Bold.woff') format('woff');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Katzenwedelwiesen 3D</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #1a1d20;
+      }
+      canvas {
+        display: block;
+      }
+      #presets {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        gap: 8px;
+        z-index: 10;
+      }
+      #presets button {
+        font: 13px system-ui, sans-serif;
+        padding: 6px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 6px;
+        background: rgba(20, 24, 28, 0.65);
+        color: #eef2f5;
+        cursor: pointer;
+      }
+      #presets button:hover {
+        background: rgba(50, 60, 70, 0.75);
+      }
+      #presets button.active {
+        background: rgba(154, 201, 94, 0.55);
+      }
+      #compare-panel {
+        position: fixed;
+        top: 96px;
+        right: 12px;
+        bottom: 40px;
+        width: 400px;
+        max-width: calc(100vw - 24px);
+        z-index: 20;
+        flex-direction: column;
+        font: 13px system-ui, sans-serif;
+        color: #eef2f5;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 8px;
+        background: rgba(20, 24, 28, 0.82);
+        overflow: hidden;
+      }
+      #compare-panel .compare-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      #compare-panel .compare-header button {
+        border: none;
+        background: transparent;
+        color: #eef2f5;
+        font-size: 15px;
+        cursor: pointer;
+      }
+      #compare-panel .compare-body {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        gap: 8px;
+        padding: 8px;
+      }
+      #compare-panel .compare-list {
+        width: 45%;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      #compare-panel .thumb {
+        cursor: pointer;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        padding: 4px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+      #compare-panel .thumb:hover {
+        background: rgba(50, 60, 70, 0.6);
+      }
+      #compare-panel .thumb.selected {
+        border-color: #9ac95e;
+      }
+      #compare-panel .thumb span {
+        display: block;
+        font-size: 11px;
+        margin-bottom: 3px;
+      }
+      #compare-panel .thumb img {
+        width: 100%;
+        display: block;
+        border-radius: 4px;
+      }
+      #compare-panel .compare-detail {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 0;
+      }
+      #compare-panel .compare-detail img {
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        object-fit: contain;
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.3);
+      }
+      #compare-panel .compare-detail button {
+        font: 13px system-ui, sans-serif;
+        padding: 6px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 6px;
+        background: rgba(154, 201, 94, 0.35);
+        color: #eef2f5;
+        cursor: pointer;
+      }
+      #compare-panel .compare-detail button:hover {
+        background: rgba(154, 201, 94, 0.55);
+      }
+      #season {
+        position: fixed;
+        top: 52px;
+        right: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 10;
+        font: 13px system-ui, sans-serif;
+        color: #eef2f5;
+        padding: 6px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 6px;
+        background: rgba(20, 24, 28, 0.65);
+      }
+      #season input[type='range'] {
+        width: 160px;
+        accent-color: #9ac95e;
+      }
+      #season .value {
+        min-width: 118px;
+        text-align: right;
+      }
+      footer {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10;
+        font: 11px system-ui, sans-serif;
+        color: rgba(255, 255, 255, 0.75);
+        background: rgba(0, 0, 0, 0.45);
+        padding: 4px 10px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="presets"></div>
+    <div id="season" title="Jahreszeit (Tag des Jahres)">
+      <label for="dayofyear">Tag</label>
+      <input id="dayofyear" type="range" min="0" max="364" step="1" value="190" />
+      <span class="value" id="seasonvalue">Tag 190</span>
+    </div>
+    <footer>
+      <span id="treeprogress"></span>
+      Daten: LGL-BW (Datenlizenz Deutschland - Namensnennung 2.0) - (c) OpenStreetMap contributors
+    </footer>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

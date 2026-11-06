@@ -1,0 +1,56 @@
+[
+ {
+  "file": "photos/20200928.jpg",
+  "date": "2020-09-28",
+  "day": 272,
+  "preset": "southEnd"
+ },
+ {
+  "file": "photos/20201114.jpg",
+  "date": "2020-11-14",
+  "day": 319,
+  "preset": "southEnd"
+ },
+ {
+  "file": "photos/20210117.jpg",
+  "date": "2021-01-17",
+  "day": 17,
+  "preset": "southEnd"
+ },
+ {
+  "file": "photos/20210328.jpg",
+  "date": "2021-03-28",
+  "day": 87,
+  "preset": "southEnd"
+ },
+ {
+  "file": "photos/20210522.jpg",
+  "date": "2021-05-22",
+  "day": 142,
+  "preset": "southEnd"
+ },
+ {
+  "file": "photos/20210607.jpg",
+  "date": "2021-06-07",
+  "day": 158,
+  "preset": "southEnd"
+ },
+ {
+  "file": "photos/20261022_125920.jpg",
+  "date": "2026-10-22",
+  "day": 295,
+  "preset": "elevated"
+ },
+ {
+  "file": "photos/20261022_125941.jpg",
+  "date": "2026-10-22",
+  "day": 295,
+  "preset": "elevated"
+ },
+ {
+  "file": "photos/20261022_130011.jpg",
+  "date": "2026-10-22",
+  "day": 295,
+  "preset": "elevated"
+ }
+]
