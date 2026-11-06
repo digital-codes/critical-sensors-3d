@@ -100,92 +100,83 @@
   {
    "footprint": [
     [
-     39.702,
-     27.602
+     18.6,
+     -2.8
     ],
     [
-     38.21,
-     33.004
+     21.0,
+     -2.8
     ],
     [
-     33.559,
-     31.732
+     21.0,
+     -0.4
     ],
     [
-     35.044,
-     26.33
-    ],
-    [
-     39.702,
-     27.602
+     18.6,
+     -0.4
     ]
    ],
    "heightEst": 3.5,
    "id": "osmway124028003",
    "note": "wooden frame tower with ladder element, purple fabric (photo 20261022_125920)",
    "osmWay": 124028003,
-   "x": 37.243,
-   "z": 29.254
+   "positionSource": "DOP 2024-08-22 spot measurement (OSM way is a garden shed east of the orchard)",
+   "x": 19.8,
+   "z": -1.6
   },
   {
    "footprint": [
     [
-     38.369,
-     5.979
+     14.4,
+     0.7
     ],
     [
-     44.348,
-     7.595
+     16.8,
+     0.7
     ],
     [
-     45.434,
-     3.59
+     16.8,
+     3.1
     ],
     [
-     39.455,
-     1.975
-    ],
-    [
-     38.369,
-     5.979
+     14.4,
+     3.1
     ]
    ],
    "heightEst": 3.0,
    "id": "osmway124028004",
    "note": "boxier frame with top railing and blue tarp awning (photo 20261022_125920)",
    "osmWay": 124028004,
-   "x": 41.195,
-   "z": 5.024
+   "positionSource": "DOP 2024-08-22 spot measurement (OSM way is a garden shed east of the orchard)",
+   "x": 15.6,
+   "z": 1.9
   },
   {
    "footprint": [
     [
-     -32.66,
-     0.125
+     23.5,
+     4.2
     ],
     [
-     -34.198,
-     -0.632
+     25.9,
+     4.2
     ],
     [
-     -35.603,
-     2.192
+     25.9,
+     6.6
     ],
     [
-     -33.337,
-     3.311
-    ],
-    [
-     -32.66,
-     0.125
+     23.5,
+     6.6
     ]
    ],
    "heightEst": 2.5,
    "id": "osmway124028005",
    "note": "smaller frame at south meadow edge (photos 20261022_*)",
    "osmWay": 124028005,
-   "x": -33.692,
-   "z": 1.024
+   "positionSource": "DOP 2024-08-22 spot measurement (OSM way is a garden shed east of the orchard)",
+   "x": 24.7,
+   "z": 5.4
   }
  ],
  "trees": [

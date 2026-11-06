@@ -10,6 +10,7 @@ interface SiteStructure {
   z: number;
   heightEst: number;
   note: string;
+  positionSource?: string;
 }
 
 /** Oriented bounding rectangle of a footprint polygon (local metres). */

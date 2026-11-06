@@ -36,8 +36,10 @@ Outputs:
 - `public/site/aerial.jpg` — RGB crop of the DOP20 RGBI (2024) orthophoto
   window, 0.2 m grid, draped over the terrain
 - `src/site.json` — geometry metadata: 18 OSM tree positions (with size
-  class, species preset, and per-tree seed), 3 Hocksitzcafe structures from
-  OSM ways 124028003/004/005 (footprint polygons + height estimates), camera
+  class, species preset, and per-tree seed), 3 Hocksitzcafe structures (ids
+  reference OSM ways 124028003/004/005, but positions are measured from the
+  Aug-2024 DOP — the OSM ways map to garden sheds inside the private garden
+  east of the orchard), camera
   presets, and licence/source list
 
 Inputs: `geoimages/` (LGL-BW DGM and DOP GeoTIFFs + world files) and
@@ -53,7 +55,10 @@ via Overpass/API).
   generate ~10–15 m trees).
 - 4 season variants per tree, selected via a day-of-year slider (0–364);
   winter renders bare — verified against the reference photos.
-- 3 stylized wooden Hocksitzcafe structures placed on their OSM footprints.
+- 3 stylized wooden Hocksitzcafe structures at their true meadow-centre
+  positions (measured from the Aug-2024 DOP spots; the OSM ways with the
+  same ids are garden sheds east of the orchard and are NOT used for
+  positioning). Small 2.4 m footprints, ~3 m tall, with tarp accents.
 - ~90k instanced grass blades with wind sway.
 - Overcast sky dome with procedural clouds.
 - Camera presets matching the real photo vantages: **Südende** (south-west,

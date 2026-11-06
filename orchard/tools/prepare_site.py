@@ -144,22 +144,36 @@ def main():
             "seed": el["id"] % 100000,
         })
 
-    # ---- structures from OSM ways ----
-    ways = json.load(open(OSM_WAYS))
+    # ---- structures ----
+    # The OSM ways 124028003/4/5 are mapped inside the PRIVATE GARDEN area at
+    # the east end of the orchard - they are garden sheds, NOT the three
+    # Hocksitzcafe towers. The towers actually stand in the meadow centre,
+    # next to the central tree cluster; their positions were measured from
+    # the Aug-2024 DOP (three compact white/brown spots, verified visually).
+    # Ground area ~2.4 x 2.4 m each (the OSM footprints are far too large).
+    MEASURED_STRUCTURES = {
+        124028003: (19.8, -1.6),
+        124028004: (15.6, 1.9),
+        124028005: (24.7, 5.4),
+    }
+    HALF = 1.2  # 2.4 m square footprint
     structures = []
     for wid in sorted(STRUCTURES.keys()):
-        w = ways[str(wid)]
-        pts = [to_local(*utm(la, lo)) for la, lo in w["pts"]]
-        cxs = [p[0] for p in pts]
-        czs = [p[1] for p in pts]
+        mx, mz = MEASURED_STRUCTURES[wid]
         structures.append({
             "id": "osmway%d" % wid,
             "osmWay": wid,
-            "footprint": [[p[0], p[1]] for p in pts],
-            "x": round(sum(cxs) / len(cxs), 3),
-            "z": round(sum(czs) / len(czs), 3),
+            "footprint": [
+                [round(mx - HALF, 3), round(mz - HALF, 3)],
+                [round(mx + HALF, 3), round(mz - HALF, 3)],
+                [round(mx + HALF, 3), round(mz + HALF, 3)],
+                [round(mx - HALF, 3), round(mz + HALF, 3)],
+            ],
+            "x": mx,
+            "z": mz,
             "heightEst": STRUCTURES[wid]["heightEst"],
             "note": STRUCTURES[wid]["note"],
+            "positionSource": "DOP 2024-08-22 spot measurement (OSM way is a garden shed east of the orchard)",
         })
 
     # ---- camera presets (y from heightmap sample) ----
