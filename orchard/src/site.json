@@ -10,37 +10,37 @@
  "cameraPresets": {
   "erhoeht": {
    "lookAt": [
-    -16.86,
-    118.696,
+    -6.157,
+    121.738,
     -71.107
    ],
    "position": [
-    -71.86,
-    119.842,
+    -61.157,
+    120.015,
     73.123
    ]
   },
   "nordwest": {
    "lookAt": [
-    9.247,
-    115.382,
-    -9.036
+    20.372,
+    115.829,
+    -9.224
    ],
    "position": [
-    -66.86,
-    117.975,
+    -56.157,
+    117.972,
     -71.107
    ]
   },
   "southEnd": {
    "lookAt": [
-    -16.86,
-    118.696,
+    -6.157,
+    121.738,
     -71.107
    ],
    "position": [
-    -63.86,
-    115.432,
+    -53.157,
+    115.79,
     61.123
    ]
   }
@@ -305,34 +305,6 @@
    "z": 41.722
   },
   {
-   "id": "bk01271",
-   "lat": 48.9898333,
-   "lon": 8.3868151,
-   "nameDe": "Kaiser-Linde",
-   "nameSci": "Tilia x intermedia 'Pallida'",
-   "seed": 86134,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -35.537,
-   "z": 7.128
-  },
-  {
-   "id": "bk01272",
-   "lat": 48.9897933,
-   "lon": 8.3869455,
-   "nameDe": "Kaiser-Linde",
-   "nameSci": "Tilia x intermedia 'Pallida'",
-   "seed": 86496,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -26.029,
-   "z": 11.649
-  },
-  {
    "id": "bk01273",
    "lat": 48.9897339,
    "lon": 8.3871314,
@@ -473,48 +445,6 @@
    "z": -4.041
   },
   {
-   "id": "bk02587",
-   "lat": 48.9900734,
-   "lon": 8.3867322,
-   "nameDe": "unbekannt",
-   "nameSci": "unbekannt",
-   "seed": 86485,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -41.381,
-   "z": -19.613
-  },
-  {
-   "id": "bk02591",
-   "lat": 48.989939,
-   "lon": 8.386781,
-   "nameDe": "unbekannt",
-   "nameSci": "unbekannt",
-   "seed": 86063,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -37.931,
-   "z": -4.639
-  },
-  {
-   "id": "bk02593",
-   "lat": 48.9899197,
-   "lon": 8.3868404,
-   "nameDe": "unbekannt",
-   "nameSci": "unbekannt",
-   "seed": 86471,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -33.604,
-   "z": -2.457
-  },
-  {
    "id": "bk02600",
    "lat": 48.9898238,
    "lon": 8.3875736,
@@ -571,34 +501,6 @@
    "z": -66.107
   },
   {
-   "id": "bk02634",
-   "lat": 48.9901251,
-   "lon": 8.3869619,
-   "nameDe": "unbekannt",
-   "nameSci": "unbekannt",
-   "seed": 86076,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -24.535,
-   "z": -25.221
-  },
-  {
-   "id": "bk02636",
-   "lat": 48.9901121,
-   "lon": 8.386947,
-   "nameDe": "unbekannt",
-   "nameSci": "unbekannt",
-   "seed": 86051,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -25.631,
-   "z": -23.785
-  },
-  {
    "id": "bk02647",
    "lat": 48.99035,
    "lon": 8.3869096,
@@ -613,20 +515,6 @@
    "z": -50.259
   },
   {
-   "id": "bk02660",
-   "lat": 48.9899882,
-   "lon": 8.3867957,
-   "nameDe": "unbekannt",
-   "nameSci": "unbekannt",
-   "seed": 86479,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -36.813,
-   "z": -10.099
-  },
-  {
    "id": "bk02679",
    "lat": 48.9904108,
    "lon": 8.387066,
@@ -639,20 +527,6 @@
    "trunkCircumference": "",
    "x": -16.66,
    "z": -56.916
-  },
-  {
-   "id": "bk02682",
-   "lat": 48.9899278,
-   "lon": 8.3867789,
-   "nameDe": "unbekannt",
-   "nameSci": "unbekannt",
-   "seed": 86077,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -38.098,
-   "z": -3.395
   },
   {
    "id": "bk02683",
@@ -695,20 +569,6 @@
    "trunkCircumference": "",
    "x": -1.574,
    "z": 8.293
-  },
-  {
-   "id": "bk02733",
-   "lat": 48.9900102,
-   "lon": 8.3867265,
-   "nameDe": "unbekannt",
-   "nameSci": "unbekannt",
-   "seed": 86428,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -41.86,
-   "z": -12.584
   },
   {
    "id": "bk02739",

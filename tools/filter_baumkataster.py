@@ -76,6 +76,22 @@ def main():
 
     selected = []
     counts = {"core": 0, "south": 0, "adjacent": 0}
+    # user-curated exclusions (visual check of the DOP, 2026-11): trees ON
+    # the western building plot - the residence at x -50..-28 / z -22..-5,
+    # its fenced garden (x -36..-26 / z -6..+4) and the strip up to the long
+    # barn (x -70..-20 / z +5..+35) - including the single tree right in
+    # front of the residence. Explicitly KEPT per user: the 4-tree group
+    # north of the plot near the trail (bk02647, bk02690, bk02859, bk02864)
+    # and the 4 street trees at Sankt-Florians-Strasse SE (bk00868, bk01202,
+    # bk01203, bk01671).
+    DROP_IDS = {
+        "bk02587",  # in front of the residence, west meadow edge
+        "bk02733",  # residence plot west
+        "bk02660",  # residence plot south edge
+        "bk02591", "bk02682", "bk02593",  # fenced garden
+        "bk01271", "bk01272",  # between garden and long barn
+        "bk02634", "bk02636",  # plot NE corner, below the trail
+    }
     for idx, it in enumerate(st13):
         lat, lon, name_de, name_sci, _num, _name, wiki, circ = it[:8]
         e, n = tr.transform(lon, lat)
@@ -89,6 +105,9 @@ def main():
         elif (cx0 - PAD) <= x <= (cx1 + PAD) and (cz0 - PAD) <= z <= (cz1 + PAD):
             zone = "adjacent"
         else:
+            continue
+        tree_id = "bk%05d" % idx
+        if tree_id in DROP_IDS:
             continue
         counts[{"core": "core", "south": "south", "adjacent": "adjacent"}[zone]] += 1
         sc = size_class(circ)
