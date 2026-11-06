@@ -71,7 +71,10 @@ def utm(lat, lon):
 
 def to_local(e, n):
     e0, n0 = utm(ORIGIN_LAT, ORIGIN_LON)
-    return round(e - e0, 3), round(n - n0, 3)
+    # +z points SOUTH (z = -(N - n0)): (east, up, south) is right-handed,
+    # which three.js requires; (east, up, north) is left-handed and renders
+    # the whole scene mirrored.
+    return round(e - e0, 3), round(n0 - n, 3)
 
 
 def main():
@@ -162,31 +165,31 @@ def main():
     # ---- camera presets (y from heightmap sample) ----
     def height_at_local(x, z):
         e = e0_local + x
-        n = n0_local + z
+        n = n0_local - z  # +z = south
         px = int(round((e - dgm_tfw["E"]) / dgm_tfw["A"])) - x0
         py = int(round((dgm_tfw["N"] - n) / dgm_tfw["A"])) - y0
         py = max(0, min(win.shape[0] - 1, py))
         px = max(0, min(win.shape[1] - 1, px))
         return round(float(win[py, px]), 3)
 
-    # Photo vantage presets (match the real photos):
+    # Photo vantage presets (match the real photos). NOTE: +z = SOUTH now.
     # - old weekly photos (2020-2022): from the SOUTH-WEST, ground level,
     #   looking NORTH-EAST across the orchard
     # - 2026 photos: slightly elevated (~5 m, above the south hedge) looking
     #   north-east ('erhoeht'), and from the NORTH-WEST hedge looking
     #   south-east at the Hocksitzcafe ('nordwest', photo 20261022_125920)
     tree_xs = [t["x"] for t in trees]
-    tree_zs = [t["z"] for t in trees]
+    tree_zs = [t["z"] for t in trees]  # south-positive: min = northernmost
     sx = round(min(tree_xs) - 22.0, 3)
-    sz = round(min(tree_zs) - 18.0, 3)
+    sz = round(max(tree_zs) + 18.0, 3)
     sy = height_at_local(sx, sz) + 1.5
-    sx_look, sz_look = round(min(tree_xs) + 25.0, 3), round(max(tree_zs) + 5.0, 3)
+    sx_look, sz_look = round(min(tree_xs) + 25.0, 3), round(min(tree_zs) - 5.0, 3)
     # erhoeht: ~5.5 m above ground, a bit further south, same NE view axis
-    ex, ez = round(min(tree_xs) - 30.0, 3), round(min(tree_zs) - 30.0, 3)
+    ex, ez = round(min(tree_xs) - 30.0, 3), round(max(tree_zs) + 30.0, 3)
     ey = height_at_local(ex, ez) + 5.5
     # nordwest: inside the meadow's NW corner, ~5 m up, looking SE at the
     # towers (photo 20261022_125920: hedge in the foreground, towers mid-frame)
-    nw_x, nw_z = round(min(tree_xs) - 25.0, 3), round(max(tree_zs) - 5.0, 3)
+    nw_x, nw_z = round(min(tree_xs) - 25.0, 3), round(min(tree_zs) - 5.0, 3)
     nw_y = height_at_local(nw_x, nw_z) + 5.0
     tw_x = round(sum(tree_xs) / len(tree_xs), 3)
     tw_z = round(sum(tree_zs) / len(tree_zs), 3)
@@ -198,7 +201,7 @@ def main():
                    "utmE": round(e0_local, 3), "utmN": round(n0_local, 3)},
         "window": {"eMin": WIN_E_MIN, "eMax": WIN_E_MAX,
                    "nMin": WIN_N_MIN, "nMax": WIN_N_MAX},
-        "localAxes": {"x": "easting (m)", "z": "northing (m)", "y": "height (m)"},
+        "localAxes": {"x": "easting (m)", "z": "southing (m, +z = south - right-handed for three.js)", "y": "height (m)"},
         "heightmap": {"file": "site/heightmap.png", "encoding": "uint16 millimetres above hmin",
                       "hmin": hmin, "hmax": hmax,
                       "originPx": [x0, y0], "gridM": dgm_tfw["A"]},

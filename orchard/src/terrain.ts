@@ -9,8 +9,10 @@ export const WIN_W = win.eMax - win.eMin; // 500 m (east-west)
 export const WIN_D = win.nMax - win.nMin; // 450 m (south-north)
 export const X_MIN = win.eMin - origin.utmE;
 export const X_MAX = win.eMax - origin.utmE;
-export const Z_MIN = win.nMin - origin.utmN;
-export const Z_MAX = win.nMax - origin.utmN;
+// +z = SOUTH (right-handed for three.js with +x = east, +y = up):
+// north edge is the most negative z.
+export const Z_MIN = origin.utmN - win.nMax;
+export const Z_MAX = origin.utmN - win.nMin;
 
 interface HeightField {
   w: number;
@@ -150,7 +152,7 @@ export async function loadHeightField(url: string): Promise<HeightField> {
 
 export interface Terrain {
   mesh: THREE.Mesh;
-  /** local metres (x east, z north) -> absolute height in metres */
+  /** local metres (x east, z south) -> absolute height in metres */
   heightAt(x: number, z: number): number;
 }
 
@@ -159,7 +161,7 @@ let sharedField: HeightField | null = null;
 
 function sampleMM(field: HeightField, grid: number, x: number, z: number): number {
   const fx = clamp((x - X_MIN) / grid, 0, field.w - 1);
-  const fy = clamp((Z_MAX - z) / grid, 0, field.h - 1);
+  const fy = clamp((z - Z_MIN) / grid, 0, field.h - 1);
   const x0 = Math.floor(fx);
   const y0 = Math.floor(fy);
   const x1 = Math.min(x0 + 1, field.w - 1);
@@ -215,6 +217,8 @@ export async function createTerrain(): Promise<Terrain> {
   const tex = await new THREE.TextureLoader().loadAsync('/' + site.aerial.file);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
+  // image row 0 = north; +z = south => v grows southward with flipY disabled
+  tex.flipY = false;
 
   const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex }));
   return { mesh, heightAt };

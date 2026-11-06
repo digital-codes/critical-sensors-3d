@@ -24,6 +24,9 @@ npm run build    # tsc + vite build
 `python3 orchard/tools/prepare_site.py` regenerates all site assets from LGL-BW
 open geodata and OSM snapshots. It is deterministic: re-running it produces
 byte-identical outputs (except the `generatedAt` date in `site.json`).
+App-local axes: +x = east, +y = up, **+z = south** — (east, up, south) is the
+right-handed triple three.js requires; (east, up, north) is left-handed and
+renders the whole scene mirrored.
 
 Outputs:
 

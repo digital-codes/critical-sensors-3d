@@ -60,7 +60,7 @@ export async function createGrass(): Promise<Grass> {
   }
   const isLawnAt = (x: number, z: number): boolean => {
     const i = Math.floor(((x - X_MIN) / WIN_W) * MASK_W);
-    const j = Math.floor(((Z_MIN + WIN_D - z) / WIN_D) * MASK_H);
+    const j = Math.floor(((z - Z_MIN) / WIN_D) * MASK_H);
     if (i < 0 || j < 0 || i >= MASK_W || j >= MASK_H) return false;
     return lawn[j * MASK_W + i] === 1;
   };
