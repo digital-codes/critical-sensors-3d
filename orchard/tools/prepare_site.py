@@ -167,6 +167,30 @@ def main():
     ae_path = os.path.join(OUT_PUBLIC, "aerial.jpg")
     crop.save(ae_path, quality=85)
 
+    # ---- lawn mask from the ORIGINAL (unflattened) DOP ----
+    # Exported for grass.ts (blade placement) and the terrain snow gate.
+    # The FLATTENED aerial cannot be used for this: its shadow-flatten tints
+    # path/trail pixels near crowns toward the lawn median, so they pass the
+    # green test and grass/snow would creep onto paths. The raw DOP colours
+    # keep gravel/dirt paths grey (g - r <= 8) -> excluded.
+    # Enclosed holes are FILLED: the baked tree crowns/shadows mid-meadow are
+    # non-green blobs fully surrounded by lawn (the flatten removes them and
+    # the 3D trees replace them, so they must count as grass). The flatten's
+    # dark|near-lawn union must NOT be used here - it also sweeps in barn
+    # roofs, yards and trail edges near the meadow, which put snow back onto
+    # everything. Paths/trails/streets connect to the outside non-lawn region
+    # and therefore stay open. Grid 250x225, cell (i, j): i = west->east,
+    # row 0 = north - same mapping grass.ts and the terrain shader use.
+    lawn_filled = ndi.binary_fill_holes(lawn)
+    lawn_img = Image.fromarray((lawn_filled * 255).astype(np.uint8), mode="L")
+    MASK_W, MASK_H = 250, 225
+    lawn_small = lawn_img.resize((MASK_W, MASK_H), Image.BOX)
+    lawn_small = lawn_small.point(lambda v: 255 if v > 127 else 0)
+    lawn_path = os.path.join(OUT_PUBLIC, "lawn_mask.png")
+    lawn_small.save(lawn_path)
+    print("  lawn mask: %d/%d cells on (%s)" % (
+        sum(1 for v in lawn_small.getdata() if v), MASK_W * MASK_H, lawn_path))
+
     # ---- tileable Perlin snow-patch texture (ideas/perlin/repeat.py) ----
     # Seamless multi-octave noise tile sampled by the terrain shader for the
     # winter snow patches - replaces the old sin-grid mask that read as a
@@ -311,6 +335,11 @@ def main():
                       "originPx": [x0, y0], "gridM": dgm_tfw["A"]},
         "aerial": {"file": "site/aerial.jpg", "gridM": dop_tfw["A"],
                    "originPx": [dx0, dy0]},
+        "lawnMask": {"file": "site/lawn_mask.png", "w": MASK_W, "h": MASK_H,
+                     "note": "green-dominant cells of the ORIGINAL DOP (not the "
+                             "shadow-flattened aerial - that tints paths green); "
+                             "drives grass placement and the terrain snow gate, "
+                             "so paths/trails stay bare in winter"},
         "snowNoise": {"file": "site/snow_noise.png", "sizePx": 256,
                       "period": 8, "octaves": 4,
                       "note": "tileable Perlin (ideas/perlin/repeat.py); mean %.3f std %.3f" % (sn_mean, sn_std)},

@@ -13,9 +13,6 @@ const COUNT = 90000;
 const BLADE_W = 0.085;
 // off-white the grass blades fade toward under patchy snow
 const SNOW_TINT = new THREE.Color(0xdfe4e8);
-// mown-lawn mask resolution (cells across the 500x450 m window, ~2 m/cell)
-const MASK_W = 250;
-const MASK_H = 225;
 
 const SEASON_TINT: Record<SeasonKey, number> = {
   winter: 0x8a8a72,
@@ -36,38 +33,36 @@ export interface Grass {
 export async function createGrass(): Promise<Grass> {
   const getHeight = await getHeightSampler();
 
-  // Mown-lawn mask from the aerial image: only place grass where the DOP
-  // actually shows open lawn (keeps blades off paths, courts, buildings and
-  // the photographic tree rows). Sampled at ~2 m/cell via canvas 2D.
-  const tex = await new THREE.TextureLoader().loadAsync('/' + site.aerial.file);
-  const img = tex.image as HTMLImageElement;
+  // Mown-lawn mask, precomputed by prepare_site.py from the ORIGINAL DOP
+  // colours (public/site/lawn_mask.png, site.lawnMask). It must NOT be
+  // derived from the flattened aerial: the shadow-flatten tints path and
+  // trail pixels near crowns toward the lawn median, which let grass and
+  // winter snow creep onto paths. Raw-DOP gravel/dirt paths stay grey and
+  // are excluded, so streets and trails stay bare in winter.
+  const maskTex = await new THREE.TextureLoader().loadAsync('/' + site.lawnMask.file);
+  const mimg = maskTex.image as HTMLImageElement;
+  const mw = site.lawnMask.w;
+  const mh = site.lawnMask.h;
   const mc = document.createElement('canvas');
-  mc.width = MASK_W;
-  mc.height = MASK_H;
+  mc.width = mw;
+  mc.height = mh;
   const mctx = mc.getContext('2d', { willReadFrequently: true })!;
-  mctx.drawImage(img, 0, 0, MASK_W, MASK_H);
-  const md = mctx.getImageData(0, 0, MASK_W, MASK_H).data;
+  mctx.drawImage(mimg, 0, 0);
+  const md = mctx.getImageData(0, 0, mw, mh).data;
   // cell (i, j): i = west->east, j = north->south (image row 0 = north)
-  const lawn = new Uint8Array(MASK_W * MASK_H);
+  const lawn = new Uint8Array(mw * mh);
   let lawnCells = 0;
-  for (let j = 0; j < MASK_H; j++) {
-    for (let i = 0; i < MASK_W; i++) {
-      const o = (j * MASK_W + i) * 4;
-      const r = md[o];
-      const g = md[o + 1];
-      const b = md[o + 2];
-      const isLawn = g > r + 8 && g > b + 8 && g > 60 && g < 200;
-      if (isLawn) {
-        lawn[j * MASK_W + i] = 1;
-        lawnCells++;
-      }
+  for (let k = 0; k < mw * mh; k++) {
+    if (md[k * 4] > 127) {
+      lawn[k] = 1;
+      lawnCells++;
     }
   }
   const isLawnAt = (x: number, z: number): boolean => {
-    const i = Math.floor(((x - X_MIN) / WIN_W) * MASK_W);
-    const j = Math.floor(((z - Z_MIN) / WIN_D) * MASK_H);
-    if (i < 0 || j < 0 || i >= MASK_W || j >= MASK_H) return false;
-    return lawn[j * MASK_W + i] === 1;
+    const i = Math.floor(((x - X_MIN) / WIN_W) * mw);
+    const j = Math.floor(((z - Z_MIN) / WIN_D) * mh);
+    if (i < 0 || j < 0 || i >= mw || j >= mh) return false;
+    return lawn[j * mw + i] === 1;
   };
 
   // 2-triangle tapered blade: plane with base at y=0, top pinched
@@ -193,7 +188,7 @@ export async function createGrass(): Promise<Grass> {
   mesh.count = placed;
   mesh.instanceMatrix.needsUpdate = true;
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-  console.info(`grass: ${placed} blades on ${lawnCells} lawn cells (${Math.round((100 * lawnCells) / (MASK_W * MASK_H))}% of window)`);
+  console.info(`grass: ${placed} blades on ${lawnCells} lawn cells (${Math.round((100 * lawnCells) / (mw * mh))}% of window)`);
 
   // Snow extent: the terrain gates snow to this lawn mask (via
   // getLawnMask) intersected with the same padded tree bounds as the
@@ -221,7 +216,7 @@ export async function createGrass(): Promise<Grass> {
       return key;
     },
     getLawnMask(): { data: Uint8Array; w: number; h: number } {
-      return { data: lawn, w: MASK_W, h: MASK_H };
+      return { data: lawn, w: mw, h: mh };
     },
   };
 }

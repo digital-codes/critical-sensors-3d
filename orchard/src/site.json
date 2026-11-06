@@ -58,6 +58,12 @@
    1480
   ]
  },
+ "lawnMask": {
+  "file": "site/lawn_mask.png",
+  "h": 225,
+  "note": "green-dominant cells of the ORIGINAL DOP (not the shadow-flattened aerial - that tints paths green); drives grass placement and the terrain snow gate, so paths/trails stay bare in winter",
+  "w": 250
+ },
  "localAxes": {
   "x": "easting (m)",
   "y": "height (m)",
