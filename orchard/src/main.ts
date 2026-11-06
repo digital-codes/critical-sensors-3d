@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createTerrain } from './terrain';
+import { createTerrain, getHeightSampler } from './terrain';
 import { createCameraRig } from './camera';
 import { createOrchard, type Orchard } from './trees';
 import { nearestSeason, snowAmount } from './seasons';
@@ -9,6 +9,7 @@ import { createBuildings } from './buildings';
 import { createSky, type Sky } from './sky';
 import site from './site';
 import { createComparePanel } from './compare';
+import { createBirdFlight } from './flight';
 
 const MONTHS = [
   'Jan',
@@ -144,6 +145,20 @@ async function main(): Promise<void> {
 
   createComparePanel(renderer, rig, seasonInput);
 
+  // "Vogelflug": bird's-eye flight from the elevated NE tree over the
+  // orchard; cancels on user interaction, hands the camera back to OrbitControls
+  const flight = await createBirdFlight(rig, await getHeightSampler());
+  const presetsUi = document.getElementById('presets');
+  if (presetsUi) {
+    const btn = document.createElement('button');
+    btn.textContent = 'Vogelflug';
+    btn.dataset.preset = 'vogelflug';
+    btn.addEventListener('click', () => (flight.active ? flight.stop() : flight.start()));
+    presetsUi.appendChild(btn);
+  }
+  (window as unknown as Record<string, unknown>).__scene3 =
+    { ...(window as unknown as Record<string, unknown>).__scene3 as object, flight };
+
   let orchard: Orchard | null = null;
   createOrchard((done, total) => {
     if (progressEl) progressEl.textContent = `Bäume: ${done}/${total} …`;
@@ -217,6 +232,7 @@ async function main(): Promise<void> {
   renderer.setAnimationLoop(() => {
     const dt = clock.getDelta();
     const t = clock.elapsedTime;
+    flight.update(dt);
     rig.controls.update();
     if (needle) {
       rig.camera.getWorldDirection(camDir);

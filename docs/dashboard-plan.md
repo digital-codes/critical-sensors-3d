@@ -141,6 +141,9 @@ label size (1.2em) carry over from the old c3 overrides.
    mode (canvas → image) for real-vs-model comparison.
 4. **Coupling + markers** — sensor positions in the 3D scene, click-through,
    health strip.
+4b. **Remote interaction (idea)** — expose the 3D scene to websocket control
+   (camera presets/flight like the existing `flight.seek(t)` hook, time
+   slider) so remote users/screens can drive the model; needs auth thinking.
 5. **Polish** — German copy review, mobile layout, Lighthouse pass.
 
 ## 7. Open questions (answer when back — nothing blocking the plan)
