@@ -38,8 +38,7 @@ sources = [
 {"data":"temp","name":"TT_TU","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/recent/stundenwerte_TU_04177_akt.zip"},
 {"data":"hum","name":"RF_TU","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/recent/stundenwerte_TU_04177_akt.zip"},
 {"data":"light","name":"SD_SO","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/sun/recent/stundenwerte_SD_04177_akt.zip"},
-{"data":"pres","name":"  P0","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/pressure/recent/stundenwerte_P0_04177_akt.zip"},
-{"data":"wind","name":"   F","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/wind/recent/stundenwerte_FF_04177_akt.zip"}
+{"data":"pres","name":"  P0","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/pressure/recent/stundenwerte_P0_04177_akt.zip"}
 ]
 
 dwd = pd.DataFrame()
@@ -216,9 +215,9 @@ for s in sources:
 # excluded/missing light channel becomes NULL in the database
 if "light" not in dwd.columns:
     dwd["light"] = float("nan")
-# excluded/missing wind channel (DWD FF) becomes NULL as well;
-# icosWind stays the ICOS ERIC reference (AS_KIT lowest level, currently
-# empty at the source - KIT does not populate WS in the NRT meteo product)
+# wind: PLACEHOLDER column (NULL) - the real wind source is still to be
+# chosen (ICOS KIT does not populate WS in the NRT meteo product); the
+# column and its schema stay reserved so the future source slots in
 if "wind" not in dwd.columns:
     dwd["wind"] = float("nan")
 
@@ -254,7 +253,7 @@ if len(dwd[dwd.date >= limit]) < 1:
 
     dwd = meteo.copy()
     dwd["light"] = 0  # no light from kit
-    dwd["wind"] = float("nan")  # no wind from kit (NRT meteo WS empty)
+    dwd["wind"] = float("nan")  # wind placeholder (real source pending)
 
 #print(dwd)
 
