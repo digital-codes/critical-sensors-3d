@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import site from './site';
-import { getHeightSampler } from './terrain';
+import { getHeightSampler, X_MIN, Z_MIN, WIN_W, WIN_D } from './terrain';
 import { nearestSeason, type SeasonKey } from './seasons';
 import { getFootprintRects } from './structures';
 
@@ -11,6 +11,9 @@ interface SiteTree {
 
 const COUNT = 90000;
 const BLADE_W = 0.085;
+// mown-lawn mask resolution (cells across the 500x450 m window, ~2 m/cell)
+const MASK_W = 250;
+const MASK_H = 225;
 
 const SEASON_TINT: Record<SeasonKey, number> = {
   winter: 0x8a8a72,
@@ -28,6 +31,40 @@ export interface Grass {
 export async function createGrass(): Promise<Grass> {
   const getHeight = await getHeightSampler();
 
+  // Mown-lawn mask from the aerial image: only place grass where the DOP
+  // actually shows open lawn (keeps blades off paths, courts, buildings and
+  // the photographic tree rows). Sampled at ~2 m/cell via canvas 2D.
+  const tex = await new THREE.TextureLoader().loadAsync('/' + site.aerial.file);
+  const img = tex.image as HTMLImageElement;
+  const mc = document.createElement('canvas');
+  mc.width = MASK_W;
+  mc.height = MASK_H;
+  const mctx = mc.getContext('2d', { willReadFrequently: true })!;
+  mctx.drawImage(img, 0, 0, MASK_W, MASK_H);
+  const md = mctx.getImageData(0, 0, MASK_W, MASK_H).data;
+  // cell (i, j): i = west->east, j = north->south (image row 0 = north)
+  const lawn = new Uint8Array(MASK_W * MASK_H);
+  let lawnCells = 0;
+  for (let j = 0; j < MASK_H; j++) {
+    for (let i = 0; i < MASK_W; i++) {
+      const o = (j * MASK_W + i) * 4;
+      const r = md[o];
+      const g = md[o + 1];
+      const b = md[o + 2];
+      const isLawn = g > r + 8 && g > b + 8 && g > 60 && g < 200;
+      if (isLawn) {
+        lawn[j * MASK_W + i] = 1;
+        lawnCells++;
+      }
+    }
+  }
+  const isLawnAt = (x: number, z: number): boolean => {
+    const i = Math.floor(((x - X_MIN) / WIN_W) * MASK_W);
+    const j = Math.floor(((Z_MIN + WIN_D - z) / WIN_D) * MASK_H);
+    if (i < 0 || j < 0 || i >= MASK_W || j >= MASK_H) return false;
+    return lawn[j * MASK_W + i] === 1;
+  };
+
   // 2-triangle tapered blade: plane with base at y=0, top pinched
   const blade = new THREE.PlaneGeometry(BLADE_W, 1, 1, 1);
   blade.translate(0, 0.5, 0);
@@ -36,7 +73,7 @@ export async function createGrass(): Promise<Grass> {
     if (pos.getY(i) > 0.9) pos.setX(i, pos.getX(i) * 0.18);
   }
 
-  // placement bounds: tree extent padded by 25 m on every side
+  // placement bounds: tree extent padded by 15 m on every side, then masked
   let xMin = Infinity;
   let xMax = -Infinity;
   let zMin = Infinity;
@@ -48,10 +85,10 @@ export async function createGrass(): Promise<Grass> {
     zMin = Math.min(zMin, t.z);
     zMax = Math.max(zMax, t.z);
   }
-  xMin -= 25;
-  xMax += 25;
-  zMin -= 25;
-  zMax += 25;
+  xMin -= 15;
+  xMax += 15;
+  zMin -= 15;
+  zMax += 15;
 
   // exclusion zones: structure footprints expanded by 0.5 m
   const rects = getFootprintRects();
@@ -109,9 +146,13 @@ export async function createGrass(): Promise<Grass> {
   const c = new THREE.Color();
 
   let placed = 0;
-  while (placed < COUNT) {
+  let attempts = 0;
+  const maxAttempts = COUNT * 40;
+  while (placed < COUNT && attempts < maxAttempts) {
+    attempts++;
     const x = xMin + Math.random() * (xMax - xMin);
     const z = zMin + Math.random() * (zMax - zMin);
+    if (!isLawnAt(x, z)) continue;
     if (nearTree(x, z) || inStructure(x, z)) continue;
     const h = 0.25 + Math.random() * 0.65;
     p.set(x, getHeight(x, z), z);
@@ -123,8 +164,11 @@ export async function createGrass(): Promise<Grass> {
     mesh.setColorAt(placed, c);
     placed++;
   }
+  // shrink the instance buffer to what actually got placed
+  mesh.count = placed;
   mesh.instanceMatrix.needsUpdate = true;
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  console.info(`grass: ${placed} blades on ${lawnCells} lawn cells (${Math.round((100 * lawnCells) / (MASK_W * MASK_H))}% of window)`);
 
   return {
     mesh,

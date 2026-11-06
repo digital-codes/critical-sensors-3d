@@ -149,11 +149,32 @@ async function main(): Promise<void> {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
+  // Compass HUD: an "N" arrow that always points toward world north (+z),
+  // so the view orientation is verifiable in any orbit position.
+  const compass = document.createElement('div');
+  compass.id = 'compass';
+  compass.innerHTML =
+    '<svg viewBox="0 0 40 40" width="40" height="40">' +
+    '<circle cx="20" cy="20" r="18" fill="rgba(0,0,0,0.45)"/>' +
+    '<path id="compass-needle" d="M20 5 L25 26 L20 22 L15 26 Z" fill="#e05555"/></svg>';
+  compass.style.cssText =
+    'position:fixed;left:12px;top:12px;width:40px;height:40px;z-index:20;' +
+    'pointer-events:none;';
+  document.body.appendChild(compass);
+  const needle = compass.querySelector('#compass-needle') as SVGPathElement | null;
+  const camDir = new THREE.Vector3();
+
   const clock = new THREE.Clock();
   renderer.setAnimationLoop(() => {
     const dt = clock.getDelta();
     const t = clock.elapsedTime;
     rig.controls.update();
+    if (needle) {
+      rig.camera.getWorldDirection(camDir);
+      // heading: 0 = looking north (+z), pi = south; rotate needle by -heading
+      const heading = Math.atan2(camDir.x, camDir.z);
+      needle.setAttribute('transform', `rotate(${(-heading * 180) / Math.PI} 20 20)`);
+    }
     orchard?.update(t);
     grass.update(t);
     sky.update(dt);
