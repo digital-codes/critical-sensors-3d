@@ -44,6 +44,42 @@ Dashboard never talks to DWD/ICOS directly: the cron writes a JSON cache
 (`www/data/sensors.json`, one file per variable + meta) that the site fetches.
 Rationale: rate-limit rules, PID citation control, and the site stays static.
 
+## 2b. Design tokens — picked up from the old site (critical-sensors.de)
+
+Source: `oldwww/css/custom.css` (colors documented there as "colors from cz
+logo"); the Mohave font files ship in `oldwww/fonts/Mohave/` (Regular, Italic,
+Bold — woff2/woff/ttf) and can be copied into the new dashboard.
+
+```css
+:root {
+  /* palette (cz logo) */
+  --accent-red:   #f93822;  /* "rot" - body text color on the old site */
+  --olive-dark:   #9a8700;  /* "dunkel"  - gradient bottom */
+  --olive-mid:    #a69621;  /* "mittel" */
+  --olive-light:  #cbc282;  /* "heller" */
+  --olive-pale:   #d8d1a5;  /* "ganz hell" - gradient top */
+  --white:        #f6f6f6;  /* borders */
+  --panel:        rgba(250,250,250,.7);  /* #framing content panels */
+  --panel-chart:  rgba(220,220,220,.5);  /* chart captions */
+  --footer-bg:    #ddddee;
+
+  /* font */
+  --font-main: "Mohave", sans-serif;  /* self-hosted, 400/700 + italic */
+  --fs-body: 1.17em;
+  --fs-h1: 2em;
+  --fs-h2: 1.6em;
+}
+/* page background (old site): vertical gradient light->dark */
+body { background-image: linear-gradient(#d8d1a5,#cbc282,#a69621,#9a8700);
+       color: var(--accent-red); }
+```
+
+Notes for the new dashboard: keep the gradient + red-on-olive identity, but
+the red text on olive gradient is low-contrast for dense chart labels — use
+the red for accents/headlines/active states and near-black (#222) for chart
+text, on the translucent white panels. Line weight 3px and generous axis
+label size (1.2em) carry over from the old c3 overrides.
+
 ## 3. Layout (German, single page, mobile-first)
 
 ```
