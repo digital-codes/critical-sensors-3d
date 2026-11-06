@@ -367,10 +367,13 @@ def main():
              "licence": "CC BY 4.0 (Stadt Karlsruhe / Code for Karlsruhe)"},
             {"file": "/mnt_ai/data/odd26/ka3d/hauenstein-20260127/CityJSON/"
                      "gebaeude_lod2_455000_5426000.json",
-             "role": "3D building models LoD2 (CityJSON 1.0.1, EPSG:25832) via "
-                     "tools/convert_cityjson.py -> site/buildings_lod2.json",
-             "licence": "Stadt Karlsruhe 3D-Gebäudemodelle (geoportal.karlsruhe.de) "
-                        "- licence to be confirmed"},
+             "role": "3D building models LoD2 (CityJSON 1.0.1, EPSG:25832), "
+                     "official viewer https://geoportal.karlsruhe.de/3d/"
+                     "karlsruhe_3d/, converted via tools/convert_cityjson.py "
+                     "-> site/buildings_lod2.json",
+             "licence": "Stadt Karlsruhe 3D-Gebäudemodelle (geoportal."
+                        "karlsruhe.de) - licence to be confirmed "
+                        "(likely dl-de/by-2-0 like other city geodata)"},
             {"file": ".cache/opencode/osm_orchard_nodes.json",
              "role": "orchard tree positions (fallback)", "licence": LICENCE_OSM},
             {"file": ".cache/opencode/osm_ways.json",
