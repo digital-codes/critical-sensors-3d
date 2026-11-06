@@ -49,6 +49,7 @@ def main():
         return [round(x - e0, 2), round(z, 2), round(n0 - y, 2)]
 
     buildings = []
+    dropped = 0
     for cid, obj in cos.items():
         geoms = [g for g in obj.get("geometry", []) if str(g.get("lod")) in ("2", "2.0")]
         if not geoms:
@@ -65,9 +66,10 @@ def main():
                         ys.append(y)
         if not xs:
             continue
-        if max(xs) < E0 - MARGIN or min(xs) > E1 + MARGIN:
-            continue
-        if max(ys) < N0 - MARGIN or min(ys) > N1 + MARGIN:
+        # STRICT containment: drop buildings that reach outside the tile so
+        # nothing hangs over the terrain edge (user request)
+        if min(xs) < E0 or max(xs) > E1 or min(ys) < N0 or max(ys) > N1:
+            dropped += 1
             continue
 
         # collect surfaces with semantic type; dedupe identical rings
@@ -122,7 +124,8 @@ def main():
         "buildings": buildings,
     }
     json.dump(out, open(OUT, "w"), ensure_ascii=False, indent=1)
-    print("wrote %s: %d buildings" % (OUT, len(buildings)))
+    print("wrote %s: %d buildings (dropped %d reaching outside the tile)"
+          % (OUT, len(buildings), dropped))
     for b in buildings:
         ntypes = {}
         for s in b["surfaces"]:

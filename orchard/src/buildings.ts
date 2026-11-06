@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import site from './site';
-import { getHeightSampler } from './terrain';
+import { getHeightSampler, X_MIN, X_MAX, Z_MIN, Z_MAX } from './terrain';
 
 /**
  * LoD2 city buildings (Stadt Karlsruhe CityJSON, converted to local metres
@@ -8,7 +8,10 @@ import { getHeightSampler } from './terrain';
  * Buildings sit around the orchard (west residential row, south-east
  * street); they replace the roofs painted into the aerial with real 3D
  * volumes: semantic WallSurface / RoofSurface polygons, triangulated with
- * holes, flat-shaded, casting shadows.
+ * holes, flat-shaded, casting shadows. All surfaces carry UVs derived from
+ * world x/z, so the AERIAL IMAGE textures them: roofs show the exact DOP
+ * pixels of the real roofs (seamless with the terrain beneath), walls get
+ * the smearing strip from the nadir view, tinted darker.
  */
 
 interface Surface {
@@ -36,14 +39,16 @@ export interface CityBuildings {
   group: THREE.Group;
 }
 
-const WALL_COLOUR = 0xd9d2c4;
-const ROOF_COLOUR = 0x9b5f4f;
+const WALL_TINT = 0xb0aa9c; // multiplier over the aerial map: darker walls
+const ROOF_TINT = 0xffffff; // roofs take the DOP pixels as-is
 
 // triangulate one LoD2 surface polygon in 3D. Strategy: find the face
 // normal, project the ring onto the two axes least aligned with it (walls
 // -> xy/yz, roofs -> xz), run ShapeUtils there, and map back through a
 // PARALLEL 3D point array (same reversal as the 2D points). Handles holes;
 // keeps the real per-vertex heights; dy settles the building onto the DGM.
+// Also emits aerial-image UVs from world x/z (u west->east, v: image row 0
+// is the north edge = v 1).
 function surfaceGeometry(surf: Surface, dy: number): THREE.BufferGeometry | null {
   const rings = surf.rings;
   if (!rings.length || rings[0].length < 3) return null;
@@ -93,14 +98,32 @@ function surfaceGeometry(surf: Surface, dy: number): THREE.BufferGeometry | null
   const all = [contour.p3, ...holes.map((h) => h.p3)].flat();
 
   const positions: number[] = [];
+  const uvs: number[] = [];
+  // walls: a nadir DOP has no facade pixels - world UVs would smear a thin
+  // ground strip down the wall (vertical streaks). Sample ONE uniform tone
+  // instead: the DOP colour at the wall footprint's centroid.
+  const cx = rings[0].reduce((s, p) => s + p[0], 0) / rings[0].length;
+  const cz = rings[0].reduce((s, p) => s + p[2], 0) / rings[0].length;
+  const wallU = (cx - X_MIN) / (X_MAX - X_MIN);
+  const wallV = 1 - (cz - Z_MIN) / (Z_MAX - Z_MIN);
+  const isWall = surf.type === 'WallSurface';
   for (const f of faces) {
     for (const idx of f) {
       const p = all[idx];
       positions.push(p.x, p.y + dy, p.z);
+      if (isWall) {
+        uvs.push(wallU, wallV);
+      } else {
+        uvs.push(
+          (p.x - X_MIN) / (X_MAX - X_MIN),
+          1 - (p.z - Z_MIN) / (Z_MAX - Z_MIN),
+        );
+      }
     }
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geo.computeVertexNormals(); // non-indexed -> flat per-face normals
   return geo;
 }
@@ -113,8 +136,17 @@ export async function createBuildings(): Promise<CityBuildings> {
 
   const group = new THREE.Group();
   group.name = 'city-buildings';
-  const wallMat = new THREE.MeshLambertMaterial({ color: WALL_COLOUR, side: THREE.DoubleSide });
-  const roofMat = new THREE.MeshLambertMaterial({ color: ROOF_COLOUR, side: THREE.DoubleSide });
+  // aerial image as shared texture: roofs show the exact DOP pixels of the
+  // real roofs (seamless with the terrain), walls get the nadir smear,
+  // tinted darker so they read as facades
+  const aerialTex = new THREE.TextureLoader().load('/' + site.aerial.file);
+  aerialTex.colorSpace = THREE.SRGBColorSpace;
+  const wallMat = new THREE.MeshLambertMaterial({
+    map: aerialTex, color: WALL_TINT, side: THREE.DoubleSide,
+  });
+  const roofMat = new THREE.MeshLambertMaterial({
+    map: aerialTex, color: ROOF_TINT, side: THREE.DoubleSide,
+  });
 
   let placed = 0;
   for (const b of asset.buildings) {
