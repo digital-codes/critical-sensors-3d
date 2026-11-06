@@ -18,6 +18,7 @@ const PRESET_LABELS: Record<string, string> = {
   southEnd: 'Südende',
   erhoeht: 'Erhöht',
   nordwest: 'Nordwest',
+  vergleich: 'Fotostandpunkt',
 };
 
 // Presets come from site.json so the pipeline can define the real photo
