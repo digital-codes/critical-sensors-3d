@@ -112,8 +112,25 @@ def seedStatements():
     return stmts
 
 
-def allStatements():
-    return [DDL_SENSORS + ";", DDL_SENSOR_LOCATIONS + ";"] + seedStatements()
+def migrationStatements():
+    """Convert existing tables to utf8mb4 + explicit collation.
+
+    CONVERT TO re-encodes all character columns (e.g. a legacy latin1
+    'raw' column or pre-existing name strings); it is a no-op on tables
+    already created with the new DDL. Non-character columns are untouched.
+    """
+    return [
+        "ALTER TABLE sensors CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
+        "ALTER TABLE sensor_locations CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
+    ]
+
+
+def allStatements(migrate=False):
+    stmts = [DDL_SENSORS + ";", DDL_SENSOR_LOCATIONS + ";"]
+    if migrate:
+        stmts += migrationStatements()   # before the seeds: INSERTs land on utf8mb4
+    stmts += seedStatements()
+    return stmts
 
 
 # ######################################################
@@ -122,9 +139,12 @@ def allStatements():
 parser = argparse.ArgumentParser(description="Create tables for the sensor database (MySQL 'cz')")
 parser.add_argument("--sql", action="store_true",
                     help="print the DDL + seed statements to stdout and exit (offline mode)")
+parser.add_argument("--migrate", action="store_true",
+                    help="also convert existing tables to utf8mb4/utf8mb4_unicode_ci "
+                         "(ALTER ... CONVERT TO; runs after the DDL, before the seeds)")
 args = parser.parse_args()
 
-statements = allStatements()
+statements = allStatements(migrate=args.migrate)
 
 if args.sql:
     for stmt in statements:
@@ -149,7 +169,7 @@ if not dbUrl:
 
 try:
     # force utf8mb4 on the connection regardless of what the URL carries,
-# so DDL + seed rows (e.g. "Büro") survive any server default
+    # so DDL + seed rows (e.g. "Büro") survive any server default
     engine = create_engine(dbUrl, connect_args={"charset": "utf8mb4"})
 except Exception as exc:
     print("Sql failed:", exc)
@@ -159,7 +179,8 @@ with engine.begin() as conn:
     for stmt in statements:
         conn.execute(text(stmt))
 
-print("Tables created (if they did not exist).")
+print("Tables created (if they did not exist)." +
+      (" Migration to utf8mb4 applied." if args.migrate else ""))
 
 # verification block
 with engine.connect() as conn:
