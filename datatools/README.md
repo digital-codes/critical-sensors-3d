@@ -1,10 +1,11 @@
 # datatools — Reference Sensor Pipeline
 
 `refSensors.py` feeds the **virtual reference sensor** (sensor id `0`) of
-[critical-sensors.de](https://critical-sensors.de). It merges public data from
-two sources into the `sensors` table of the `cz` MySQL database, using the
-**exact same row format as the real IoT sensors** (`id = 0`, plus placeholder
-columns `rssi`, `bat`, `raw`, ...), so the dashboard treats it like any device.
+[critical-sensors.de](https://critical-sensors.de). It merges data from
+three source groups into the `sensors` table of the `cz` MySQL database,
+using the **exact same row format as the real IoT sensors** (`id = 0`, plus
+placeholder columns `rssi`, `bat`, `raw`, ...), so the dashboard treats it
+like any device.
 
 - **DWD open data** — station 04177 (Karlsruhe): hourly products
   `recent/*_04177_akt.zip` for temperature/humidity (`TU`), sunshine duration
@@ -12,12 +13,19 @@ columns `rssi`, `bat`, `raw`, ...), so the dashboard treats it like any device.
   inner-joined on timestamps (from 2020-10-01). A **3-day staleness guard**
   applies per source: products that stop updating are excluded with a warning
   instead of capping the whole merge (e.g. `SD_SO` ended 2026-07-26, so `light`
-  is `NULL` now).
+  is `NULL` now). Wind (10-min `FF_10`) and rain (hourly `R1`) come from the
+  same station — see the wind/rain sections below.
 - **ICOS Carbon Portal** — KIT station `AS_KIT`: the CO2 NRT "growing" object
   @ 30 m is fetched on **every** run (latest version via SPARQL on
   `meta.icos-cp.eu`, binary data via `icoscp_core`). The ICOS meteo growing
   object @ 2.5 m (temp, humidity, pressure) is a **fallback** replacing the DWD
   channels entirely (with `light = 0`) when DWD has no data within 2 days.
+  NRT objects publish roughly daily — the newest ICOS row is the last
+  midnight, so `co2` always trails realtime by ~12–30 h.
+- **SensorCity (Stadt Karlsruhe)** — the wind mast at 008 Weiherfeldstraße
+  (`mastWind`, ~10-min cadence, ~52-day rolling archive) and the rain gauge
+  at Grünwettersbach (`mastRain`, cumulative tip counter). Details in the
+  wind/rain sections below.
 
 ## Setup
 
@@ -63,10 +71,23 @@ URL) plus licence and landing-page links.
 .venv/bin/python datatools/refSensors.py --csv
 ```
 
-Database config: env var `REFSENSORS_DB_URL`, or the first line of
-`datatools/dburl.txt` (keep it out of version control), e.g.
-`mysql://user:pass@host/cz`. Only rows newer than the latest stored row for
-sensor 0 are inserted.
+Database config: the env var `REFSENSORS_DB_URL` wins; otherwise the **first
+non-empty line** of `datatools/dburl.txt` is used. The file is a SQLAlchemy
+database URL — one line, no comments:
+
+```
+mysql+pymysql://user:password@host:3306/cz?charset=utf8mb4
+```
+
+- driver prefix `mysql+pymysql://` (PyMySQL is the only installed driver);
+  plain `mysql://` also works and resolves to PyMySQL
+- port optional (3306 default); `?charset=utf8mb4` recommended — the scripts
+  force `charset=utf8mb4` on the connection anyway, so umlauts in seeds and
+  data survive any server default
+- keep the file out of version control (gitignored); same for the env var
+
+Only rows newer than the latest stored row for sensor 0 are inserted —
+re-runs are no-ops, partial runs self-heal on the next run.
 
 After the write, refSensors composes every active *virtual* sensor
 (currently id 7 „Wiese-Verbund") from the new data its sources wrote since
@@ -76,23 +97,56 @@ hour). Same latest-date dedup: re-runs are no-ops.
 
 ## Database schema (create_tables.py)
 
-Four tables, built by `datatools/create_tables.py` (idempotent, `--sql`
-prints everything offline):
+Four tables, built by `datatools/create_tables.py`:
 
-- `sensors` — measurement rows (see above), one row per hour per sensor id.
-- `sensor_locations` — the sensor/device registry (ids 0–6 from the old
-  site's labels). Sensor 0 is a **virtual composite** and carries no
-  position; the physical sites live in `stations`.
-- `stations` — physical measurement stations with coordinates: DWD 04177
+```sh
+.venv/bin/python datatools/create_tables.py             # create + seed (idempotent)
+.venv/bin/python datatools/create_tables.py --migrate   # also convert existing
+                                                        # tables to utf8mb4, drop
+                                                        # superseded ones
+.venv/bin/python datatools/create_tables.py --sql       # offline: print all
+                                                        # statements, no database
+```
+
+- `sensors` — measurement rows, one row per hour per sensor id. `index` is a
+  plain AUTO_INCREMENT primary key; refSensors never writes it (older pandas
+  versions materialised it and crashed with duplicate-PK errors).
+- `sensor_locations` — the sensor/device registry, ids 0–7. `kind` says what
+  a row is: `reference` (id 0), `virtual` (id 7 „Wiese-Verbund"), `iot`
+  (real devices), `station` (the planned meadow station). Id 0 carries no
+  position — its channels come from several physical stations (below).
+- `stations` — physical measurement stations with real coordinates: DWD 04177
   Rheinstetten (48.9726, 8.3301, 116.06 m), ICOS AS_KIT KIT campus
-  (49.0915, 8.4249, 110 m), SensorCity wind mast 008 + rain gauges
+  (49.0915, 8.4249, 110 m), SensorCity wind mast 008 + both rain gauges
   (coordinates from the FeatureServer/`sensorcity_stations.json`), and the
   orchard site itself (48.98990, 8.38730, 113.4 m from the LGL DGM).
-- `sensor_variables` — channel → source mapping: which column of which
-  sensor comes from which station (e.g. refSensors `temp` ← DWD-04177,
-  `co2` ← ICOS-AS_KIT, `mastRain` ← SC-RAIN-GWB). This is what lets the
-  dashboard label the composite reference "Referenz" while still knowing
-  where every channel physically comes from.
+- `sensor_sources` — channel → source mapping. `source_kind` picks the kind:
+  `station` (source_key = `stations.station_key`) or `sensor` (source_key =
+  another device's numeric id, combined per `agg`). This is what lets the
+  dashboard label the composite reference „Referenz" while still knowing
+  where every channel physically comes from — and it drives the composer.
+
+The virtual sensors themselves: id 0 (Referenz) is composed by refSensors'
+fetches, id 7 (Wiese-Verbund) after each run from the real sensors' new rows
+(see Usage). The chart can keep the combined label — the database stores
+every source individually.
+
+## Single-instance lock & graceful termination
+
+refSensors may overlap itself only by accident (cron jitter, manual start
+during a run). On start it:
+
+1. reads `datatools/refsensors.lock` — if that PID is alive **and** is
+   actually a refSensors process (checked via `/proc/<pid>/cmdline`, so a
+   recycled PID or a stale lock is taken over, not trusted),
+2. sends it **SIGTERM** (SIGKILL after 60 s if it ignores that),
+3. writes its own PID to the lock and installs SIGTERM/SIGINT handlers.
+
+The old process exits **gracefully** (code 2) at the next checkpoint — after
+each fetch phase and at a final gate directly before the database write; a
+running write is never interrupted. Even a hard kill mid-write self-heals:
+rows are inserted date-ascending and the latest-date dedup continues exactly
+where the interrupted run stopped.
 
 ## Cron example (wiese server)
 
@@ -100,9 +154,11 @@ prints everything offline):
 0 */6 * * * cd /srv/wiese && ./venv/bin/python datatools/refSensors.py >> datatools/refsensors.log 2>&1
 ```
 
-Adjust paths to the server layout. Exit code 1 signals failure. The DB URL
-comes from `dburl.txt` or the env var — **never hard-code credentials in the
-cron line**.
+Adjust paths to the server layout. Exit codes: `0` ok, `1` failure
+(SQL/config), `2` graceful termination (a newer instance took over). The DB
+URL comes from `dburl.txt` or the env var — **never hard-code credentials in
+the cron line**. The lock file lives next to the script
+(`datatools/refsensors.lock`).
 
 ## SensorCity neighbour probe (exploratory)
 
@@ -236,3 +292,9 @@ continuous.
 - `No database configured` (exit 1) — set `REFSENSORS_DB_URL` or `dburl.txt`.
 - HTTP 403 from ICOS — data licence not accepted for this account.
 - Expired auth token — refreshes automatically from stored credentials.
+- `stale lock ... taking over` — a previous run died hard; safe to continue.
+- `virtual N composed: 0 rows` — no new source data since the last run, **or**
+  `sensor_locations` is empty (the composer discovers virtual sensors there —
+  re-run `create_tables.py --migrate`).
+- `create_tables.py` printing `FAILED on statement: ...` — names the exact
+  statement; seeds run per-statement, so earlier successes stay committed.
