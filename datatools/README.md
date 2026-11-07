@@ -146,9 +146,17 @@ ECMWF AIFS-single 0.25° 100 m wind GRIB2 from
 CC BY 4.0 + attribution wording; nearest grid cell (49.0, 8.5) ≈ 8.3 km;
 ~6 h publication lag, 12 h fallback needed). sensor.community's `wind.json`
 map layer is the same 8.3 km cell but NCEP GFS 0.5°/10 m — forecast only, no
-measured history anywhere in that repo; measured series are DWD 04177 above,
-the SensorCity mast at 621 m, and ICOS KIT `WS` (already ingested as
-`icosWind`).
+measured history anywhere in that repo. Measured series, complementary:
+
+- **SensorCity wind mast at 621 m** (device `9899e75f`, layer 5) — real-time
+  (~minutes lag), median cadence **599 s ≈ 10 min**, fields
+  `wind_average_kmh`, `windgust_1s_kmh`, `windgust_3s_kmh`,
+  `wind_direction_degree` (km/h, 5.0 m mast, LS 33991). Archive depth only
+  **~52 days rolling** (verified 2026-11-07: 8 562 recs, no empty days,
+  56–194 recs/day) — good for "now" and recent context, not for history.
+- **DWD 04177** (4.6 km, 10-min, ~550-day retention, ~1-day lag, m/s) — the
+  historical series.
+- ICOS KIT `WS` (already ingested as `icosWind`).
 
 ## Timezone convention
 
