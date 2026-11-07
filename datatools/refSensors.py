@@ -38,7 +38,8 @@ sources = [
 {"data":"temp","name":"TT_TU","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/recent/stundenwerte_TU_04177_akt.zip"},
 {"data":"hum","name":"RF_TU","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/recent/stundenwerte_TU_04177_akt.zip"},
 {"data":"light","name":"SD_SO","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/sun/recent/stundenwerte_SD_04177_akt.zip"},
-{"data":"pres","name":"  P0","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/pressure/recent/stundenwerte_P0_04177_akt.zip"}
+{"data":"pres","name":"  P0","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/pressure/recent/stundenwerte_P0_04177_akt.zip"},
+{"data":"rain","name":"  R1","url":"https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/precipitation/recent/stundenwerte_RR_04177_akt.zip"}
 ]
 
 dwd = pd.DataFrame()
@@ -54,6 +55,8 @@ def extract(s,data):
     df.reset_index(inplace=True)
     if s["data"] == "light":
         df.light = df.light / 60 * 100
+    if s["data"] == "rain":
+        df.loc[df.rain < -100,"rain"] = float("nan")  # DWD -999 sentinel; dry hours are 0.0
     #print(s["data"],df)
     return df[["date",s["data"]]]
 
@@ -216,6 +219,10 @@ for s in sources:
 if "light" not in dwd.columns:
     dwd["light"] = float("nan")
 
+# same for rain (mm per hour, hourly sum)
+if "rain" not in dwd.columns:
+    dwd["rain"] = float("nan")
+
 # wind: DWD 04177 Rheinstetten 10-minute wind, aggregated to hourly means to
 # fit the reference sensor's hourly rows. The 10-minute product (FF_10 m/s,
 # DD_10 deg) is preferred over the hourly F product for the finer source
@@ -287,6 +294,7 @@ if len(dwd[dwd.date >= limit]) < 1:
     dwd = meteo.copy()
     dwd["light"] = 0  # no light from kit
     dwd["wind"] = float("nan")  # wind placeholder (real source pending)
+    dwd["rain"] = float("nan")  # rain placeholder (no ICOS rain channel)
 
 #print(dwd)
 
@@ -409,6 +417,51 @@ except Exception as exc:
     print("SensorCity mast wind fetch failed:", exc, "- mastWind stays NULL")
     sensorCityWind = None
 
+# SensorCity rain gauge 'Barani MeteoRain' at Grünwettersbach (7.5 km SE of
+# the orchard): Karlsruhe SensorCity FeatureServer, layer 3
+# NodeRED_Regenschreiber_Archiv, device 4ac74c30-4378-4182-86cb-f1e552d8f8fb.
+# clicks is a cumulative tipping-bucket counter (0.2 mm per tip) with
+# occasional device resets; hourly sum goes into the 'mastRain' column (mm,
+# same unit as DWD 'rain').
+sensorCityRain = None
+try:
+    r = requests.get(
+        "https://geoportal.karlsruhe.de/ags04/rest/services/Hosted/"
+        "Sensordaten_NodeRED/FeatureServer/3/query",
+        params={
+            "where": "device_id='4ac74c30-4378-4182-86cb-f1e552d8f8fb'",
+            "outFields": "measured_at,clicks",
+            "returnGeometry": "false",
+            "f": "json",
+            "resultRecordCount": "2000",  # ~14 days at the 10-min cadence
+            "orderByFields": "measured_at DESC",
+        },
+        timeout=30,
+    )
+    r.raise_for_status()
+    feats = r.json().get("features", [])
+    if feats:
+        m = pd.DataFrame([f["attributes"] for f in feats])
+        m = m.dropna(subset=["clicks"])
+        m = m.drop_duplicates(subset=["measured_at"])
+        m = m.sort_values("measured_at")  # query returns DESC, flip to ascending
+        m["date"] = pd.to_datetime(m.pop("measured_at"), unit="ms")  # naive UTC
+        tips = m.clicks.diff()
+        # device reset: the counter jumps down - treat the new count as the
+        # tips accumulated since the last sample
+        tips.loc[tips < 0] = m.loc[tips < 0, "clicks"]
+        tips = tips.clip(lower=0)
+        m["mm"] = tips * 0.2  # 0.2 mm per bucket tip
+        # min_count: hours with no samples stay NaN (gauge outage != dry hour)
+        rainHourly = m.set_index("date")["mm"].resample("h").sum(min_count=1).dropna()
+        sensorCityRain = rainHourly.rename("mastRain").reset_index()
+        print("SensorCity mast rain:", len(m), "records ->", len(sensorCityRain), "hourly rows")
+    else:
+        print("SensorCity mast rain: no records returned")
+except Exception as exc:
+    print("SensorCity mast rain fetch failed:", exc, "- mastRain stays NULL")
+    sensorCityRain = None
+
 #print(icos)
 
 
@@ -430,6 +483,12 @@ if sensorCityWind is not None:
     ref = ref.merge(sensorCityWind,on="date",how="left")
 if "mastWind" not in ref.columns:
     ref["mastWind"] = float("nan")
+
+# mast rain joins the same way; a fetch failure leaves it as NULL column
+if sensorCityRain is not None:
+    ref = ref.merge(sensorCityRain,on="date",how="left")
+if "mastRain" not in ref.columns:
+    ref["mastRain"] = float("nan")
 
 # adjust timezone and DST
 ref["date"] += pd.Timedelta(hours=1)
@@ -505,7 +564,7 @@ print("Adding data: ",len(ref))
 # idempotently before appending
 existingCols = {c["name"] for c in inspect(engine).get_columns("sensors")}
 with engine.begin() as conn:
-    for col in ("icosTemp","icosHum","icosWind","wind","mastWind"):
+    for col in ("icosTemp","icosHum","icosWind","wind","mastWind","rain","mastRain"):
         if col not in existingCols:
             print("ALTER TABLE sensors ADD COLUMN",col)
             conn.exec_driver_sql("ALTER TABLE sensors ADD COLUMN %s FLOAT" % col)
@@ -536,7 +595,9 @@ ref.to_sql(
         "icosHum":Float,
         "icosWind":Float,
         "wind":Float,
-        "mastWind":Float
+        "mastWind":Float,
+        "rain":Float,
+        "mastRain":Float
         }
 )
 # close

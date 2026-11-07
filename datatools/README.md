@@ -170,6 +170,34 @@ measured history anywhere in that repo. Measured series, complementary:
   historical series.
 - ICOS KIT `WS` (already ingested as `icosWind`).
 
+## Rain in refSensors (implemented 2026-11-07)
+
+Two rain columns, mirroring the wind pattern (units mm — `rain` is the DWD
+hourly sum, `mastRain` the gauge's hourly sum):
+
+- `rain` ← DWD 04177 hourly **precipitation** product `R1` (station 04177,
+  same source as temp/hum/light/pressure; zip
+  `climate/hourly/precipitation/recent/stundenwerte_RR_04177_akt.zip`).
+  Missing values are the `-999` sentinel and are filtered to `NaN` (genuine
+  dry hours are `0.0`). Hourly sum in mm. ~550-day rolling retention,
+  ~1-day publication lag, same 3-day staleness guard as the other DWD
+  sources.
+- `mastRain` ← **SensorCity Barani MeteoRain** rain gauge at Grünwettersbach
+  (7.5 km SE of the orchard; FeatureServer layer 3
+  `NodeRED_Regenschreiber_Archiv`, device `4ac74c30-4378-4182-86cb-f1e552d8f8fb`).
+  ~10-min cadence, near-real-time. `clicks` is a **cumulative tip counter**
+  (tipping bucket, 0.2 mm per tip) with rare device resets, handled by
+  `diff()` — a negative diff (reset) is replaced with the new counter value,
+  then clipped at 0 and scaled to mm before the hourly sum.
+- Calibration 2026-11-07 (90 days): 528 tips = 105.6 mm vs DWD 04177
+  102.2 mm; hourly correlation 0.52 (0.59 when SensorCity is shifted +1 h —
+  its timestamps appear to lag DWD by ~1 h; no shift applied, for consistency
+  with `mastWind`).
+- The other gauge in the feed, **'Barani (MeteoRain IoT Pro)
+  [AC1F09FFFE0E25FC]'** at Rintheim (4.5 km NE), is **UNUSABLE**: `clicks` is
+  implausible (12 980 tips/90 d vs DWD 102 mm), correlation 0.25, 28 counter
+  anomalies, and `niederschlag_stdl` was never populated in 40 209 rows.
+
 ## Timezone convention
 
 Stored dates are **UTC+1 (CET)**; rows before 2020-10-25 02:00 (UTC+2) get an
