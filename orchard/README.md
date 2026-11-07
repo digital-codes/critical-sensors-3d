@@ -24,6 +24,20 @@ npm run dev      # Vite dev server
 npm run build    # tsc + vite build
 ```
 
+### Configuration & determinism
+
+- `src/config.ts` is the single home for all app-level tunables (sun/shadow,
+  camera, bird flight, sky, grass, seasons, structure materials/dimensions,
+  label tables) — modules import, never re-declare. Admission rule (header
+  of the file): generated site data → `site.json` (via `tools/prepare_site.py`,
+  never hand-edited); app tunable → `config.ts`; algorithm-internal numbers →
+  local constant with a comment.
+- `?seed=<n>` on the URL makes every random scene decision (grass blade
+  placement, cloud placement/textures) reproducible via a mulberry32 PRNG
+  (`src/rng.ts`) — the same seed renders a pixel-identical scene, which is
+  how refactors get verified by pixel comparison. Without the parameter the
+  scene is randomised per load, as before.
+
 ## Geodata, findings, and methods
 
 App-local axes: +x = east, +y = up, **+z = south** — (east, up, south) is the

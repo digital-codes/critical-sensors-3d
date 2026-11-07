@@ -11,28 +11,15 @@ import site from './site';
 import { createComparePanel } from './compare';
 import { createBirdFlight } from './flight';
 import { createCameraUI } from './cameraui';
-
-const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mär',
-  'Apr',
-  'Mai',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Okt',
-  'Nov',
-  'Dez',
-];
+import { CONFIG } from './config';
+import { sceneRng } from './rng';
 
 function monthDay(day: number): string {
-  const lengths = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const { MONTHS, MONTH_LENGTHS } = CONFIG.UI;
   let m = 0;
   let d = day;
-  while (d >= lengths[m]) {
-    d -= lengths[m];
+  while (d >= MONTH_LENGTHS[m]) {
+    d -= MONTH_LENGTHS[m];
     m++;
   }
   return `${MONTHS[m]} ${d + 1}`;
@@ -46,22 +33,28 @@ async function main(): Promise<void> {
   document.body.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  const skyColor = 0xb9c6d0;
+  const skyColor = CONFIG.SCENE.SKY_COLOR;
   scene.background = new THREE.Color(skyColor);
-  scene.fog = new THREE.Fog(skyColor, 400, 1600);
+  scene.fog = new THREE.Fog(skyColor, CONFIG.SCENE.FOG_NEAR, CONFIG.SCENE.FOG_FAR);
 
   // soft overcast lighting; the sun's midday elevation follows the season
-  scene.add(new THREE.HemisphereLight(0xe8eef2, 0x62604e, 1.0));
-  const sun = new THREE.DirectionalLight(0xffffff, 0.7);
+  scene.add(
+    new THREE.HemisphereLight(
+      CONFIG.SCENE.HEMI.SKY,
+      CONFIG.SCENE.HEMI.GROUND,
+      CONFIG.SCENE.HEMI.INTENSITY,
+    ),
+  );
+  const sun = new THREE.DirectionalLight(CONFIG.SUN.COLOR, CONFIG.SUN.BASE_INTENSITY);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.left = -90;
-  sun.shadow.camera.right = 90;
-  sun.shadow.camera.top = 90;
-  sun.shadow.camera.bottom = -90;
-  sun.shadow.camera.near = 50;
-  sun.shadow.camera.far = 600;
-  sun.shadow.bias = -0.0005;
+  sun.shadow.mapSize.set(CONFIG.SUN.SHADOW.MAP_SIZE, CONFIG.SUN.SHADOW.MAP_SIZE);
+  sun.shadow.camera.left = -CONFIG.SUN.SHADOW.EXTENT;
+  sun.shadow.camera.right = CONFIG.SUN.SHADOW.EXTENT;
+  sun.shadow.camera.top = CONFIG.SUN.SHADOW.EXTENT;
+  sun.shadow.camera.bottom = -CONFIG.SUN.SHADOW.EXTENT;
+  sun.shadow.camera.near = CONFIG.SUN.SHADOW.NEAR;
+  sun.shadow.camera.far = CONFIG.SUN.SHADOW.FAR;
+  sun.shadow.bias = CONFIG.SUN.SHADOW.BIAS;
   scene.add(sun);
   scene.add(sun.target);
 
@@ -70,18 +63,20 @@ async function main(): Promise<void> {
   // low in winter, so the generated trees' shadows lengthen and swing with
   // the season instead of the baked-in DOP shadows.
   function updateSun(day: number): void {
-    const lat = 48.9899;
-    const decl = 23.44 * Math.sin((2 * Math.PI * (day + 284)) / 365); // deg
+    const lat = CONFIG.SUN.LATITUDE_DEG;
+    const decl =
+      CONFIG.SUN.DECL_OBLIQUITY_DEG *
+      Math.sin((2 * Math.PI * (day + CONFIG.SUN.DECL_PHASE_DAYS)) / CONFIG.SUN.YEAR_DAYS); // deg
     const alt = ((90 - lat + decl) * Math.PI) / 180; // rad above horizon
-    const cx = 10, cy = 117, cz = 0; // orchard centre
-    const R = 400;
+    const [cx, cy, cz] = CONFIG.SUN.ANCHOR; // orchard centre
+    const R = CONFIG.SUN.ORBIT_R;
     sun.position.set(cx, cy + Math.sin(alt) * R, cz + Math.cos(alt) * R);
     sun.target.position.set(cx, cy, cz);
-    sun.intensity = 0.3 + 0.5 * Math.sin(alt);
+    sun.intensity = CONFIG.SUN.INTENSITY_BASE + CONFIG.SUN.INTENSITY_AMP * Math.sin(alt);
   }
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  scene.add(new THREE.AmbientLight(0xffffff, 0.25));
+  scene.add(new THREE.AmbientLight(CONFIG.SCENE.AMBIENT.COLOR, CONFIG.SCENE.AMBIENT.INTENSITY));
 
   const rig = createCameraRig(renderer.domElement, window.innerWidth / window.innerHeight);
   // debug/testing hook: lets tooling move the camera programmatically
@@ -91,7 +86,7 @@ async function main(): Promise<void> {
   scene.add(terrain.mesh);
   terrain.mesh.receiveShadow = true;
 
-  const sky: Sky = createSky();
+  const sky: Sky = createSky(sceneRng());
   scene.add(sky.group);
 
   const structures = await createStructures();
@@ -103,8 +98,8 @@ async function main(): Promise<void> {
     }
   });
 
-  const grass: Grass = await createGrass();
-  (window as unknown as Record<string, unknown>).__buildId = 'v3magenta-20261106';
+  const grass: Grass = await createGrass(sceneRng());
+  (window as unknown as Record<string, unknown>).__buildId = CONFIG.DEBUG.BUILD_ID;
   scene.add(grass.mesh);
 
   const buildings = await createBuildings();

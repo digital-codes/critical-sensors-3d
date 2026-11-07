@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import site from './site';
 import { getHeightSampler } from './terrain';
+import { CONFIG } from './config';
 
 interface SiteStructure {
   id: string;
@@ -79,9 +80,9 @@ export async function createStructures(): Promise<Structures> {
   const group = new THREE.Group();
   group.name = 'structures';
 
-  const wood = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
-  const cream = new THREE.MeshLambertMaterial({ color: 0xd8cfae, side: THREE.DoubleSide });
-  const snowMat = new THREE.MeshLambertMaterial({ color: 0xe8edf2 });
+  const wood = new THREE.MeshLambertMaterial({ color: CONFIG.STRUCTURES.WOOD });
+  const cream = new THREE.MeshLambertMaterial({ color: CONFIG.STRUCTURES.CREAM, side: THREE.DoubleSide });
+  const snowMat = new THREE.MeshLambertMaterial({ color: CONFIG.STRUCTURES.SNOW });
   const snowCaps: THREE.Mesh[] = [];
 
   /** thin white slab lying flat at height y (a dusting of snow) */
@@ -103,7 +104,7 @@ export async function createStructures(): Promise<Structures> {
     return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
   }
 
-  function post(x: number, z: number, h: number, r = 0.07): THREE.Mesh {
+  function post(x: number, z: number, h: number, r: number = CONFIG.STRUCTURES.POST_R): THREE.Mesh {
     const p = box(r * 2, h, r * 2);
     p.position.set(x, h / 2, z);
     return p;
@@ -189,7 +190,7 @@ export async function createStructures(): Promise<Structures> {
       const DECK = H * 0.6; // ~2.5 m
       for (const sx of [-1, 1]) {
         for (const sz of [-1, 1]) {
-          g.add(post(sx * rect.halfLen, sz * rect.halfWid, H, 0.08));
+          g.add(post(sx * rect.halfLen, sz * rect.halfWid, H, CONFIG.STRUCTURES.POST_R_HEAVY));
         }
       }
       // deck
@@ -197,7 +198,7 @@ export async function createStructures(): Promise<Structures> {
       deck.position.y = DECK;
       g.add(deck);
       // slat railing around the deck perimeter
-      const railTop = DECK + 0.6;
+      const railTop = DECK + CONFIG.STRUCTURES.RAIL_ABOVE_DECK;
       for (const side of [-1, 1]) {
         const rE = box(0.06, 0.06, W);
         rE.position.set(side * rect.halfLen, railTop, 0);
@@ -207,19 +208,19 @@ export async function createStructures(): Promise<Structures> {
         g.add(rS);
         for (let t = -rect.halfWid + 0.1; t <= rect.halfWid - 0.1; t += 0.16) {
           const slat = box(0.035, 0.55, 0.035);
-          slat.position.set(side * rect.halfLen, DECK + 0.3, t);
+          slat.position.set(side * rect.halfLen, DECK + CONFIG.STRUCTURES.SLAT_ABOVE_DECK, t);
           g.add(slat);
         }
         for (let t = -rect.halfLen + 0.1; t <= rect.halfLen - 0.1; t += 0.16) {
           const slat = box(0.035, 0.55, 0.035);
-          slat.position.set(t, DECK + 0.3, side * rect.halfWid);
+          slat.position.set(t, DECK + CONFIG.STRUCTURES.SLAT_ABOVE_DECK, side * rect.halfWid);
           g.add(slat);
         }
       }
       // roof posts + dark low-pitched roof with overhang
       for (const sx of [-1, 1]) {
         for (const sz of [-1, 1]) {
-          const rp = box(0.07, H - DECK - 0.65, 0.07);
+          const rp = box(CONFIG.STRUCTURES.POST_R, H - DECK - 0.65, CONFIG.STRUCTURES.POST_R);
           rp.position.set(sx * (rect.halfLen - 0.05), DECK + (H - DECK - 0.65) / 2, sz * (rect.halfWid - 0.05));
           g.add(rp);
         }
@@ -230,7 +231,7 @@ export async function createStructures(): Promise<Structures> {
       g.add(roof);
       g.add(snowCap(L + 0.55, W + 0.55, H - 0.27));
       // blue tarp awning: railing top on the SE (+x/+z) side sloping down-out
-      g.add(tarpQuad(DECK + 0.55, 0.55, rect.halfLen + 0.02, rect.halfLen + 1.4, rect.halfWid * 0.85, 0x3f6f96));
+      g.add(tarpQuad(DECK + 0.55, 0.55, rect.halfLen + 0.02, rect.halfLen + 1.4, rect.halfWid * 0.85, CONFIG.STRUCTURES.TARP));
       // picnic-style table beneath the deck
       const tbl = box(1.2, 0.05, 0.7);
       tbl.position.set(0, 0.72, 0);
@@ -250,7 +251,7 @@ export async function createStructures(): Promise<Structures> {
       const DECK = H * 0.5; // ~2.3 m
       for (const sx of [-1, 1]) {
         for (const sz of [-1, 1]) {
-          g.add(post(sx * rect.halfLen, sz * rect.halfWid, H, 0.08));
+          g.add(post(sx * rect.halfLen, sz * rect.halfWid, H, CONFIG.STRUCTURES.POST_R_HEAVY));
         }
       }
       // diagonal bracing on the west (-x) side
@@ -268,7 +269,7 @@ export async function createStructures(): Promise<Structures> {
       deck.position.y = DECK;
       g.add(deck);
       // slat railing around the deck
-      const railTop = DECK + 0.6;
+      const railTop = DECK + CONFIG.STRUCTURES.RAIL_ABOVE_DECK;
       for (const side of [-1, 1]) {
         const rE = box(0.06, 0.06, W);
         rE.position.set(side * rect.halfLen, railTop, 0);
@@ -278,12 +279,12 @@ export async function createStructures(): Promise<Structures> {
         g.add(rS);
         for (let t = -rect.halfWid + 0.1; t <= rect.halfWid - 0.1; t += 0.16) {
           const slat = box(0.035, 0.55, 0.035);
-          slat.position.set(side * rect.halfLen, DECK + 0.3, t);
+          slat.position.set(side * rect.halfLen, DECK + CONFIG.STRUCTURES.SLAT_ABOVE_DECK, t);
           g.add(slat);
         }
         for (let t = -rect.halfLen + 0.1; t <= rect.halfLen - 0.1; t += 0.16) {
           const slat = box(0.035, 0.55, 0.035);
-          slat.position.set(t, DECK + 0.3, side * rect.halfWid);
+          slat.position.set(t, DECK + CONFIG.STRUCTURES.SLAT_ABOVE_DECK, side * rect.halfWid);
           g.add(slat);
         }
       }
@@ -301,7 +302,7 @@ export async function createStructures(): Promise<Structures> {
       // ladder on the WEST (-x) side, up to the deck
       ladder(g, -rect.halfLen - 0.1, rect.halfWid, DECK + 0.3);
       // purple fabric valance over the top crossbeam, hanging on the south side
-      const fabric = fabricPlane(L * 0.8, 1.1, 0x6a4a9c);
+      const fabric = fabricPlane(L * 0.8, 1.1, CONFIG.STRUCTURES.FABRIC);
       fabric.position.set(0, H - 0.62, rect.halfWid + 0.05);
       fabric.rotation.x = -0.08;
       fabric.rotation.z = 0.05;

@@ -1,3 +1,5 @@
+import { CONFIG } from './config';
+
 export type SeasonKey = 'winter' | 'spring' | 'summer' | 'autumn';
 
 export interface SeasonDef {
@@ -10,12 +12,7 @@ export interface SeasonDef {
   tint: number;
 }
 
-export const SEASONS: SeasonDef[] = [
-  { key: 'winter', day: 15, leafFactor: 0, tint: 0x9ac95e },
-  { key: 'spring', day: 110, leafFactor: 0.55, tint: 0x9ac95e },
-  { key: 'summer', day: 190, leafFactor: 1, tint: 0x5f8f3e },
-  { key: 'autumn', day: 300, leafFactor: 0.85, tint: 0xc77f3a },
-];
+export const SEASONS: SeasonDef[] = CONFIG.SEASONS.map((s) => ({ ...s }));
 
 /** Nearest season keyframe for a day of year (0..364). */
 export function nearestSeason(day: number): SeasonDef {

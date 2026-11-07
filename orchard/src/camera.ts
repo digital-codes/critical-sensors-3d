@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import site from './site';
+import { CONFIG } from './config';
 
 export interface CameraRig {
   camera: THREE.PerspectiveCamera;
@@ -14,12 +15,7 @@ interface Preset {
   lookAt: number[];
 }
 
-const PRESET_LABELS: Record<string, string> = {
-  southEnd: 'Südende',
-  erhoeht: 'Erhöht',
-  nordwest: 'Nordwest',
-  vergleich: 'Fotostandpunkt',
-};
+const PRESET_LABELS: Record<string, string> = CONFIG.CAMERA.PRESET_LABELS;
 
 // Presets come from site.json so the pipeline can define the real photo
 // vantages (southEnd/erhoeht/nordwest). 'elevated' is kept as an alias for
@@ -32,11 +28,11 @@ const PRESETS: Record<string, Preset> = Object.fromEntries(
 );
 
 export function createCameraRig(dom: HTMLElement, aspect: number): CameraRig {
-  const camera = new THREE.PerspectiveCamera(55, aspect, 0.5, 4000);
+  const camera = new THREE.PerspectiveCamera(CONFIG.CAMERA.FOV, aspect, CONFIG.CAMERA.NEAR, CONFIG.CAMERA.FAR);
   const controls = new OrbitControls(camera, dom);
   controls.enableDamping = true;
-  controls.dampingFactor = 0.08;
-  controls.maxPolarAngle = Math.PI / 2 - 0.02;
+  controls.dampingFactor = CONFIG.CAMERA.DAMPING;
+  controls.maxPolarAngle = Math.PI / 2 - CONFIG.CAMERA.POLAR_MARGIN;
 
   function applyPreset(p: Preset): void {
     camera.position.set(p.position[0], p.position[1], p.position[2]);

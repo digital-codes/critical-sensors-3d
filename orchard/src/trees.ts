@@ -15,14 +15,12 @@ interface SiteTree {
   seed: number;
 }
 
+import { CONFIG } from './config';
+
 type BarkMaps = TreeOptions['bark']['maps'];
 
-// fallback for OSM trees without a calibrated height (m)
-const SIZE_SCALE: Record<string, number> = {
-  small: 4.5,
-  medium: 6.0,
-  large: 7.5,
-};
+// fallback for OSM trees without a calibrated height (m) — CONFIG.TREES
+const SIZE_SCALE: Record<string, number> = CONFIG.TREES.SIZE_SCALE;
 
 export interface Orchard {
   group: THREE.Group;
@@ -87,7 +85,7 @@ export async function createOrchard(
     const y = getHeight(entry.x, entry.z);
     // calibrated height (photo-based, see filter_baumkataster.height_for)
     // with the old size-class scale as OSM fallback
-    const targetHeight = entry.heightM ?? SIZE_SCALE[entry.sizeClass] ?? 6.0;
+    const targetHeight = entry.heightM ?? SIZE_SCALE[entry.sizeClass] ?? CONFIG.TREES.DEFAULT_HEIGHT;
 
     for (const season of SEASONS) {
       const t = new Tree();

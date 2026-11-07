@@ -1,8 +1,7 @@
 import type * as THREE from 'three';
 import type { CameraRig } from './camera';
-import { nearestSeason, type SeasonKey } from './seasons';
+import { nearestSeason } from './seasons';
 import photos from './photos.json';
-
 interface PhotoEntry {
   file: string;
   date: string;
@@ -10,15 +9,10 @@ interface PhotoEntry {
   preset: string;
 }
 
-const SEASON_LABELS: Record<SeasonKey, string> = {
-  winter: 'Winter',
-  spring: 'Frühling',
-  summer: 'Sommer',
-  autumn: 'Herbst',
-};
+import { CONFIG } from './config';
 
 function seasonLabel(day: number): string {
-  return SEASON_LABELS[nearestSeason(day).key];
+  return CONFIG.UI.SEASON_LABELS[nearestSeason(day).key];
 }
 
 export function createComparePanel(

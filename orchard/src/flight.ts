@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { CameraRig } from './camera';
+import { CONFIG } from './config';
 
 /**
  * "Vogelflug" camera flight: a bird's glide that starts at the elevated
@@ -25,32 +26,17 @@ export interface BirdFlight {
   update(dt: number): void;
 }
 
-// waypoints in local metres (x east, y up, z south); y is filled from the
-// DGM at start() as `terrain(x, z) + clearance`. The start sits ~1.5 m above
-// the crown of the NE tree (bk01345, 11 m tall on the ~121 m ridge).
-const WAYPOINTS: Array<[number, number, number]> = [
-  [66, 12.5, -45],  // the elevated NE tree's crown (bk01345)
-  [50, 13.5, -38],  // off the ridge, skimming the crown tops
-  [30, 14, -22],    // NE meadow corner (clears bk02868)
-  [17, 14, -1],     // over the Hocksitzcafe towers (clears bk02839)
-  [3, 14.5, 18],    // mid-meadow pass (clears bk01274)
-  [6, 13.5, 40],    // south meadow, ends above open grass (clear of row+trees)
-];
-const DURATION_S = 36; // ~4 m/s glide
-const BOB_AMP_M = 0.35; // wing-beat (vertical float; target rides along, so no pitch wobble)
-const BOB_HZ = 0.9;
-const SWAY_AMP_M = 0.5; // slow lateral drift
-const SWAY_HZ = 0.11;
-const LOOK_AHEAD_M = 12; // gaze anchored this far ahead along the path tangent
-const LOOK_DIP_M = 2.5;  // slight downward gaze, keeps the horizon in frame
-const YAW_TAU_S = 2.0;   // gaze inertia: the heading lags the tangent like a banking bird
+// waypoints/tuning live in CONFIG.FLIGHT (single constants home); y is
+// filled from the DGM at start() as `terrain(x, z) + clearance`. The start
+// sits ~1.5 m above the crown of the NE tree (bk01345, 11 m tall on the
+// ~121 m ridge).
 
 export async function createBirdFlight(
   rig: CameraRig,
   terrain: (x: number, z: number) => number,
 ): Promise<BirdFlight> {
   // resolve waypoint heights once: clearance above the local DGM ground
-  const pts = WAYPOINTS.map(([x, clearance, z]) => new THREE.Vector3(
+  const pts = CONFIG.FLIGHT.WAYPOINTS.map(([x, clearance, z]) => new THREE.Vector3(
     x, terrain(x, z) + clearance, z,
   ));
   const path = new THREE.CatmullRomCurve3(pts, false, 'centripetal', 0.5);
@@ -64,8 +50,8 @@ export async function createBirdFlight(
     const sc = Math.min(0.999, s);
     path.getPointAt(sc, out);
     path.getTangentAt(sc, tmpTangent);
-    out.addScaledVector(tmpTangent, LOOK_AHEAD_M);
-    out.y -= LOOK_DIP_M;
+    out.addScaledVector(tmpTangent, CONFIG.FLIGHT.LOOK_AHEAD_M);
+    out.y -= CONFIG.FLIGHT.LOOK_DIP_M;
     return out;
   }
 
@@ -86,12 +72,12 @@ export async function createBirdFlight(
     // into gradual heading changes (per-frame lerp from the time constant;
     // a direct seek snaps so poses stay deterministic)
     if (!gazeDir.lengthSq() || dt <= 0) gazeDir.copy(tmpTangent);
-    else gazeDir.lerp(tmpTangent, 1 - Math.exp(-dt / YAW_TAU_S)).normalize();
-    const look = tmpLook.copy(pos).addScaledVector(gazeDir, LOOK_AHEAD_M);
-    look.y -= LOOK_DIP_M;
+    else gazeDir.lerp(tmpTangent, 1 - Math.exp(-dt / CONFIG.FLIGHT.YAW_TAU_S)).normalize();
+    const look = tmpLook.copy(pos).addScaledVector(gazeDir, CONFIG.FLIGHT.LOOK_AHEAD_M);
+    look.y -= CONFIG.FLIGHT.LOOK_DIP_M;
     // wing-beat + sway, phase-locked to flight time
-    const bob = Math.sin(progress * BOB_HZ * 2 * Math.PI) * BOB_AMP_M;
-    const sway = Math.sin(progress * SWAY_HZ * 2 * Math.PI) * SWAY_AMP_M;
+    const bob = Math.sin(progress * CONFIG.FLIGHT.BOB_HZ * 2 * Math.PI) * CONFIG.FLIGHT.BOB_AMP_M;
+    const sway = Math.sin(progress * CONFIG.FLIGHT.SWAY_HZ * 2 * Math.PI) * CONFIG.FLIGHT.SWAY_AMP_M;
     // sway perpendicular to the flight direction (horizontal)
     const side = new THREE.Vector3(-tmpTangent.z, 0, tmpTangent.x).normalize();
     rig.camera.position.copy(pos).addScaledVector(side, sway);
@@ -137,18 +123,18 @@ export async function createBirdFlight(
     seek(t01: number): void {
       if (!active) start();
       paused = true; // seek pins the pose; resume() or stop() continues
-      progress = THREE.MathUtils.clamp(t01, 0, 1) * DURATION_S;
+      progress = THREE.MathUtils.clamp(t01, 0, 1) * CONFIG.FLIGHT.DURATION_S;
       apply(THREE.MathUtils.clamp(t01, 0, 1));
     },
     update(dt: number): void {
       if (!active || paused) return;
       progress += dt;
-      if (progress >= DURATION_S) {
+      if (progress >= CONFIG.FLIGHT.DURATION_S) {
         apply(1, dt);
         stop();
         return;
       }
-      apply(progress / DURATION_S, dt);
+      apply(progress / CONFIG.FLIGHT.DURATION_S, dt);
     },
   };
 }

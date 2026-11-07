@@ -3,23 +3,20 @@ import site from './site';
 import { getHeightSampler, X_MIN, Z_MIN, WIN_W, WIN_D } from './terrain';
 import { nearestSeason, snowAmount, grassHeight, type SeasonKey } from './seasons';
 import { getFootprintRects } from './structures';
+import { CONFIG } from './config';
+import type { Rng } from './rng';
 
 interface SiteTree {
   x: number;
   z: number;
 }
 
-const COUNT = 90000;
-const BLADE_W = 0.085;
-// off-white the grass blades fade toward under patchy snow
-const SNOW_TINT = new THREE.Color(0xdfe4e8);
+// density/width/tints live in CONFIG.GRASS (single constants home)
+const COUNT = CONFIG.GRASS.COUNT;
+const BLADE_W = CONFIG.GRASS.BLADE_W;
+const SNOW_TINT = new THREE.Color(CONFIG.GRASS.SNOW_TINT);
 
-const SEASON_TINT: Record<SeasonKey, number> = {
-  winter: 0x8a8a72,
-  spring: 0x86a84a,
-  summer: 0x6f9440,
-  autumn: 0xa89a4a,
-};
+const SEASON_TINT: Record<SeasonKey, number> = CONFIG.GRASS.SEASON_TINT;
 
 export interface Grass {
   mesh: THREE.InstancedMesh;
@@ -30,7 +27,7 @@ export interface Grass {
   getLawnMask(): { data: Uint8Array; w: number; h: number };
 }
 
-export async function createGrass(): Promise<Grass> {
+export async function createGrass(rng: Rng = Math.random): Promise<Grass> {
   const getHeight = await getHeightSampler();
 
   // Mown-lawn mask, precomputed by prepare_site.py from the ORIGINAL DOP
@@ -167,17 +164,17 @@ export async function createGrass(): Promise<Grass> {
   const maxAttempts = COUNT * 40;
   while (placed < COUNT && attempts < maxAttempts) {
     attempts++;
-    const x = xMin + Math.random() * (xMax - xMin);
-    const z = zMin + Math.random() * (zMax - zMin);
+    const x = xMin + rng() * (xMax - xMin);
+    const z = zMin + rng() * (zMax - zMin);
     if (!isLawnAt(x, z)) continue;
     if (nearTree(x, z) || inStructure(x, z)) continue;
-    const h = 0.22 + Math.random() * 0.55;
+    const h = CONFIG.GRASS.BLADE_H_MIN + rng() * CONFIG.GRASS.BLADE_H_RANGE;
     p.set(x, getHeight(x, z), z);
-    q.setFromAxisAngle(up, Math.random() * Math.PI * 2);
-    s.set(0.8 + Math.random() * 0.5, h, 1);
+    q.setFromAxisAngle(up, rng() * Math.PI * 2);
+    s.set(0.8 + rng() * 0.5, h, 1);
     m.compose(p, q, s);
     mesh.setMatrixAt(placed, m);
-    c.copy(cA).lerp(cB, Math.random());
+    c.copy(cA).lerp(cB, rng());
     mesh.setColorAt(placed, c);
     bladeVar[placed * 3] = c.r;
     bladeVar[placed * 3 + 1] = c.g;

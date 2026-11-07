@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CONFIG } from './config';
 import site from './site';
 import { getHeightSampler, X_MIN, X_MAX, Z_MIN, Z_MAX } from './terrain';
 
@@ -39,7 +40,8 @@ export interface CityBuildings {
   group: THREE.Group;
 }
 
-const ROOF_TINT = 0xffffff; // roofs take the DOP pixels as-is
+// roofs take the DOP pixels as-is (tint lives in CONFIG.BUILDINGS)
+const ROOF_TINT = CONFIG.BUILDINGS.ROOF_TINT;
 
 // triangulate one LoD2 surface polygon in 3D. Strategy: find the face
 // normal, project the ring onto the two axes least aligned with it (walls
