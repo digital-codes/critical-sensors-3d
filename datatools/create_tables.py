@@ -4,6 +4,14 @@
 Matches what datatools/refSensors.py writes (to_sql append on 'sensors')
 and what oldwww/srv.php reads.
 
+Model (the reference sensor is a COMPOSITE of stations at different sites):
+
+  sensors          one row per measurement hour, per sensor id
+  sensor_locations the sensor/device registry (id, names, activeness);
+                   virtual/composite devices carry no position
+  stations         physical measurement sites with real coordinates
+  sensor_variables which channel of which sensor comes from which station
+
 Offline mode: --sql prints the DDL + seed statements to stdout and exits
 without connecting to any database.
 """
@@ -58,36 +66,124 @@ DDL_SENSOR_LOCATIONS = """CREATE TABLE IF NOT EXISTS sensor_locations (
   since DATE NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"""
 
-# labels from the old site's custom.js sensorLabels
+DDL_STATIONS = """CREATE TABLE IF NOT EXISTS stations (
+  station_key VARCHAR(24) NOT NULL PRIMARY KEY,
+  name VARCHAR(60) NOT NULL,
+  operator VARCHAR(20) NOT NULL,
+  lat DOUBLE NULL,
+  lon DOUBLE NULL,
+  elev_m FLOAT NULL,
+  notes VARCHAR(200) NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"""
+
+DDL_SENSOR_VARIABLES = """CREATE TABLE IF NOT EXISTS sensor_variables (
+  sensor_id SMALLINT NOT NULL,
+  variable VARCHAR(16) NOT NULL,
+  station_key VARCHAR(24) NULL,
+  unit VARCHAR(12) NULL,
+  note VARCHAR(160) NULL,
+  PRIMARY KEY (sensor_id, variable)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"""
+
+# labels from the old site's custom.js sensorLabels; id 0 is a VIRTUAL
+# composite - its channels are mapped to physical stations in
+# sensor_variables, so it carries no position of its own
 SEED_LOCATIONS = [
-    (0, "Referenz", "Reference", "reference", 48.98990, 8.38730, None,
+    (0, "Referenz", "Reference", "reference", None, None, None,
      "temp,hum,pres,light,rain,wind,mastWind,mastRain,co2",
-     "virtueller Referenzsensor (DWD 04177 + ICOS AS_KIT + SensorCity); Position = Wiesenmitte Katzenwedelwiesen",
+     "virtueller Verbundsensor - Kanäle von mehreren Stationen, siehe sensor_variables",
      1, "2020-10-01"),
-    (1, "Wiese1", "Orchard1", "iot", 48.98990, 8.38730, None,
+    (1, "Wiese1", "Orchard1", "iot", 48.98990, 8.38730, 113.4,
      "co2,rssi,bat",
-     "Position auf der Wiese unbestimmt \u2014 Platzhalter Wiesenmitte",
+     "Position auf der Wiese unbestimmt — Platzhalter Wiesenmitte",
      1, None),
-    (2, "Wiese2", "Orchard2", "iot", 48.98990, 8.38730, None,
+    (2, "Wiese2", "Orchard2", "iot", 48.98990, 8.38730, 113.4,
      "co2,rssi,bat",
-     "Position auf der Wiese unbestimmt \u2014 Platzhalter Wiesenmitte",
+     "Position auf der Wiese unbestimmt — Platzhalter Wiesenmitte",
      1, None),
-    (3, "B\u00fcro", "Office", "iot", None, None, None,
+    (3, "Büro", "Office", "iot", None, None, None,
      "co2,rssi,bat",
      "Position unbestimmt",
      1, None),
     (4, "ZKM1", "ZKM1", "iot", None, None, None,
      "co2,rssi,bat",
-     "ZKM Karlsruhe \u2014 Position unbestimmt",
+     "ZKM Karlsruhe — Position unbestimmt",
      1, None),
     (5, "ZKM2", "ZKM2", "iot", None, None, None,
      "co2,rssi,bat",
-     "ZKM Karlsruhe \u2014 Position unbestimmt",
+     "ZKM Karlsruhe — Position unbestimmt",
      1, None),
-    (6, "Wiesenstation", "Meadow station", "station", 48.98990, 8.38730, None,
+    (6, "Wiesenstation", "Meadow station", "station", 48.98990, 8.38730, 113.4,
      "temp,hum,pres,light,rgb",
-     "geplant (Station direkt an der Wiese); l\u00e4uft mit Dummy-Daten bis Inbetriebnahme",
+     "geplant (Station direkt an der Wiese); läuft mit Dummy-Daten bis Inbetriebnahme",
      0, None),
+]
+
+# physical measurement sites. Coordinates: DWD/ICOS from the operators'
+# station metadata (user-provided 2026-11-07); SensorCity from the live
+# layer registrations captured in sensorcity_stations.json + the live
+# FeatureServer; orchard site position georeferenced, elevation from the
+# LGL-BW DGM 0.25 m (meadow centre 113.4 m DHHN).
+SEED_STATIONS = [
+    ("DWD-04177", "DWD Klimastation Rheinstetten", "DWD",
+     48.9726, 8.3301, 116.06,
+     "Quelle von temp/hum/pres/light/rain/wind des Referenzsensors"),
+    ("ICOS-AS-KIT", "ICOS Atmosphärenstation KIT Campus", "ICOS",
+     49.0915, 8.4249, 110.0,
+     "CO2 @30 m + Meteo @2.5 m; CC BY 4.0, PID-Zitierpflicht"),
+    ("SC-WIND-008", "SensorCity Windmast 008 Weiherfeldstraße", "Stadt KA",
+     48.989078, 8.395698, None,
+     "621 m östlich der Wiese; ~52 Tage rollendes Archiv"),
+    ("SC-RAIN-GWB", "SensorCity Regenmesser Grünwettersbach", "Stadt KA",
+     48.951301, 8.471813, None,
+     "Barani MeteoRain; kumulativer Tipcounter 0.2 mm/Tip"),
+    ("SC-RAIN-RTM", "SensorCity Regenmesser Rintheim", "Stadt KA",
+     49.013174, 8.437976, None,
+     "UNBRAUCHBAR (Zähler implausibel) — nur zur Dokumentation"),
+    ("ORCHARD", "Streuobstwiese Katzenwedelwiesen", "Projekt",
+     48.98990, 8.38730, 113.4,
+     "Wiesenmitte; Höhe aus LGL-BW DGM 0.25 m"),
+    ("SC-N-116", "SensorCity 116 Breite Straße", "Stadt KA",
+     48.991566, 8.388714, None, "N 212 m; Luft (T/RH/p/solar)"),
+    ("SC-N-002", "SensorCity 002 Hohenzollernstraße", "Stadt KA",
+     48.994009, 8.387011, None, "N 457 m; Bodenprofil"),
+    ("SC-N-003", "SensorCity 003 Neue-Anlage-Straße", "Stadt KA",
+     48.992122, 8.379726, None, "N 607 m; Bodenprofil"),
+    ("SC-E-008", "SensorCity 008 Weiherfeldstraße", "Stadt KA",
+     48.989078, 8.395698, None, "E 621 m; Luft (T/RH/p/solar)"),
+    ("SC-E-011", "SensorCity 011 Schauinslandstraße", "Stadt KA",
+     48.983561, 8.393836, None, "E 852 m; Luft (T/RH/p/solar)"),
+    ("SC-E-093", "SensorCity 093 Kehler Straße", "Stadt KA",
+     48.988212, 8.399485, None, "E 911 m; Bodenprofil"),
+    ("SC-SW-006", "SensorCity 006 Lützenhardtstraße", "Stadt KA",
+     48.988934, 8.383011, None, "SW 332 m; Luft (T/RH/p/solar)"),
+    ("SC-SW-007", "SensorCity 007 Weiherfeldstraße", "Stadt KA",
+     48.988948, 8.382984, None, "SW 333 m; Luft (T/RH/p/solar)"),
+    ("SC-SW-001", "SensorCity 001 Grünwinkler Straße", "Stadt KA",
+     48.988695, 8.380039, None, "SW 548 m; Bodenprofil"),
+]
+
+# channel -> source station mapping (the composite reference sensor)
+SEED_VARIABLES = [
+    (0, "temp", "DWD-04177", "\°C", "TT_TU, stündlich"),
+    (0, "hum", "DWD-04177", "%", "RF_TU, stündlich"),
+    (0, "pres", "DWD-04177", "hPa", "P0, stündlich"),
+    (0, "light", "DWD-04177", "%", "SD_SO Sonnenscheindauer in %; Produkt eingestellt seit 2026-07"),
+    (0, "rain", "DWD-04177", "mm/h", "R1, stündliche Summe"),
+    (0, "wind", "DWD-04177", "m/s", "FF_10 10-min, Stundenmittel"),
+    (0, "co2", "ICOS-AS-KIT", "ppm", "NRT growing object @30 m; CC BY 4.0"),
+    (0, "icosTemp", "ICOS-AS-KIT", "\°C", "AT @2.5 m"),
+    (0, "icosHum", "ICOS-AS-KIT", "%", "RH @2.5 m"),
+    (0, "icosWind", "ICOS-AS-KIT", "m/s", "WS @2.5 m (derzeit kaum belegt)"),
+    (0, "mastWind", "SC-WIND-008", "m/s", "wind_average_kmh -> m/s, Stundenmittel"),
+    (0, "mastRain", "SC-RAIN-GWB", "mm/h", "Tipcounter 0.2 mm/Tip, Stundensumme"),
+    (1, "co2", "ORCHARD", "ppm", "IoT-Knoten auf der Wiese"),
+    (2, "co2", "ORCHARD", "ppm", "IoT-Knoten auf der Wiese"),
+    (6, "temp", "ORCHARD", "\°C", "geplant"),
+    (6, "hum", "ORCHARD", "%", "geplant"),
+    (6, "pres", "ORCHARD", "hPa", "geplant"),
+    (6, "light", "ORCHARD", "klx", "geplant"),
+    (6, "rgb", "ORCHARD", "rgb", "geplant; tönt das Licht der 3D-Szene"),
 ]
 
 
@@ -109,6 +205,18 @@ def seedStatements():
             "INSERT IGNORE INTO sensor_locations "
             "(sensor_id, name, name_en, kind, lat, lon, elev_m, variables, position_note, active, since) "
             "VALUES (%s);" % vals)
+    for (key, name, operator, lat, lon, elev, notes) in SEED_STATIONS:
+        vals = ", ".join(sqlValue(v) for v in (key, name, operator, lat, lon, elev, notes))
+        stmts.append(
+            "INSERT IGNORE INTO stations "
+            "(station_key, name, operator, lat, lon, elev_m, notes) "
+            "VALUES (%s);" % vals)
+    for (sid, var, key, unit, note) in SEED_VARIABLES:
+        vals = ", ".join(sqlValue(v) for v in (sid, var, key, unit, note))
+        stmts.append(
+            "INSERT IGNORE INTO sensor_variables "
+            "(sensor_id, variable, station_key, unit, note) "
+            "VALUES (%s);" % vals)
     return stmts
 
 
@@ -122,11 +230,14 @@ def migrationStatements():
     return [
         "ALTER TABLE sensors CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
         "ALTER TABLE sensor_locations CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
+        "ALTER TABLE stations CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
+        "ALTER TABLE sensor_variables CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
     ]
 
 
 def allStatements(migrate=False):
-    stmts = [DDL_SENSORS + ";", DDL_SENSOR_LOCATIONS + ";"]
+    stmts = [DDL_SENSORS + ";", DDL_SENSOR_LOCATIONS + ";",
+             DDL_STATIONS + ";", DDL_SENSOR_VARIABLES + ";"]
     if migrate:
         stmts += migrationStatements()   # before the seeds: INSERTs land on utf8mb4
     stmts += seedStatements()
@@ -194,4 +305,19 @@ with engine.connect() as conn:
     locQry = "select sensor_id, name, kind, lat, lon, active from sensor_locations order by sensor_id;"
     print(locQry)
     for row in conn.execute(text(locQry)):
+        print(" ", tuple(row))
+
+    print()
+    print("stations:")
+    stQry = "select station_key, operator, lat, lon, elev_m from stations order by station_key;"
+    print(stQry)
+    for row in conn.execute(text(stQry)):
+        print(" ", tuple(row))
+
+    print()
+    print("sensor_variables (sensor 0 = composite reference):")
+    varQry = ("select sensor_id, variable, station_key, unit from sensor_variables "
+              "order by sensor_id, variable;")
+    print(varQry)
+    for row in conn.execute(text(varQry)):
         print(" ", tuple(row))

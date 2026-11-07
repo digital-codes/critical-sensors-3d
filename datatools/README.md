@@ -68,6 +68,26 @@ Database config: env var `REFSENSORS_DB_URL`, or the first line of
 `mysql://user:pass@host/cz`. Only rows newer than the latest stored row for
 sensor 0 are inserted.
 
+## Database schema (create_tables.py)
+
+Four tables, built by `datatools/create_tables.py` (idempotent, `--sql`
+prints everything offline):
+
+- `sensors` — measurement rows (see above), one row per hour per sensor id.
+- `sensor_locations` — the sensor/device registry (ids 0–6 from the old
+  site's labels). Sensor 0 is a **virtual composite** and carries no
+  position; the physical sites live in `stations`.
+- `stations` — physical measurement stations with coordinates: DWD 04177
+  Rheinstetten (48.9726, 8.3301, 116.06 m), ICOS AS_KIT KIT campus
+  (49.0915, 8.4249, 110 m), SensorCity wind mast 008 + rain gauges
+  (coordinates from the FeatureServer/`sensorcity_stations.json`), and the
+  orchard site itself (48.98990, 8.38730, 113.4 m from the LGL DGM).
+- `sensor_variables` — channel → source mapping: which column of which
+  sensor comes from which station (e.g. refSensors `temp` ← DWD-04177,
+  `co2` ← ICOS-AS_KIT, `mastRain` ← SC-RAIN-GWB). This is what lets the
+  dashboard label the composite reference "Referenz" while still knowing
+  where every channel physically comes from.
+
 ## Cron example (wiese server)
 
 ```
