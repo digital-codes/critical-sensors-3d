@@ -64,6 +64,81 @@ def extract(s,data):
 scriptDir = os.path.dirname(os.path.abspath(__file__))
 icosCitationFile = os.path.join(scriptDir, "ICOS-CITATION.txt")
 
+# ######################################
+# single-instance lock + graceful termination
+#
+# On start, an older still-running refSensors.py is SIGTERMed; the old
+# process aborts at the next checkpoint (never mid database write). A hard
+# kill mid-write would still self-heal: rows are inserted date-ascending
+# and the latest-date dedup makes the next run continue exactly there.
+import signal, atexit, errno
+
+lockFile = os.path.join(scriptDir,"refsensors.lock")
+_shutdown = {"flag": False}
+
+def _pidAlive(pid):
+    if pid <= 0: return False
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError as e:
+        return e.errno == errno.EPERM  # alive, owned by another user
+
+def _isRefsensors(pid):
+    # guard against PID reuse: only trust the lock if the process is ours
+    try:
+        with open("/proc/%d/cmdline" % pid,"rb") as f:
+            return b"refSensors" in f.read()
+    except OSError:
+        return False
+
+def _onTerm(signum, frame):
+    if not _shutdown["flag"]:
+        print("termination requested (signal %d) - aborting at next checkpoint..." % signum)
+    _shutdown["flag"] = True
+
+def checkShutdown(step):
+    if _shutdown["flag"]:
+        print("aborted before %s (graceful termination)" % step)
+        sys.exit(2)
+
+def _releaseLock():
+    try:
+        if os.path.exists(lockFile):
+            with open(lockFile) as f:
+                if f.read().strip() == str(os.getpid()):
+                    os.remove(lockFile)
+    except OSError:
+        pass
+
+if os.path.exists(lockFile):
+    try:
+        oldpid = int(open(lockFile).read().strip())
+    except (OSError, ValueError):
+        oldpid = 0
+    if oldpid != os.getpid() and _pidAlive(oldpid) and _isRefsensors(oldpid):
+        print("another refSensors.py is running (pid %d) - sending SIGTERM..." % oldpid)
+        try:
+            os.kill(oldpid, signal.SIGTERM)
+        except OSError:
+            pass
+        for _ in range(24):                      # up to 60 s for a graceful exit
+            if not _pidAlive(oldpid): break
+            time.sleep(2.5)
+        else:
+            print("old process still alive - sending SIGKILL")
+            try: os.kill(oldpid, signal.SIGKILL)
+            except OSError: pass
+            time.sleep(1)
+    else:
+        print("stale lock (pid %d not a live refSensors.py) - taking over" % oldpid)
+
+with open(lockFile,"w") as f:
+    f.write(str(os.getpid()))
+atexit.register(_releaseLock)
+signal.signal(signal.SIGTERM,_onTerm)
+signal.signal(signal.SIGINT,_onTerm)   # Ctrl-C exits gracefully too
+
 def updateIcosCitation(dobjUri,fileName,outFile=None):
     objHash = dobjUri.rstrip("/").split("/")[-1]
     url = "https://meta.icos-cp.eu/objects/%s/%s.json" % (objHash,fileName)
@@ -196,6 +271,7 @@ def getIcos(spec,height,expectedColumns,citFile=None):
     
 
 for s in sources:
+    checkShutdown("DWD fetch %s" % s["data"])
     r = requests.get(s["url"])
     z = zipfile.ZipFile(io.BytesIO(r.content))
     #z.extractall("/path/to/destination_directory")
@@ -356,6 +432,7 @@ if len(dwd[dwd.date >= limit]) < 1:
 ### print citation
 ##print('citation: ', f.citation)
 
+checkShutdown("ICOS CO2 fetch")
 icos = getIcos("http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject","30",["TIMESTAMP","co2","Flag","NbPoints","Stdev"])
 # convert to dataframe
 icos = icos.drop(index=icos[icos.co2.isnull()].index)
@@ -374,12 +451,14 @@ if args.csv:
 # air temperature (AT), relative humidity (RH), wind speed (WS) as extra
 # reference columns next to the DWD temp/hum (distinct column names)
 icosMeteoCitationFile = os.path.join(scriptDir,"ICOS-CITATION-METEO.txt")
+checkShutdown("ICOS meteo fetch")
 meteoLow = getIcos("http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject",None,
                    ["TIMESTAMP","AT","RH","WS"],citFile=icosMeteoCitationFile)
 meteoLow = meteoLow.rename(columns={"TIMESTAMP":"date","AT":"icosTemp","RH":"icosHum","WS":"icosWind"})
 meteoLow = meteoLow.drop(index=meteoLow.loc[meteoLow.date < "2020-10-01 00:00:00"].index)
 meteoLow = meteoLow.reset_index(drop=True)
 
+checkShutdown("SensorCity wind fetch")
 # SensorCity wind mast at station '008 - Weiherfeldstraße' (621 m E of the
 # orchard): Karlsruhe SensorCity FeatureServer, layer 5
 # NodeRED_Windsensor_Archiv, device 9899e75f-2353-4dda-a1cc-4d4ffde4f003.
@@ -417,6 +496,7 @@ except Exception as exc:
     print("SensorCity mast wind fetch failed:", exc, "- mastWind stays NULL")
     sensorCityWind = None
 
+checkShutdown("SensorCity rain fetch")
 # SensorCity rain gauge 'Barani MeteoRain' at Grünwettersbach (7.5 km SE of
 # the orchard): Karlsruhe SensorCity FeatureServer, layer 3
 # NodeRED_Regenschreiber_Archiv, device 4ac74c30-4378-4182-86cb-f1e552d8f8fb.
@@ -564,6 +644,9 @@ if len(df) > 0:
 ref = ref.reset_index(drop=True)
 print("Adding data: ",len(ref))
 
+# the database write is the one step we never want interrupted halfway:
+# if termination was requested while fetching/merging, bail out here
+checkShutdown("database write")
 # the new ICOS meteo columns may not exist in an older table - add them
 # idempotently before appending
 existingCols = {c["name"] for c in inspect(engine).get_columns("sensors")}
