@@ -9,7 +9,11 @@ Uses a **vendored copy of ez-tree v1.1.0** (source in `src/eztree/`) instead of
 the npm package (`@dgreenheck/ez-tree`): the shipped TypeScript typings lag
 behind the library API — `bark.maps`, `leaves.map`, and `generateLODs` are
 missing from its `.d.ts` — so the vendored copy keeps `npm run build`
-(`tsc && vite build`) working.
+(`tsc && vite build`) working. One local patch on top: terminal twig tips
+only grow their tip leaf when `leaves.count > 0` (`src/eztree/tree.js`) —
+upstream recorded one leaf per tip unconditionally, so the bare winter
+variant (count 0) still carried ~280 green tufts. Re-apply that gate when
+updating the vendored copy.
 
 ## Run
 
@@ -114,7 +118,8 @@ Inputs: `geoimages/` (LGL-BW DGM/DOP GeoTIFFs + world files),
 - 39 procedural trees (ez-tree presets), rescaled at runtime to the
   calibrated per-tree heights (photo-based, 5.4–15.6 m).
 - 4 season variants per tree, selected via a day-of-year slider (0–364);
-  winter renders bare — verified against the reference photos.
+  winter renders bare (vendored-ez-tree tip-leaf gate, see above) and
+  winter grass sits at 2 cm so blades do not speckle the snow surface.
 - Seasonal grass height (growth from late Feb, peak early summer, mowed
   late Aug, low winter) and a seasonal midday sun, so the generated trees
   cast the only, season-correct shadows.
@@ -127,16 +132,33 @@ Inputs: `geoimages/` (LGL-BW DGM/DOP GeoTIFFs + world files),
 - Overcast sky dome with procedural clouds.
 - Camera presets matching the real photo vantages: **Südende** (south-west,
   ground level, looking north-east — the classic weekly-photo spot),
-  **Erhöht** (same axis, ~5.5 m up — the slightly elevated 2026 shots) and
+  **Erhöht** (same axis, ~5.5 m up — the slightly elevated 2026 shots),
   **Nordwest** (meadow NW corner, ~5 m up, looking south-east at the
-  Hocksitzcafe — photo 20261022_125920); heights are sampled from the
+  Hocksitzcafe — photo 20261022_125920) and **Fotostandpunkt** (south of
+  St.-Florian-Str. 1, eye height, looking at the north slope — the
+  Vergleich reference-photo vantage); heights are sampled from the
   heightmap. Note: hedges/rows are painted on the terrain texture, so very
   low oblique views from outside the meadow read them edge-on — stay inside
   the meadow boundary for ground-level shots.
 - Compare mode (**Vergleich**): 9 reference photos (weekly photos from the
   old site + 2026 photos, indexed in `src/photos.json` with day-of-year and
   camera preset) side by side with the live render, including a canvas
-  screenshot download.
+  screenshot download. Selecting a photo moves the camera to its preset and
+  sets its day-of-year in one step.
+- **Vogelflug** (`src/flight.ts`): a ~36 s bird's-eye glide that takes off
+  ~1.5 m above the crown of the elevated NE tree (Baumkataster bk01345 on
+  the ~121 m ridge), sweeps south-west over the Hocksitzcafe and the meadow
+  and pulls up over the south grass. The gaze anchors 12 m ahead along the
+  path tangent and is low-passed (2 s) like a banking bird, so the heading
+  stays smooth through the path's corners; wing-beat bob and lateral sway
+  translate the view without rotating it. Any pointer interaction cancels
+  the flight and hands the camera back to OrbitControls; `seek(t)` /
+  `pause()` / `stop()` on `window.__scene3.flight` give deterministic poses.
+- **Kamera panel** (`src/cameraui.ts`, bottom-left): numeric Position
+  X/Y/Z and Blickpunkt X/Y/Z with *Übernehmen*, plus Azimut (0° = north),
+  Elevation and Abstand with *Nach Winkel*. Non-focused fields live-update
+  while orbiting, so a hand-flown pose can be read out and re-applied with
+  nudges — the same values as `camera.position` / `controls.target`.
 
 ## Licences / attribution
 
