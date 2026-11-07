@@ -42,7 +42,7 @@ DDL_SENSORS = """CREATE TABLE IF NOT EXISTS sensors (
   raw VARCHAR(50) NULL,
   KEY ix_sensors_id_date (id, date),
   KEY ix_sensors_date (date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"""
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"""
 
 DDL_SENSOR_LOCATIONS = """CREATE TABLE IF NOT EXISTS sensor_locations (
   sensor_id SMALLINT NOT NULL PRIMARY KEY,
@@ -56,7 +56,7 @@ DDL_SENSOR_LOCATIONS = """CREATE TABLE IF NOT EXISTS sensor_locations (
   position_note VARCHAR(160) NULL,
   active TINYINT(1) NOT NULL DEFAULT 1,
   since DATE NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"""
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"""
 
 # labels from the old site's custom.js sensorLabels
 SEED_LOCATIONS = [
@@ -148,7 +148,9 @@ if not dbUrl:
     sys.exit(1)
 
 try:
-    engine = create_engine(dbUrl)
+    # force utf8mb4 on the connection regardless of what the URL carries,
+# so DDL + seed rows (e.g. "Büro") survive any server default
+    engine = create_engine(dbUrl, connect_args={"charset": "utf8mb4"})
 except Exception as exc:
     print("Sql failed:", exc)
     sys.exit(1)
