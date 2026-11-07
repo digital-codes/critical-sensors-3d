@@ -22,7 +22,7 @@ columns `rssi`, `bat`, `raw`, ...), so the dashboard treats it like any device.
 ## Setup
 
 ```sh
-python3 -m venv .venv                      # at the PROJECT ROOT
+python3 -m venv .venv                      # at the PROJECT ROOT; Python >= 3.12
 .venv/bin/pip install -r datatools/requirements.txt
 ```
 Installs `icoscp-core`, `pandas`, `numpy`, `requests`, `sqlalchemy`, `pymysql`.
