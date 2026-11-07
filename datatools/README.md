@@ -78,6 +78,48 @@ Adjust paths to the server layout. Exit code 1 signals failure. The DB URL
 comes from `dburl.txt` or the env var — **never hard-code credentials in the
 cron line**.
 
+## SensorCity neighbour probe (exploratory)
+
+`sensorcity_pick.py` + `sensorcity_read.py` query the city's **SensorCity**
+environmental-sensor feed (dashboard:
+https://geoportal.karlsruhe.de/sensorcity/Dashboard/, ArcGIS FeatureServer
+`https://geoportal.karlsruhe.de/ags04/rest/services/Hosted/Sensordaten_NodeRED/FeatureServer`,
+no auth) to find the sensor neighbourhood of the orchard
+(centre 48.98990, 8.38730).
+
+- `sensorcity_pick.py` — per direction, the **3 nearest stations** north /
+  east / south-west (angular Voronoi sectors around bearings 0/90/225 deg,
+  boundaries 45/157.5/292.5), plus the **closest station with valid wind**
+  (layer 5) and **rain** (layer 3) data. Writes `sensorcity_stations.json`.
+- `sensorcity_read.py` — live values (layer 1) per selected station and
+  7-day archive availability + latest sample from layers 2 Temperatur,
+  3 Regenschreiber, 4 Boden, 5 Wind. Run after the picker.
+
+Snapshot (2026-11-07, 11 stations): N = 116 Breite Straße, 002
+Hohenzollernstraße*, 003 Neue-Anlage-Straße*; E = 008 Weiherfeldstraße, 011
+Schauinslandstraße, 093 Kehler Straße*; SW = 006 Lützenhardtstraße, 007
+Weiherfeldstraße, 001 Grünwinkler Straße*; WIND = wind mast at 008
+Weiherfeldstraße (621 m E); RAIN = Barani MeteoRain (~4.5 km NE, only two
+gauges in the whole feed). `*` = soil profile station (moisture/temperature
+at 0/30/70 cm; the 70 cm values are sentinels — probe not installed).
+
+API quirks this probe works around (relevant for the dashboard cache later):
+
+- Date filters need SQL `timestamp 'YYYY-MM-DD HH:MM:SS'` — epoch-ms
+  literals are rejected ("Ungültiger Datentyp").
+- Group-by statistics (`groupByFieldsForStatistics`) require
+  `outFields` = the group-by field only; `outFields=*` corrupts the response.
+- Most stations carry coordinates only as feature **geometry** (a few also as
+  `lat`/`lon` attributes). Wind archive rows (layer 5) have **no geometry at
+  all** — wind devices are located via their own live-layer registrations.
+- Several stations have duplicate device rows (test registrations, multi-
+  parser stations); station selection dedupes by name + rounded position and
+  keeps the row carrying values.
+- Known label conflict: the wind parser of 008 Weiherfeldstraße is registered
+  at the station's live position (E, 621 m) but its archive rows say
+  `stadtteil: Beiertheim-Bulach` (the soil station 007 site, SW). All six
+  sibling wind masts agree with their registrations, so the registration wins.
+
 ## Timezone convention
 
 Stored dates are **UTC+1 (CET)**; rows before 2020-10-25 02:00 (UTC+2) get an

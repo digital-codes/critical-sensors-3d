@@ -11,7 +11,7 @@ driven through `opencode` for a complete change trace.
 
 | Path | What |
 |---|---|
-| `datatools/` | `refSensors.py` — assembles a virtual reference sensor from DWD (Kollsberg 04177) + ICOS (KIT tower @30 m CO₂, @2.5 m meteo) and writes it into the sensor DB. See `datatools/README.md`. |
+| `datatools/` | `refSensors.py` — assembles a virtual reference sensor from DWD (Kollsberg 04177) + ICOS (KIT tower @30 m CO₂, @2.5 m meteo) and writes it into the sensor DB. `sensorcity_pick.py`/`sensorcity_read.py` — SensorCity neighbour-station probe (exploratory). See `datatools/README.md`. |
 | `orchard/` | Three.js + ez-tree realtime 3D model of the orchard (terrain from LGL-BW DGM 0.25 m, aerial from DOP20 2024, 39 curated Baumkataster trees with photo-calibrated heights, LoD2 buildings, seasons, compare mode). See `orchard/README.md`. |
 | `oldwww/` | Current live PHP site (https://critical-sensors.de/) + weekly orchard photos 2020–2022. Reference for the new dashboard. |
 | `newimages/` | New 2026 reference photos (Hocksitzcafe, other directions). Too large for git; 9 downscaled copies live in `orchard/public/photos/`. |
