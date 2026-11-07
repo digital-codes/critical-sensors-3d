@@ -215,9 +215,42 @@ for s in sources:
 # excluded/missing light channel becomes NULL in the database
 if "light" not in dwd.columns:
     dwd["light"] = float("nan")
-# wind: PLACEHOLDER column (NULL) - the real wind source is still to be
-# chosen (ICOS KIT does not populate WS in the NRT meteo product); the
-# column and its schema stay reserved so the future source slots in
+
+# wind: DWD 04177 Rheinstetten 10-minute wind, aggregated to hourly means to
+# fit the reference sensor's hourly rows. The 10-minute product (FF_10 m/s,
+# DD_10 deg) is preferred over the hourly F product for the finer source
+# resolution; direction has no column in the sensors table yet, so only the
+# speed is stored (m/s, same unit as icosWind).
+def dwdWind10():
+    url = ("https://opendata.dwd.de/climate_environment/CDC/observations_germany/"
+           "climate/10_minutes/wind/recent/10minutenwerte_wind_04177_akt.zip")
+    r = requests.get(url, timeout=60)
+    r.raise_for_status()
+    z = zipfile.ZipFile(io.BytesIO(r.content))
+    target = [n for n in z.namelist() if n.startswith("produkt_")][0]
+    df = pd.read_csv(io.StringIO(z.read(target).decode("utf-8")), sep=";")
+    df.columns = [c.strip() for c in df.columns]  # DWD pads column names
+    df["date"] = pd.to_datetime(df.MESS_DATUM.astype(str), format="%Y%m%d%H%M")
+    df["wind"] = pd.to_numeric(df.FF_10, errors="coerce")
+    df.loc[df.wind < -100, "wind"] = float("nan")  # DWD -999 sentinel
+    df = df.loc[df.date >= "2020-10-01 00:00:00"]
+    return df.set_index("date")["wind"].resample("h").mean().dropna()
+
+wind10 = None
+try:
+    wind10 = dwdWind10()
+    # same staleness guard as the hourly sources: a discontinued product must
+    # not cap the whole merge
+    if wind10.index.max() < pd.Timestamp.now() - timedelta(days=3):
+        print("DWD 10-min wind stale (last:", wind10.index.max(), "), excluded")
+        wind10 = None
+except Exception as exc:
+    print("DWD 10-min wind fetch failed:", exc, "- wind stays NULL")
+    wind10 = None
+
+if wind10 is not None and not dwd.empty:
+    # left join: hours without a wind sample keep their other values
+    dwd = dwd.merge(wind10.rename("wind").reset_index(), on="date", how="left")
 if "wind" not in dwd.columns:
     dwd["wind"] = float("nan")
 
@@ -339,6 +372,43 @@ meteoLow.rename(columns={"TIMESTAMP":"date","AT":"icosTemp","RH":"icosHum","WS":
 meteoLow.drop(index=meteoLow.loc[meteoLow.date < "2020-10-01 00:00:00"].index,inplace=True)
 meteoLow.reset_index(drop=True,inplace=True)
 
+# SensorCity wind mast at station '008 - Weiherfeldstraße' (621 m E of the
+# orchard): Karlsruhe SensorCity FeatureServer, layer 5
+# NodeRED_Windsensor_Archiv, device 9899e75f-2353-4dda-a1cc-4d4ffde4f003.
+# wind_average_kmh + 1s/3s gusts + direction every ~10 min, rolling ~52-day
+# archive. Hourly mean converted km/h -> m/s goes into the 'mastWind' column
+# (same unit as 'wind'/'icosWind'); gusts/direction have no columns yet.
+sensorCityWind = None
+try:
+    r = requests.get(
+        "https://geoportal.karlsruhe.de/ags04/rest/services/Hosted/"
+        "Sensordaten_NodeRED/FeatureServer/5/query",
+        params={
+            "where": "device_id='9899e75f-2353-4dda-a1cc-4d4ffde4f003'",
+            "outFields": "measured_at,wind_average_kmh",
+            "returnGeometry": "false",
+            "f": "json",
+            "resultRecordCount": "2000",  # ~14 days at the 10-min cadence
+            "orderByFields": "measured_at DESC",
+        },
+        timeout=30,
+    )
+    r.raise_for_status()
+    feats = r.json().get("features", [])
+    if feats:
+        m = pd.DataFrame([f["attributes"] for f in feats])
+        m = m.dropna(subset=["wind_average_kmh"])
+        m["date"] = pd.to_datetime(m.pop("measured_at"), unit="ms")  # naive UTC
+        mastHourly = (m.set_index("date")["wind_average_kmh"] / 3.6)
+        mastHourly = mastHourly.resample("h").mean().dropna()
+        sensorCityWind = mastHourly.rename("mastWind").reset_index()
+        print("SensorCity mast wind:", len(m), "records ->", len(sensorCityWind), "hourly rows")
+    else:
+        print("SensorCity mast wind: no records returned")
+except Exception as exc:
+    print("SensorCity mast wind fetch failed:", exc, "- mastWind stays NULL")
+    sensorCityWind = None
+
 #print(icos)
 
 
@@ -354,6 +424,12 @@ ref = dwd.merge(icos,on="date")
 # left join for the meteo columns: keep all CO2 rows even where the meteo
 # NRT product lags behind
 ref = ref.merge(meteoLow,on="date",how="left")
+
+# mast wind joins the same way; a fetch failure leaves it as NULL column
+if sensorCityWind is not None:
+    ref = ref.merge(sensorCityWind,on="date",how="left")
+if "mastWind" not in ref.columns:
+    ref["mastWind"] = float("nan")
 
 # adjust timezone and DST
 ref["date"] += pd.Timedelta(hours=1)
@@ -429,7 +505,7 @@ print("Adding data: ",len(ref))
 # idempotently before appending
 existingCols = {c["name"] for c in inspect(engine).get_columns("sensors")}
 with engine.begin() as conn:
-    for col in ("icosTemp","icosHum","icosWind","wind"):
+    for col in ("icosTemp","icosHum","icosWind","wind","mastWind"):
         if col not in existingCols:
             print("ALTER TABLE sensors ADD COLUMN",col)
             conn.exec_driver_sql("ALTER TABLE sensors ADD COLUMN %s FLOAT" % col)
@@ -459,7 +535,8 @@ ref.to_sql(
         "icosTemp":Float,
         "icosHum":Float,
         "icosWind":Float,
-        "wind":Float
+        "wind":Float,
+        "mastWind":Float
         }
 )
 # close

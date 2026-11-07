@@ -120,24 +120,36 @@ API quirks this probe works around (relevant for the dashboard cache later):
   `stadtteil: Beiertheim-Bulach` (the soil station 007 site, SW). All six
   sibling wind masts agree with their registrations, so the registration wins.
 
-## DWD wind — the measured source for refSensors' `wind` column
+## Wind in refSensors — two measured sources (implemented 2026-11-07)
 
 Closest DWD station to the orchard: **04177 Rheinstetten, 4.6 km NE** — the
 same station `refSensors.py` already uses for temp/hum/light/pressure, and it
-is in the wind networks too. `refSensors.py` carries a reserved NULL `wind`
-column ("real source pending"); this is the source to slot in, without any
-schema change. Verified live 2026-11-07:
+is in the wind networks too. The reference sensor carries **both** as its own
+columns (units m/s everywhere, like `icosWind`):
 
-- Hourly: `climate/hourly/wind/recent/stundenwerte_FF_04177_akt.zip` —
-  columns `F` (speed m/s), `D` (direction deg), `QN_3`; latest ~1–2 days lag.
-- **10-minute (preferred)**:
-  `climate/10_minutes/wind/recent/10minutenwerte_wind_04177_akt.zip` —
-  columns `FF_10` (10-min mean speed m/s), `DD_10` (direction deg), `QN`;
-  ~550-day rolling retention, ~1-day publication lag.
-- 10-minute gusts:
-  `climate/10_minutes/extreme_wind/recent/10minutenwerte_extrema_wind_04177_akt.zip` —
-  columns `FX_10` (max 2-s gust), `FNX_10`/`FMX_10` (min/max 10-min mean),
-  `DX_10` (direction).
+- `wind` ← DWD 04177 **10-minute** wind (`FF_10` m/s, `DD_10` deg), hourly
+  mean; left-joined so hours without a wind sample keep their other values.
+  The 10-minute product is preferred over the hourly F product for the finer
+  source resolution; direction has no sensors-table column yet. Zip:
+  `climate/10_minutes/wind/recent/10minutenwerte_wind_04177_akt.zip`
+  (~550-day rolling retention, ~1-day publication lag, `-999` sentinels
+  filtered, same 3-day staleness guard as the other DWD sources).
+- `mastWind` ← **SensorCity wind mast at 008 Weiherfeldstraße** (621 m E of
+  the orchard; FeatureServer layer 5, device `9899e75f-…`): hourly mean of
+  `wind_average_kmh` converted km/h → m/s. ~10-min cadence, real-time
+  (~minutes lag), but only ~52-day rolling archive (verified 2026-11-07:
+  8 562 recs, no empty days, median interval 599 s). 1-s/3-s gusts and
+  direction exist in the feed but have no sensors-table columns yet.
+  The mast reports wind only — temp/hum/pressure at that station come from a
+  separate parser (`da9b5ec5-…`).
+- Cross-check 2026-11-07: corr(wind, mastWind) = 0.88 over 265 shared hours;
+  the mast reads slightly lower (5 m mast in built area vs open 10 m station).
+  `icosWind` (ICOS KIT WS) is currently ~0% populated in the NRT object —
+  these two sources close that gap.
+
+10-minute gusts (optional, not wired):
+`climate/10_minutes/extreme_wind/recent/10minutenwerte_extrema_wind_04177_akt.zip`
+— `FX_10` (max 2-s gust), `FNX_10`/`FMX_10` (min/max 10-min mean), `DX_10`.
 
 Forecasts (dashboard wind overlay): prefer **ECMWF** over the American GFS —
 the radiationMap repo (`digital-codes/radiationMap`, `getWind100.py`) fetches
