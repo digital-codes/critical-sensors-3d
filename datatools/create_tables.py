@@ -4,13 +4,15 @@
 Matches what datatools/refSensors.py writes (to_sql append on 'sensors')
 and what oldwww/srv.php reads.
 
-Model (the reference sensor is a COMPOSITE of stations at different sites):
+Model — sensors can be real devices or VIRTUAL composites:
 
   sensors          one row per measurement hour, per sensor id
   sensor_locations the sensor/device registry (id, names, activeness);
-                   virtual/composite devices carry no position
+                   virtual/composite devices may carry the site position
   stations         physical measurement sites with real coordinates
-  sensor_variables which channel of which sensor comes from which station
+  sensor_sources   channel -> source mapping; source_kind is 'station'
+                   (external reference sites) or 'sensor' (another sensor
+                   of this database, combined with `agg`, e.g. mean)
 
 Offline mode: --sql prints the DDL + seed statements to stdout and exits
 without connecting to any database.
@@ -76,22 +78,28 @@ DDL_STATIONS = """CREATE TABLE IF NOT EXISTS stations (
   notes VARCHAR(200) NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"""
 
-DDL_SENSOR_VARIABLES = """CREATE TABLE IF NOT EXISTS sensor_variables (
+# channel -> source mapping. source_kind 'station': source_key is a
+# stations.station_key. source_kind 'sensor': source_key is the numeric
+# sensor id of another device in this database; `agg` says how multiple
+# sources of one channel combine ('mean').
+DDL_SENSOR_SOURCES = """CREATE TABLE IF NOT EXISTS sensor_sources (
   sensor_id SMALLINT NOT NULL,
   variable VARCHAR(16) NOT NULL,
-  station_key VARCHAR(24) NULL,
+  source_kind VARCHAR(10) NOT NULL,
+  source_key VARCHAR(24) NOT NULL,
   unit VARCHAR(12) NULL,
+  agg VARCHAR(12) NULL,
   note VARCHAR(160) NULL,
-  PRIMARY KEY (sensor_id, variable)
+  PRIMARY KEY (sensor_id, variable, source_kind, source_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"""
 
 # labels from the old site's custom.js sensorLabels; id 0 is a VIRTUAL
-# composite - its channels are mapped to physical stations in
-# sensor_variables, so it carries no position of its own
+# composite of external reference stations (mapped in sensor_sources),
+# id 7 a VIRTUAL composite of the orchard's own sensors
 SEED_LOCATIONS = [
     (0, "Referenz", "Reference", "reference", None, None, None,
      "temp,hum,pres,light,rain,wind,mastWind,mastRain,co2",
-     "virtueller Verbundsensor - Kanäle von mehreren Stationen, siehe sensor_variables",
+     "virtueller Verbundsensor - Kanäle von mehreren Stationen, siehe sensor_sources",
      1, "2020-10-01"),
     (1, "Wiese1", "Orchard1", "iot", 48.98990, 8.38730, 113.4,
      "co2,rssi,bat",
@@ -117,6 +125,11 @@ SEED_LOCATIONS = [
      "temp,hum,pres,light,rgb",
      "geplant (Station direkt an der Wiese); läuft mit Dummy-Daten bis Inbetriebnahme",
      0, None),
+    (7, "Wiese-Verbund", "Orchard composite", "virtual", 48.98990, 8.38730, 113.4,
+     "co2,temp,hum,pres,light,rgb",
+     "virtueller Verbund der echten Wiesensensoren (Wiese1 + Wiese2 + Wiesenstation); "
+     "Kanäle sobald die Quellen liefern",
+     1, None),
 ]
 
 # physical measurement sites. Coordinates: DWD/ICOS from the operators'
@@ -163,27 +176,39 @@ SEED_STATIONS = [
      48.988695, 8.380039, None, "SW 548 m; Bodenprofil"),
 ]
 
-# channel -> source station mapping (the composite reference sensor)
-SEED_VARIABLES = [
-    (0, "temp", "DWD-04177", "\°C", "TT_TU, stündlich"),
-    (0, "hum", "DWD-04177", "%", "RF_TU, stündlich"),
-    (0, "pres", "DWD-04177", "hPa", "P0, stündlich"),
-    (0, "light", "DWD-04177", "%", "SD_SO Sonnenscheindauer in %; Produkt eingestellt seit 2026-07"),
-    (0, "rain", "DWD-04177", "mm/h", "R1, stündliche Summe"),
-    (0, "wind", "DWD-04177", "m/s", "FF_10 10-min, Stundenmittel"),
-    (0, "co2", "ICOS-AS-KIT", "ppm", "NRT growing object @30 m; CC BY 4.0"),
-    (0, "icosTemp", "ICOS-AS-KIT", "\°C", "AT @2.5 m"),
-    (0, "icosHum", "ICOS-AS-KIT", "%", "RH @2.5 m"),
-    (0, "icosWind", "ICOS-AS-KIT", "m/s", "WS @2.5 m (derzeit kaum belegt)"),
-    (0, "mastWind", "SC-WIND-008", "m/s", "wind_average_kmh -> m/s, Stundenmittel"),
-    (0, "mastRain", "SC-RAIN-GWB", "mm/h", "Tipcounter 0.2 mm/Tip, Stundensumme"),
-    (1, "co2", "ORCHARD", "ppm", "IoT-Knoten auf der Wiese"),
-    (2, "co2", "ORCHARD", "ppm", "IoT-Knoten auf der Wiese"),
-    (6, "temp", "ORCHARD", "\°C", "geplant"),
-    (6, "hum", "ORCHARD", "%", "geplant"),
-    (6, "pres", "ORCHARD", "hPa", "geplant"),
-    (6, "light", "ORCHARD", "klx", "geplant"),
-    (6, "rgb", "ORCHARD", "rgb", "geplant; tönt das Licht der 3D-Szene"),
+# channel -> source mapping.
+# id 0 (Referenz): each channel from an external station.
+# id 7 (Wiese-Verbund): composed FROM the real sensors — co2 = mean of
+# Wiese1+Wiese2, the Wiesenstation channels follow once that station is
+# live (sources already registered so the composer can pick them up).
+SEED_SOURCES = [
+    (0, "temp", "station", "DWD-04177", "°C", None, "TT_TU, stündlich"),
+    (0, "hum", "station", "DWD-04177", "%", None, "RF_TU, stündlich"),
+    (0, "pres", "station", "DWD-04177", "hPa", None, "P0, stündlich"),
+    (0, "light", "station", "DWD-04177", "%", None,
+     "SD_SO Sonnenscheindauer in %; Produkt eingestellt seit 2026-07"),
+    (0, "rain", "station", "DWD-04177", "mm/h", None, "R1, stündliche Summe"),
+    (0, "wind", "station", "DWD-04177", "m/s", None, "FF_10 10-min, Stundenmittel"),
+    (0, "co2", "station", "ICOS-AS-KIT", "ppm", None, "NRT growing object @30 m; CC BY 4.0"),
+    (0, "icosTemp", "station", "ICOS-AS-KIT", "°C", None, "AT @2.5 m"),
+    (0, "icosHum", "station", "ICOS-AS-KIT", "%", None, "RH @2.5 m"),
+    (0, "icosWind", "station", "ICOS-AS-KIT", "m/s", None, "WS @2.5 m (derzeit kaum belegt)"),
+    (0, "mastWind", "station", "SC-WIND-008", "m/s", None, "wind_average_kmh -> m/s, Stundenmittel"),
+    (0, "mastRain", "station", "SC-RAIN-GWB", "mm/h", None, "Tipcounter 0.2 mm/Tip, Stundensumme"),
+    (1, "co2", "station", "ORCHARD", "ppm", None, "IoT-Knoten auf der Wiese"),
+    (2, "co2", "station", "ORCHARD", "ppm", None, "IoT-Knoten auf der Wiese"),
+    (6, "temp", "station", "ORCHARD", "°C", None, "geplant"),
+    (6, "hum", "station", "ORCHARD", "%", None, "geplant"),
+    (6, "pres", "station", "ORCHARD", "hPa", None, "geplant"),
+    (6, "light", "station", "ORCHARD", "klx", None, "geplant"),
+    (6, "rgb", "station", "ORCHARD", "rgb", None, "geplant; tönt das Licht der 3D-Szene"),
+    (7, "co2", "sensor", "1", "ppm", "mean", "aus Wiese1"),
+    (7, "co2", "sensor", "2", "ppm", "mean", "aus Wiese2"),
+    (7, "temp", "sensor", "6", "°C", "mean", "aus Wiesenstation (geplant)"),
+    (7, "hum", "sensor", "6", "%", "mean", "aus Wiesenstation (geplant)"),
+    (7, "pres", "sensor", "6", "hPa", "mean", "aus Wiesenstation (geplant)"),
+    (7, "light", "sensor", "6", "klx", "mean", "aus Wiesenstation (geplant)"),
+    (7, "rgb", "sensor", "6", "rgb", "mean", "aus Wiesenstation (geplant)"),
 ]
 
 
@@ -211,33 +236,36 @@ def seedStatements():
             "INSERT IGNORE INTO stations "
             "(station_key, name, operator, lat, lon, elev_m, notes) "
             "VALUES (%s);" % vals)
-    for (sid, var, key, unit, note) in SEED_VARIABLES:
-        vals = ", ".join(sqlValue(v) for v in (sid, var, key, unit, note))
+    for (sid, var, kind, key, unit, agg, note) in SEED_SOURCES:
+        vals = ", ".join(sqlValue(v) for v in (sid, var, kind, key, unit, agg, note))
         stmts.append(
-            "INSERT IGNORE INTO sensor_variables "
-            "(sensor_id, variable, station_key, unit, note) "
+            "INSERT IGNORE INTO sensor_sources "
+            "(sensor_id, variable, source_kind, source_key, unit, agg, note) "
             "VALUES (%s);" % vals)
     return stmts
 
 
 def migrationStatements():
-    """Convert existing tables to utf8mb4 + explicit collation.
+    """utf8mb4 conversion + shape fixups for tables created earlier today.
 
-    CONVERT TO re-encodes all character columns (e.g. a legacy latin1
-    'raw' column or pre-existing name strings); it is a no-op on tables
-    already created with the new DDL. Non-character columns are untouched.
+    CONVERT TO re-encodes all character columns; it is a no-op on tables
+    already created with the new DDL. sensor_variables was superseded by
+    sensor_sources (source_kind/source_key/agg model) — it only ever held
+    seed rows, so --migrate drops it and the seeds re-land in the new
+    table.
     """
     return [
         "ALTER TABLE sensors CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
         "ALTER TABLE sensor_locations CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
         "ALTER TABLE stations CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
-        "ALTER TABLE sensor_variables CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
+        "DROP TABLE IF EXISTS sensor_variables;",  # superseded by sensor_sources
+        "ALTER TABLE sensor_sources CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
     ]
 
 
 def allStatements(migrate=False):
     stmts = [DDL_SENSORS + ";", DDL_SENSOR_LOCATIONS + ";",
-             DDL_STATIONS + ";", DDL_SENSOR_VARIABLES + ";"]
+             DDL_STATIONS + ";", DDL_SENSOR_SOURCES + ";"]
     if migrate:
         stmts += migrationStatements()   # before the seeds: INSERTs land on utf8mb4
     stmts += seedStatements()
@@ -251,8 +279,8 @@ parser = argparse.ArgumentParser(description="Create tables for the sensor datab
 parser.add_argument("--sql", action="store_true",
                     help="print the DDL + seed statements to stdout and exit (offline mode)")
 parser.add_argument("--migrate", action="store_true",
-                    help="also convert existing tables to utf8mb4/utf8mb4_unicode_ci "
-                         "(ALTER ... CONVERT TO; runs after the DDL, before the seeds)")
+                    help="also convert existing tables to utf8mb4/utf8mb4_unicode_ci and drop "
+                         "the superseded sensor_variables table (runs after the DDL, before the seeds)")
 args = parser.parse_args()
 
 statements = allStatements(migrate=args.migrate)
@@ -291,7 +319,7 @@ with engine.begin() as conn:
         conn.execute(text(stmt))
 
 print("Tables created (if they did not exist)." +
-      (" Migration to utf8mb4 applied." if args.migrate else ""))
+      (" Migration applied (utf8mb4, sensor_variables -> sensor_sources)." if args.migrate else ""))
 
 # verification block
 with engine.connect() as conn:
@@ -315,9 +343,9 @@ with engine.connect() as conn:
         print(" ", tuple(row))
 
     print()
-    print("sensor_variables (sensor 0 = composite reference):")
-    varQry = ("select sensor_id, variable, station_key, unit from sensor_variables "
-              "order by sensor_id, variable;")
-    print(varQry)
-    for row in conn.execute(text(varQry)):
+    print("sensor_sources:")
+    srcQry = ("select sensor_id, variable, source_kind, source_key, agg from sensor_sources "
+              "order by sensor_id, variable, source_kind, source_key;")
+    print(srcQry)
+    for row in conn.execute(text(srcQry)):
         print(" ", tuple(row))
