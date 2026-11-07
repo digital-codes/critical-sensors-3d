@@ -644,6 +644,57 @@ if len(df) > 0:
 ref = ref.reset_index(drop=True)
 print("Adding data: ",len(ref))
 
+# ######################################
+# virtual sensors: after each run, compose rows for every active 'virtual'
+# sensor from its sensor_sources entries (e.g. id 7 Wiese-Verbund = mean
+# of Wiese1 + Wiese2). Only hours newer than the composite's latest stored
+# hour are inserted - the same latest-date discipline as the reference.
+# AVG() ignores NULL, so an hour where one source is missing still gets
+# the remaining source's value (min_count=1 semantics); a channel whose
+# sources have no data yet (e.g. the planned Wiesenstation) stays NULL.
+def composeVirtualSensors(engine):
+    with engine.begin() as conn:
+        virtuals = [r[0] for r in conn.execute(text(
+            "select sensor_id from sensor_locations where kind = 'virtual' and active = 1"))]
+        if not virtuals:
+            return
+        cols = {c["name"] for c in inspect(engine).get_columns("sensors")}
+        for vid in virtuals:
+            src = pd.read_sql(text(
+                "select variable, source_key, agg from sensor_sources "
+                "where sensor_id = :v and source_kind = 'sensor'"),
+                conn, params={"v": vid})
+            if src.empty:
+                continue
+            missing = sorted(set(src["variable"]) - cols)
+            if missing:
+                print("virtual %d: no sensors column for %s - skipped"
+                      % (vid, ", ".join(missing)))
+            varSrc = src[src["variable"].isin(cols)]
+            if varSrc.empty:
+                continue
+            # NB: varSrc["agg"], not .agg - that is DataFrame's method
+            aggs = {a if a else "mean" for a in varSrc["agg"]}
+            if aggs - {"mean"}:
+                print("virtual %d: unsupported agg %s - skipped"
+                      % (vid, ", ".join(sorted(aggs - {"mean"}))))
+                continue
+            ids = sorted({int(k) for k in varSrc.source_key})
+            selCols = sorted(set(varSrc.variable))
+            limit = conn.execute(
+                text("select max(date) from sensors where id = :v"), {"v": vid}).scalar()
+            guard = " OR ".join("s.%s IS NOT NULL" % c for c in selCols)
+            sql = ("insert into sensors (id, date, %s, rssi, bat, count, rep, pkt, req, raw) "
+                   "select :v, s.date, %s, -256, 100, 0, 0, 0, 1, '' "
+                   "from sensors s where s.id in (%s) and s.date > :lim and (%s) "
+                   "group by s.date"
+                   % (",".join(selCols),
+                      ",".join("avg(s.%s)" % c for c in selCols),
+                      ",".join(str(i) for i in ids), guard))
+            res = conn.execute(text(sql), {"v": vid, "lim": limit or "1970-01-01"})
+            print("virtual %d composed: %d rows (sources %s)"
+                  % (vid, res.rowcount, ",".join(str(i) for i in ids)))
+
 # the database write is the one step we never want interrupted halfway:
 # if termination was requested while fetching/merging, bail out here
 checkShutdown("database write")
@@ -687,6 +738,12 @@ ref.to_sql(
         "mastRain":Float
         }
 )
+# compose the virtual sensors (id 7 Wiese-Verbund) from the new data the
+# real sensors wrote since the last run - independent of whether the
+# external reference fetch above found anything new
+checkShutdown("virtual composition")
+composeVirtualSensors(engine)
+
 # close
 db.close()
 

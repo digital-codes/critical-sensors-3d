@@ -68,6 +68,12 @@ Database config: env var `REFSENSORS_DB_URL`, or the first line of
 `mysql://user:pass@host/cz`. Only rows newer than the latest stored row for
 sensor 0 are inserted.
 
+After the write, refSensors composes every active *virtual* sensor
+(currently id 7 „Wiese-Verbund") from the new data its sources wrote since
+the last run — `sensor_sources` drives it (`source_kind='sensor'`), values
+combine per `agg` (mean of what is present; missing sources don't block an
+hour). Same latest-date dedup: re-runs are no-ops.
+
 ## Database schema (create_tables.py)
 
 Four tables, built by `datatools/create_tables.py` (idempotent, `--sql`
