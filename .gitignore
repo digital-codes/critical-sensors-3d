@@ -9,6 +9,7 @@ datatools/dburl.txt
 # --- generated test/measurement output ---
 co2_*.csv
 ref_*.csv
+datatools/refsensors.lock
 
 # --- bulk imagery: keep out of git ---
 oldwww/img/
