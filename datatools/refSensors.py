@@ -557,7 +557,11 @@ if len(df) > 0:
 
    
 
-ref.reset_index(inplace=True)
+# rebuild a clean 0..n-1 index WITHOUT materializing it as a column — a bare
+# reset_index() would write a literal 'index' column that collides with the
+# AUTO_INCREMENT primary key on every re-run (values shift as the dedup
+# filter moves the frame window)
+ref.reset_index(drop=True, inplace=True)
 print("Adding data: ",len(ref))
 
 # the new ICOS meteo columns may not exist in an older table - add them
