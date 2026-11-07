@@ -44,6 +44,12 @@ Dashboard never talks to DWD/ICOS directly: the cron writes a JSON cache
 (`www/data/sensors.json`, one file per variable + meta) that the site fetches.
 Rationale: rate-limit rules, PID citation control, and the site stays static.
 
+Mixed cutoffs are the normal state: ICOS NRT objects publish roughly daily
+(their newest row is the last midnight), DWD/SensorCity trail by the refSensors
+cron interval, the local nodes report in realtime — so every series carries its
+own last timestamp and charts simply end where their data ends. The cache is
+the contract: the old site's srv.php will be replaced, don't design around it.
+
 ## 2b. Design tokens — picked up from the old site (critical-sensors.de)
 
 Source: `oldwww/css/custom.css` (colors documented there as "colors from cz
