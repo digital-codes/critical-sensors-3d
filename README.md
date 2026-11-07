@@ -12,7 +12,7 @@ driven through `opencode` for a complete change trace.
 | Path | What |
 |---|---|
 | `datatools/` | `refSensors.py` — assembles a virtual reference sensor from DWD (Kollsberg 04177) + ICOS (KIT tower @30 m CO₂, @2.5 m meteo) and writes it into the sensor DB. See `datatools/README.md`. |
-| `orchard/` | Three.js + ez-tree realtime 3D model of the orchard (terrain from LGL-BW DGM 0.25 m, aerial from DOP20 2024, 18 trees at OSM positions, seasons, compare mode). See `orchard/README.md`. |
+| `orchard/` | Three.js + ez-tree realtime 3D model of the orchard (terrain from LGL-BW DGM 0.25 m, aerial from DOP20 2024, 39 curated Baumkataster trees with photo-calibrated heights, LoD2 buildings, seasons, compare mode). See `orchard/README.md`. |
 | `oldwww/` | Current live PHP site (https://critical-sensors.de/) + weekly orchard photos 2020–2022. Reference for the new dashboard. |
 | `newimages/` | New 2026 reference photos (Hocksitzcafe, other directions). Too large for git; 9 downscaled copies live in `orchard/public/photos/`. |
 | `geoimages/` | LGL-BW open geodata (DGM, DOP, nDOM). Too large for git — re-download from https://opengeodata.lgl-bw.de/; see `geoimages/info.txt`. |
@@ -67,6 +67,35 @@ python3 orchard/tools/prepare_site.py
 ## Status
 
 - `update-refsensors-icos-access` — complete, live-verified (ICOS via `icoscp-core`,
-  DWD per-source staleness guard, SQLAlchemy 2.x, `--csv` mode).
+  DWD per-source staleness guard, SQLAlchemy 2.x, `--csv` mode). Archived
+  2026-11-07, deltas in `openspec/specs/reference-sensor-pipeline`.
 - `orchard-3d-model` — complete, browser-verified (terrain, trees, seasons,
-  structures, grass/sky, compare mode); visual tuning session open.
+  structures, grass/sky, compare mode); visual tuning session open. Archived
+  2026-11-07, deltas in `openspec/specs/orchard-3d-view`.
+- Work after those two changes (LoD2 buildings, photo-calibrated tree heights,
+  refSensors meteo/wind columns, dashboard plan + design tokens, Vogelflug
+  camera flight, Kamera panel, Vergleich photo vantage) is traced via git
+  commits + `orchard/README.md` — no OpenSpec change proposals for that batch;
+  the next batch (dashboard implementation) returns to the OpenSpec workflow.
+
+## Agent skills created or updated in the 2026-11-06/07 session
+
+Reusable Hermes-agent skills written while building this repo (they live in
+the agent's skill store, not in git — listed here for the change trace):
+
+- **wiese-critical-sensors** *(created)* — project conventions for this repo:
+  repo layout, ICOS/DWD rules, the +z-south handedness and absolute-DHHN
+  height conventions, git/credential hygiene, and the browser verification
+  loop for the orchard app. With references for ICOS Carbon Portal,
+  site geodata/ez-tree, and the Baumkataster pipeline.
+- **aerial-shadow-removal** *(created)* — recipe for flattening baked-in
+  shadows and tree crowns out of the DOP20 orthophoto so the terrain texture
+  doesn't double-shadow; used by `orchard/tools/prepare_site.py`.
+- **development-workflow-rules** *(updated)* — general dev-workflow guardrails
+  (openspec + opencode delegation among them) extended with this project's
+  conventions.
+- **openspec-apply-change** *(updated)* — implementation-loop skill for
+  working through OpenSpec change task lists, tuned during the
+  `update-refsensors-icos-access` / `orchard-3d-model` runs.
+- **github-repo-management** *(updated)* — repo/remote/release handling used
+  for the wiese + imgsmear repositories.
