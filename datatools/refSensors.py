@@ -48,11 +48,11 @@ def extract(s,data):
     df = pd.read_csv(io.StringIO(data),sep=";")
     df["date"] = df.MESS_DATUM.apply(d)
     #df.drop(columns=["MESS_DATUM","STATIONS_ID","QN_9","eor"],inplace=True)
-    df.drop(df.loc[df.date < "2020-10-01 00:00:00"].index,inplace=True)
+    df = df.drop(df.loc[df.date < "2020-10-01 00:00:00"].index)
     # DWD pads some column names with spaces ("   F") - tolerate both
     col = s["name"] if s["name"] in df.columns else s["name"].strip()
-    df.rename(columns={col:s["data"]},inplace=True)
-    df.reset_index(inplace=True)
+    df = df.rename(columns={col:s["data"]})
+    df = df.reset_index()
     if s["data"] == "light":
         df.light = df.light / 60 * 100
     if s["data"] == "rain":
@@ -288,8 +288,8 @@ if len(dwd[dwd.date >= limit]) < 1:
 
     # relevant data: AT (air temp), RH (rel humidity), AP (air press),
     meteo = meteoFull[["TIMESTAMP","AT","RH","AP"]].copy()
-    meteo.rename(columns={"TIMESTAMP":"date","AT":"temp","RH":"hum","AP":"pres"},inplace=True)
-    meteo.drop(index=meteo[meteo.date < "2020-10-01 00:00:00"].index,inplace=True)
+    meteo = meteo.rename(columns={"TIMESTAMP":"date","AT":"temp","RH":"hum","AP":"pres"})
+    meteo = meteo.drop(index=meteo[meteo.date < "2020-10-01 00:00:00"].index)
 
     dwd = meteo.copy()
     dwd["light"] = 0  # no light from kit
@@ -358,10 +358,10 @@ if len(dwd[dwd.date >= limit]) < 1:
 
 icos = getIcos("http://meta.icos-cp.eu/resources/cpmeta/atcCo2NrtGrowingDataObject","30",["TIMESTAMP","co2","Flag","NbPoints","Stdev"])
 # convert to dataframe
-icos.drop(index=icos[icos.co2.isnull()].index,inplace=True)
-icos.rename(columns={"TIMESTAMP":"date"},inplace=True)
-icos.drop(index=icos.loc[icos.date < "2020-10-01 00:00:00"].index,inplace=True)
-icos.drop(["Flag","NbPoints","Stdev"],axis=1,inplace=True)
+icos = icos.drop(index=icos[icos.co2.isnull()].index)
+icos = icos.rename(columns={"TIMESTAMP":"date"})
+icos = icos.drop(index=icos.loc[icos.date < "2020-10-01 00:00:00"].index)
+icos = icos.drop(["Flag","NbPoints","Stdev"],axis=1)
 #icos.reset_index(inplace=True)
 #icos.drop(["index"],axis=1,inplace=True)
 ts = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -376,9 +376,9 @@ if args.csv:
 icosMeteoCitationFile = os.path.join(scriptDir,"ICOS-CITATION-METEO.txt")
 meteoLow = getIcos("http://meta.icos-cp.eu/resources/cpmeta/atcMeteoGrowingNrtDataObject",None,
                    ["TIMESTAMP","AT","RH","WS"],citFile=icosMeteoCitationFile)
-meteoLow.rename(columns={"TIMESTAMP":"date","AT":"icosTemp","RH":"icosHum","WS":"icosWind"},inplace=True)
-meteoLow.drop(index=meteoLow.loc[meteoLow.date < "2020-10-01 00:00:00"].index,inplace=True)
-meteoLow.reset_index(drop=True,inplace=True)
+meteoLow = meteoLow.rename(columns={"TIMESTAMP":"date","AT":"icosTemp","RH":"icosHum","WS":"icosWind"})
+meteoLow = meteoLow.drop(index=meteoLow.loc[meteoLow.date < "2020-10-01 00:00:00"].index)
+meteoLow = meteoLow.reset_index(drop=True)
 
 # SensorCity wind mast at station '008 - Weiherfeldstraße' (621 m E of the
 # orchard): Karlsruhe SensorCity FeatureServer, layer 5
@@ -549,7 +549,7 @@ print("Check result:", df)
 if len(df) > 0:
     limit = str(df.date.values[0])
     print("removing old entries before: ",limit)
-    ref.drop(index=ref[ref.date <= limit].index,inplace=True)
+    ref = ref.drop(index=ref[ref.date <= limit].index)
     print("Remaining: ",ref)
     if ref.empty:
         print("No new data")
@@ -561,7 +561,7 @@ if len(df) > 0:
 # reset_index() would write a literal 'index' column that collides with the
 # AUTO_INCREMENT primary key on every re-run (values shift as the dedup
 # filter moves the frame window)
-ref.reset_index(drop=True, inplace=True)
+ref = ref.reset_index(drop=True)
 print("Adding data: ",len(ref))
 
 # the new ICOS meteo columns may not exist in an older table - add them
