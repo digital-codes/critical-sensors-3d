@@ -20,7 +20,7 @@ from icoscp_core.icos import meta, data
 
 # for sql connection
 # see https://www.tutorialspoint.com/sqlalchemy/sqlalchemy_core_sql_expressions.htm
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy import Table, Column, Integer, SmallInteger, Float, String, DateTime, MetaData
 
 # offline mode: fetch/merge only, write CSVs instead of touching the database
