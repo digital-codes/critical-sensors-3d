@@ -314,12 +314,28 @@ except Exception as exc:
     print("Sql failed:", exc)
     sys.exit(1)
 
-with engine.begin() as conn:
-    for stmt in statements:
-        conn.execute(text(stmt))
+# run each statement in its own transaction: MySQL auto-commits DDL, so a
+# later failure inside one big transaction would leave freshly created
+# EMPTY tables while the seeds roll back silently. Per-statement scope
+# makes any failure name the exact statement instead.
+done = 0
+for stmt in statements:
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(stmt))
+        done += 1
+    except Exception as exc:
+        print("FAILED on statement:\n  %s\n  error: %s" % (stmt.split("\n")[0][:120], exc))
+        sys.exit(1)
 
-print("Tables created (if they did not exist)." +
-      (" Migration applied (utf8mb4, sensor_variables -> sensor_sources)." if args.migrate else ""))
+print("%d statements executed (DDL + seeds%s)." %
+      (done, ", incl. utf8mb4 migration + sensor_variables drop" if args.migrate else ""))
+
+# seed sanity: the three seed tables must not stay empty
+with engine.connect() as conn:
+    for tbl in ("sensor_locations", "stations", "sensor_sources"):
+        n = conn.execute(text("select count(*) from %s" % tbl)).scalar()
+        print("  %-17s %d rows %s" % (tbl, n, "" if n else "<< EMPTY - seeds did not land"))
 
 # verification block
 with engine.connect() as conn:
