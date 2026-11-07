@@ -120,6 +120,36 @@ API quirks this probe works around (relevant for the dashboard cache later):
   `stadtteil: Beiertheim-Bulach` (the soil station 007 site, SW). All six
   sibling wind masts agree with their registrations, so the registration wins.
 
+## DWD wind — the measured source for refSensors' `wind` column
+
+Closest DWD station to the orchard: **04177 Rheinstetten, 4.6 km NE** — the
+same station `refSensors.py` already uses for temp/hum/light/pressure, and it
+is in the wind networks too. `refSensors.py` carries a reserved NULL `wind`
+column ("real source pending"); this is the source to slot in, without any
+schema change. Verified live 2026-11-07:
+
+- Hourly: `climate/hourly/wind/recent/stundenwerte_FF_04177_akt.zip` —
+  columns `F` (speed m/s), `D` (direction deg), `QN_3`; latest ~1–2 days lag.
+- **10-minute (preferred)**:
+  `climate/10_minutes/wind/recent/10minutenwerte_wind_04177_akt.zip` —
+  columns `FF_10` (10-min mean speed m/s), `DD_10` (direction deg), `QN`;
+  ~550-day rolling retention, ~1-day publication lag.
+- 10-minute gusts:
+  `climate/10_minutes/extreme_wind/recent/10minutenwerte_extrema_wind_04177_akt.zip` —
+  columns `FX_10` (max 2-s gust), `FNX_10`/`FMX_10` (min/max 10-min mean),
+  `DX_10` (direction).
+
+Forecasts (dashboard wind overlay): prefer **ECMWF** over the American GFS —
+the radiationMap repo (`digital-codes/radiationMap`, `getWind100.py`) fetches
+ECMWF AIFS-single 0.25° 100 m wind GRIB2 from
+`https://data.ecmwf.int/forecasts/` (4 runs/day, ~57 MB/slot, steps 0–12 h @3 h,
+CC BY 4.0 + attribution wording; nearest grid cell (49.0, 8.5) ≈ 8.3 km;
+~6 h publication lag, 12 h fallback needed). sensor.community's `wind.json`
+map layer is the same 8.3 km cell but NCEP GFS 0.5°/10 m — forecast only, no
+measured history anywhere in that repo; measured series are DWD 04177 above,
+the SensorCity mast at 621 m, and ICOS KIT `WS` (already ingested as
+`icosWind`).
+
 ## Timezone convention
 
 Stored dates are **UTC+1 (CET)**; rows before 2020-10-25 02:00 (UTC+2) get an
