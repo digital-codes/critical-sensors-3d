@@ -184,9 +184,13 @@ Inputs: `geoimages/` (LGL-BW DGM/DOP GeoTIFFs + world files),
   instanced low-poly canopy blobs (`src/thicket.ts`) scattered inside
   `CONFIG.THICKET.POLYGON` — local-metre vertices traced from the red
   "Bushes" outline in `newimages/wiese-gebuesch.png` (edit the polygon to
-  reshape the strip, `CONFIG.THICKET.COUNT` for density). Static geometry,
-  one draw call, casts shadows; seasons only change the tint
-  (`CONFIG.THICKET.SEASON_TINT`, dark in winter — no snow-heap look).
+  reshape the strip, `CONFIG.THICKET.COUNT` for density). Each blob is
+  textured with a random canopy patch of the aerial orthophoto (instanced
+  UV offsets, rejection-sampled on dark vegetation pixels), multiplied by
+  the season tint (`CONFIG.THICKET.SEASON_TINT` — bright casts, dark grey
+  in winter). Terrain snow is suppressed on the strip: main.ts zeroes the
+  lawn-mask cells inside/around the polygon before handing the snow mask
+  to the terrain, so winter snow stays on the orchard meadow.
 - Winter snow as irregular Perlin patches, confined to the lawn mask
   (meadow only — paths, trails, street, and yards stay bare).
 - 26 LoD2 buildings around the orchard (west residential row incl.

@@ -219,15 +219,18 @@ export const CONFIG = {
     /** keep this far from the individually rendered orchard trees */
     TREE_CLEARANCE: 5,
     SEED: 4711,
+    /** multipliers over the aerial canopy texture — the texture already
+     *  carries the foliage colour, so these are bright casts (summer ~white
+     *  with a green bias, autumn warm, winter grey desaturating) */
     SEASON_TINT: {
-      winter: 0x565644,
-      spring: 0x4f7a33,
-      summer: 0x3f6428,
-      earlyAutumn: 0x6f7a33,
-      midAutumn: 0x7a6a2e,
-      autumn: 0x7a5f2e,
-      lateAutumn: 0x6a5530,
-      dormant: 0x565644,
+      winter: 0x8a8a7c,
+      spring: 0xc8dcb0,
+      summer: 0xdce8cc,
+      earlyAutumn: 0xd0d8a8,
+      midAutumn: 0xd0c890,
+      autumn: 0xd0b888,
+      lateAutumn: 0xc8b090,
+      dormant: 0x8a8a7c,
     },
   },
 

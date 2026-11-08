@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { CONFIG } from './config';
 import { mulberry32 } from './rng';
 import { snowAmount, type SeasonKey } from './seasons';
+import { X_MIN, Z_MIN, WIN_W, WIN_D } from './terrain';
 import site from './site';
 
 /** ray-casting point-in-polygon on the config polygon (local metres) */
@@ -49,7 +50,63 @@ export async function createThicket(
 
   const rng = mulberry32(cfg.SEED);
   const geo = new THREE.IcosahedronGeometry(1, 1); // 80 tris — cheap at scale
-  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true, roughness: 1 });
+  // every blob carries a random CANOPY PATCH of the aerial orthophoto (not a
+  // world-space projection — that would copy the terrain pixels and blend
+  // into the ground): rejection-sample dark-vegetation UV offsets inside the
+  // polygon area, then map the blob's local surface onto that patch
+  const aerialImg = new Image();
+  aerialImg.src = '/' + 'site/aerial.jpg';
+  await aerialImg.decode();
+  const acv = document.createElement('canvas');
+  acv.width = aerialImg.width;
+  acv.height = aerialImg.height;
+  const actx = acv.getContext('2d', { willReadFrequently: true })!;
+  actx.drawImage(aerialImg, 0, 0);
+  const apx = actx.getImageData(0, 0, acv.width, acv.height).data;
+  const darkVegetationUv = (): [number, number] => {
+    for (let guard2 = 0; guard2 < 200; guard2++) {
+      const x = Math.min(...poly.map((p) => p[0])) + rng() * (Math.max(...poly.map((p) => p[0])) - Math.min(...poly.map((p) => p[0])));
+      const z = Math.min(...poly.map((p) => p[1])) + rng() * (Math.max(...poly.map((p) => p[1])) - Math.min(...poly.map((p) => p[1])));
+      const px = Math.round((x - X_MIN) / 0.2);
+      const py = Math.round((z - Z_MIN) / 0.2);
+      if (px < 1 || py < 1 || px >= acv.width - 1 || py >= acv.height - 1) continue;
+      const i = (py * acv.width + px) * 4;
+      const r = apx[i], g = apx[i + 1], b = apx[i + 2];
+      if (g > r && g >= b && (r + g + b) / 3 < 110) return [px / acv.width, py / acv.height];
+    }
+    return [0.5, 0.5];
+  };
+
+  const aerial = await new THREE.TextureLoader().loadAsync('/' + 'site/aerial.jpg');
+  aerial.colorSpace = THREE.SRGBColorSpace;
+  aerial.flipY = false; // row 0 = north, v grows southward — matches the UV offsets above
+  aerial.anisotropy = 8;
+  const uvOffAttr = new THREE.InstancedBufferAttribute(new Float32Array(cfg.COUNT * 2), 2);
+  geo.setAttribute('aUvOff', uvOffAttr);
+  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true, roughness: 1, map: aerial });
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.aerialMap = { value: aerial };
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nvarying vec2 vAuv;\nvarying vec3 vLocalPos;\nattribute vec2 aUvOff;',
+      )
+      .replace(
+        '#include <begin_vertex>',
+        '#include <begin_vertex>\nvAuv = aUvOff;\nvLocalPos = position;',
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nvarying vec2 vAuv;\nvarying vec3 vLocalPos;\nuniform sampler2D aerialMap;',
+      )
+      .replace(
+        '#include <map_fragment>',
+        // 1 local unit ~ 2.5 m of imagery; the icosahedron spans ±1
+        `vec2 auv = vAuv + vLocalPos.xz * ${ (2.5 / 280).toFixed(6) };
+         diffuseColor *= texture2D(aerialMap, auv);`,
+      );
+  };
   const mesh = new THREE.InstancedMesh(geo, mat, cfg.COUNT);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
@@ -83,11 +140,14 @@ export async function createThicket(
     const v = 0.75 + rng() * 0.5; // per-blob brightness variation
     col.setRGB(v, v * (0.9 + rng() * 0.2), v * (0.85 + rng() * 0.2));
     mesh.setColorAt(placed, col);
+    const [uu, vv] = darkVegetationUv();
+    uvOffAttr.setXY(placed, uu, vv);
     placed++;
   }
   mesh.count = placed;
   mesh.instanceMatrix.needsUpdate = true;
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  uvOffAttr.needsUpdate = true;
   group.add(mesh);
 
   return {
