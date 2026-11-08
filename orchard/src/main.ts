@@ -223,13 +223,17 @@ async function main(): Promise<void> {
     if (seasonValue && seasonInput) {
       const day = Number(seasonInput.value);
       // sync the tree season with the slider so day 0 labels "Winter"
-      seasonValue.textContent = `Tag ${day} (${monthDay(day)}) · ${labelFor(o.setSeason(day))}`;
+      seasonValue.textContent = `Tag ${String(day).padStart(3, '0')} (${monthDay(day)}) · ${labelFor(o.setSeason(day))}`;
     }
   });
 
   function labelFor(key: string): string {
     return CONFIG.UI.SEASON_LABELS[key as keyof typeof CONFIG.UI.SEASON_LABELS] ?? 'Sommer';
   }
+
+  // fixed-format season label (3-digit day) so the slider panel never reflows
+  const seasonLabel = (day: number): string =>
+    `Tag ${String(day).padStart(3, '0')} (${monthDay(day)})${orchard ? ` · ${labelFor(orchard.setSeason(day))}` : ''}`;
 
   seasonInput?.addEventListener('input', () => {
     const day = Number(seasonInput.value);
@@ -238,9 +242,7 @@ async function main(): Promise<void> {
     structures.setSnow(snowAmount(day));
     updateSun(day);
     if (seasonValue) {
-      seasonValue.textContent = `Tag ${day} (${monthDay(day)})${
-        orchard ? ` · ${labelFor(orchard.setSeason(day))}` : ''
-      }`;
+      seasonValue.textContent = seasonLabel(day);
     }
   });
 

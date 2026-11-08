@@ -154,7 +154,12 @@
         accent-color: #9ac95e;
       }
       #season .value {
-        min-width: 118px;
+        /* fixed width + tabular digits: dragging the slider must never reflow
+           the panel (label length varies with the season name) */
+        width: 232px;
+        white-space: nowrap;
+        overflow: hidden;
+        font-variant-numeric: tabular-nums;
         text-align: right;
       }
       footer {

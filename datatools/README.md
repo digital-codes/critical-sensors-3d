@@ -73,10 +73,11 @@ URL) plus licence and landing-page links.
 
 Database config: the env var `REFSENSORS_DB_URL` wins; otherwise the **first
 non-empty line** of `datatools/dburl.txt` is used. The file is a SQLAlchemy
-database URL — one line, no comments:
+database URL — one line, no comments. Example (placeholder credentials —
+replace user, password, host and database with your own):
 
 ```
-mysql+pymysql://user:password@host:3306/cz?charset=utf8mb4
+mysql+pymysql://wiese:S3cret%21Passw0rd@db-host.example.lan:3306/wiese?charset=utf8mb4
 ```
 
 - driver prefix `mysql+pymysql://` (PyMySQL is the only installed driver);
@@ -84,6 +85,9 @@ mysql+pymysql://user:password@host:3306/cz?charset=utf8mb4
 - port optional (3306 default); `?charset=utf8mb4` recommended — the scripts
   force `charset=utf8mb4` on the connection anyway, so umlauts in seeds and
   data survive any server default
+- **special characters in the password must be percent-encoded** in the URL:
+  `@` → `%40`, `!` → `%21`, `#` → `%23`, `:` → `%3A`, `/` → `%2F` (so the
+  example password `S3cret!Passw0rd` is written `S3cret%21Passw0rd`)
 - keep the file out of version control (gitignored); same for the env var
 
 Only rows newer than the latest stored row for sensor 0 are inserted —

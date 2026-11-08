@@ -169,9 +169,13 @@ Inputs: `geoimages/` (LGL-BW DGM/DOP GeoTIFFs + world files),
 - Terrain mesh from real DGM heights, textured with the aerial orthophoto.
 - 39 procedural trees (ez-tree presets), rescaled at runtime to the
   calibrated per-tree heights (photo-based, 5.4–15.6 m).
-- 4 season variants per tree, selected via a day-of-year slider (0–364);
-  winter renders bare (vendored-ez-tree tip-leaf gate, see above) and
-  winter grass sits at 2 cm so blades do not speckle the snow surface.
+- 8 season variants per tree (season keyframes in `src/config.ts`
+  `CONFIG.SEASONS`), selected via a fixed-width day-of-year slider (0–364).
+  Leaf-fall calendar: canopies hold full leaves until Oct 1, thin through
+  October (0.7 by Oct 18) and November (0.45 / 0.2), and are bare from
+  Dec 1 through winter — winter renders bare (vendored-ez-tree tip-leaf
+  gate, see above) and winter grass sits at 2 cm so blades do not speckle
+  the snow surface.
 - Seasonal grass height (growth from late Feb, peak early summer, mowed
   late Aug, low winter) and a seasonal midday sun, so the generated trees
   cast the only, season-correct shadows.
