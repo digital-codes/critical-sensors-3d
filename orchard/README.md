@@ -32,6 +32,21 @@ npm run build    # tsc + vite build
   of the file): generated site data → `site.json` (via `tools/prepare_site.py`,
   never hand-edited); app tunable → `config.ts`; algorithm-internal numbers →
   local constant with a comment.
+- The main `CONFIG` groups:
+  - `SCENE` — dome/sky colour, hemisphere light, cloud band
+  - `SUN` — day-driven sun position, seasonal light factors
+  - `FLIGHT` — bird-flight waypoints, duration, camera offsets
+  - `SKY.CONDITIONS` — the four weather presets (`klar`, `heiter`,
+    `leichtBedeckt` default, `gewitter`); `DEFAULT_CONDITION` selects the
+    startup preset
+  - `SEASONS` — the season calendar (8 keyframes: day-of-year anchor, leaf
+    density, canopy tint; leaf-fall runs Oct 1 → bare Dec 1) and the
+    derived snow curve
+  - `GRASS` — blade count, height/mow curve, per-season tints
+  - `THICKET` — bush strip west of the orchard: `POLYGON` (local-metre
+    vertices — edit to reshape the strip), `COUNT`, blob radius/squash,
+    `TREE_CLEARANCE`, `SEED`, per-season tints
+  - `UI` — season labels, panel strings
 - `?seed=<n>` on the URL makes every random scene decision (grass blade
   placement, cloud placement/textures) reproducible via a mulberry32 PRNG
   (`src/rng.ts`) — the same seed renders a pixel-identical scene, which is
