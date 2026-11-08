@@ -13,6 +13,21 @@
  * Sections mirror the consuming module. Values are transcribed verbatim
  * from the modules they came from; behaviour must not change when they move.
  */
+/** One sky condition preset (values see CONFIG.SKY.CONDITIONS) */
+export type SkyCondition = {
+  LABEL: string;
+  DOME_TOP: number;
+  DOME_HORIZON: number;
+  CLOUD_COUNT: number;
+  CLOUD_TINT: number;
+  CLOUD_OPACITY_MIN: number;
+  CLOUD_OPACITY_JITTER: number;
+  FOG: number;
+  SUN_FACTOR: number;
+  HEMI_FACTOR: number;
+  AMBIENT_FACTOR: number;
+};
+
 export const CONFIG = {
   /** debug/testing hooks */
   DEBUG: {
@@ -50,7 +65,6 @@ export const CONFIG = {
 
   /** scene background / fog / global lights (main.ts) */
   SCENE: {
-    SKY_COLOR: 0xb9c6d0,
     FOG_NEAR: 400,
     FOG_FAR: 1600,
     HEMI: { SKY: 0xe8eef2, GROUND: 0x62604e, INTENSITY: 1.0 },
@@ -103,7 +117,6 @@ export const CONFIG = {
 
   /** procedural sky dome + cloud billboards (sky.ts) */
   SKY: {
-    CLOUD_COUNT: 12,
     /** cloud drift wrap bounds, local metres from origin */
     CLOUD_SPAN: 1000,
     /** approximate site ground level (terrain 111–123 m). NOTE: SUN.ANCHOR
@@ -111,13 +124,56 @@ export const CONFIG = {
      *  unified by the config extraction (no behaviour change). */
     GROUND_Y: 115,
     DOME_RADIUS: 1500,
-    DOME_TOP: 0xbfcdd8,
-    DOME_HORIZON: 0xe8ecef,
     /** cloud sprite band above ground: GROUND_Y + BASE + rand·JITTER */
     CLOUD_ALT_BASE: 80,
     CLOUD_ALT_JITTER: 40,
     /** number of shared cloud textures */
     TEXTURES: 3,
+    /** condition active on load (key of CONDITIONS) */
+    DEFAULT_CONDITION: 'leichtBedeckt',
+    /**
+     * Sky condition presets — the single home for every sky/weather look
+     * value. Dome colours + cloud count/tint/opacity + fog/background +
+     * light factors (multipliers on the seasonal light bases) switch
+     * together. leichtBedeckt MUST hold the pre-preset look exactly
+     * (12 clouds, opacity 0.55+0.30, white tint, dome 0xbfcdd8/0xe8ecef,
+     * fog 0xb9c6d0, all light factors 1.0) — the default load is
+     * pixel-verified against that baseline.
+     */
+    CONDITIONS: {
+      klar: {
+        LABEL: 'Klar',
+        DOME_TOP: 0x3d7fd6, DOME_HORIZON: 0xcfe8ff,
+        CLOUD_COUNT: 2, CLOUD_TINT: 0xffffff,
+        CLOUD_OPACITY_MIN: 0.25, CLOUD_OPACITY_JITTER: 0.2,
+        FOG: 0xcfe8ff,
+        SUN_FACTOR: 1.2, HEMI_FACTOR: 0.9, AMBIENT_FACTOR: 1.0,
+      },
+      heiter: {
+        LABEL: 'Heiter',
+        DOME_TOP: 0x6f9fd8, DOME_HORIZON: 0xdce9f5,
+        CLOUD_COUNT: 6, CLOUD_TINT: 0xffffff,
+        CLOUD_OPACITY_MIN: 0.45, CLOUD_OPACITY_JITTER: 0.25,
+        FOG: 0xdce9f5,
+        SUN_FACTOR: 1.1, HEMI_FACTOR: 0.95, AMBIENT_FACTOR: 1.0,
+      },
+      leichtBedeckt: {
+        LABEL: 'Leicht bedeckt',
+        DOME_TOP: 0xbfcdd8, DOME_HORIZON: 0xe8ecef,
+        CLOUD_COUNT: 12, CLOUD_TINT: 0xffffff,
+        CLOUD_OPACITY_MIN: 0.55, CLOUD_OPACITY_JITTER: 0.3,
+        FOG: 0xb9c6d0,
+        SUN_FACTOR: 1.0, HEMI_FACTOR: 1.0, AMBIENT_FACTOR: 1.0,
+      },
+      gewitter: {
+        LABEL: 'Gewitter',
+        DOME_TOP: 0x414b55, DOME_HORIZON: 0x828c96,
+        CLOUD_COUNT: 18, CLOUD_TINT: 0x5f6873,
+        CLOUD_OPACITY_MIN: 0.75, CLOUD_OPACITY_JITTER: 0.2,
+        FOG: 0x828c96,
+        SUN_FACTOR: 0.35, HEMI_FACTOR: 0.55, AMBIENT_FACTOR: 0.9,
+      },
+    } as const satisfies Record<string, SkyCondition>,
   },
 
   /** instanced grass blades (grass.ts) */

@@ -38,6 +38,44 @@ npm run build    # tsc + vite build
   how refactors get verified by pixel comparison. Without the parameter the
   scene is randomised per load, as before.
 
+### Sky conditions
+
+Four weather presets live in `src/config.ts` (`CONFIG.SKY.CONDITIONS`) —
+dome gradient, cloud count/tint/opacity, fog/background colour and
+sun/hemisphere/ambient light factors switch together:
+
+| key | look |
+|---|---|
+| `klar` | blue sky, at most wispy clouds, bright sun |
+| `heiter` | blue sky with a few light clouds |
+| `leichtBedeckt` | cloudy but light — the **default** (pre-preset look) |
+| `gewitter` | heavy dark clouds, thunderstorm mood, heavily dimmed sun |
+
+The dropdown next to the day slider (visible once the trees are generated)
+switches the condition; tooling and the dashboard can do the same via
+`window.__scene3.sky.setCondition('gewitter')` and read the active key from
+`window.__scene3.sky.condition`. Cloud placement is deterministic per
+condition (same key → same layout). New presets are added in `config.ts`
+only — `sky.ts`/`main.ts` read, never re-declare.
+
+### Bird-flight video export
+
+`tools/render_flight_video.py` renders a deterministic clip of the flight
+sequence from a running dev server: frames are pinned via
+`window.__scene3.flight.seek(t)` (absolute flight time → reproducible) with
+a fixed `?seed=`, then muxed to **H.264 High@4.0, CFR, yuv420p, faststart**
+using the `imageio-ffmpeg` static build:
+
+```sh
+/home/agent/bin/python tools/render_flight_video.py \
+    --url http://127.0.0.1:5199 --seconds 2 --fps 30 \
+    --out birdflight-720p.mp4
+```
+
+Do NOT use the distro `ffmpeg` for the final encode on this machine: it is
+ffmpeg-free (no libx264) and its openh264 fallback produces Baseline@3.1
+MP4s that VLC refuses to play.
+
 ## Geodata, findings, and methods
 
 App-local axes: +x = east, +y = up, **+z = south** — (east, up, south) is the

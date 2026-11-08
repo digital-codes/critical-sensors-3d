@@ -1,11 +1,13 @@
 import * as THREE from 'three';
-import { CONFIG } from './config';
-import type { Rng } from './rng';
+import { CONFIG, type SkyCondition } from './config';
+import { mulberry32, type Rng } from './rng';
 
-// count/span/ground level live in CONFIG.SKY (single constants home)
+// All sky look values live in CONFIG.SKY.CONDITIONS (single constants home).
 
 export interface Sky {
   group: THREE.Group;
+  /** switch dome/clouds to a named condition (unknown keys are ignored) */
+  setCondition(key: string): void;
   update(deltaTime: number): void;
 }
 
@@ -37,13 +39,14 @@ export function createSky(rng: Rng = Math.random): Sky {
   const group = new THREE.Group();
   group.name = 'sky';
 
-  // overcast gradient dome
+  // dome gradient from the default condition's colours
+  const initial = CONFIG.SKY.CONDITIONS[CONFIG.SKY.DEFAULT_CONDITION];
   const domeMat = new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: false,
     uniforms: {
-      topColor: { value: new THREE.Color(CONFIG.SKY.DOME_TOP) },
-      horizonColor: { value: new THREE.Color(CONFIG.SKY.DOME_HORIZON) },
+      topColor: { value: new THREE.Color(initial.DOME_TOP) },
+      horizonColor: { value: new THREE.Color(initial.DOME_HORIZON) },
     },
     vertexShader: `
       varying vec3 vDir;
@@ -65,30 +68,65 @@ export function createSky(rng: Rng = Math.random): Sky {
   const dome = new THREE.Mesh(new THREE.SphereGeometry(CONFIG.SKY.DOME_RADIUS, 32, 16), domeMat);
   group.add(dome);
 
-  // procedural cloud billboards
+  // procedural cloud billboards (shared textures, per-condition materials)
   const textures = Array.from({ length: CONFIG.SKY.TEXTURES }, () => makeCloudTexture(rng));
   const clouds: { sprite: THREE.Sprite; speed: number }[] = [];
-  for (let i = 0; i < CONFIG.SKY.CLOUD_COUNT; i++) {
-    const mat = new THREE.SpriteMaterial({
-      map: textures[i % textures.length],
-      transparent: true,
-      depthWrite: false,
-      opacity: 0.55 + rng() * 0.3,
-    });
-    const sprite = new THREE.Sprite(mat);
-    const w = 140 + rng() * 160;
-    sprite.scale.set(w, w * (0.4 + rng() * 0.2), 1);
-    sprite.position.set(
-      (rng() - 0.5) * 2 * CONFIG.SKY.CLOUD_SPAN,
-      CONFIG.SKY.GROUND_Y + CONFIG.SKY.CLOUD_ALT_BASE + rng() * CONFIG.SKY.CLOUD_ALT_JITTER,
-      (rng() - 0.5) * 2 * CONFIG.SKY.CLOUD_SPAN,
-    );
-    group.add(sprite);
-    clouds.push({ sprite, speed: 1 + rng() * 2 });
-  }
+
+  /** rng call order MUST stay: opacity → w → aspect → x → y → z → speed
+   *  (keeps the page-seeded default placement byte-identical) */
+  const spawnClouds = (
+    count: number,
+    tint: number,
+    opacityMin: number,
+    opacityJitter: number,
+    cloudRng: Rng,
+  ): void => {
+    for (let i = 0; i < count; i++) {
+      const mat = new THREE.SpriteMaterial({
+        map: textures[i % textures.length],
+        transparent: true,
+        depthWrite: false,
+        opacity: opacityMin + cloudRng() * opacityJitter,
+        color: tint,
+      });
+      const sprite = new THREE.Sprite(mat);
+      const w = 140 + cloudRng() * 160;
+      sprite.scale.set(w, w * (0.4 + cloudRng() * 0.2), 1);
+      sprite.position.set(
+        (cloudRng() - 0.5) * 2 * CONFIG.SKY.CLOUD_SPAN,
+        CONFIG.SKY.GROUND_Y + CONFIG.SKY.CLOUD_ALT_BASE + cloudRng() * CONFIG.SKY.CLOUD_ALT_JITTER,
+        (cloudRng() - 0.5) * 2 * CONFIG.SKY.CLOUD_SPAN,
+      );
+      group.add(sprite);
+      clouds.push({ sprite, speed: 1 + cloudRng() * 2 });
+    }
+  };
+
+  spawnClouds(
+    initial.CLOUD_COUNT,
+    initial.CLOUD_TINT,
+    initial.CLOUD_OPACITY_MIN,
+    initial.CLOUD_OPACITY_JITTER,
+    rng,
+  );
 
   return {
     group,
+    setCondition(key: string): void {
+      const cond = (CONFIG.SKY.CONDITIONS as Record<string, SkyCondition>)[key];
+      if (!cond) return;
+      domeMat.uniforms.topColor.value.set(cond.DOME_TOP);
+      domeMat.uniforms.horizonColor.value.set(cond.DOME_HORIZON);
+      for (const { sprite } of clouds) {
+        group.remove(sprite);
+        (sprite.material as THREE.SpriteMaterial).dispose();
+      }
+      clouds.length = 0;
+      // condition-stable placement: same key → same layout, independent of
+      // page seed and switch history
+      const seed = 0xc10d + Object.keys(CONFIG.SKY.CONDITIONS).indexOf(key);
+      spawnClouds(cond.CLOUD_COUNT, cond.CLOUD_TINT, cond.CLOUD_OPACITY_MIN, cond.CLOUD_OPACITY_JITTER, mulberry32(seed));
+    },
     update(deltaTime: number): void {
       for (const c of clouds) {
         c.sprite.position.x += c.speed * deltaTime;

@@ -11,7 +11,7 @@ import site from './site';
 import { createComparePanel } from './compare';
 import { createBirdFlight } from './flight';
 import { createCameraUI } from './cameraui';
-import { CONFIG } from './config';
+import { CONFIG, type SkyCondition } from './config';
 import { sceneRng } from './rng';
 
 function monthDay(day: number): string {
@@ -33,18 +33,22 @@ async function main(): Promise<void> {
   document.body.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  const skyColor = CONFIG.SCENE.SKY_COLOR;
-  scene.background = new THREE.Color(skyColor);
+  // sky/fog colour starts at the default sky condition's fog value
+  const skyColor = new THREE.Color(CONFIG.SKY.CONDITIONS[CONFIG.SKY.DEFAULT_CONDITION].FOG);
+  scene.background = skyColor;
   scene.fog = new THREE.Fog(skyColor, CONFIG.SCENE.FOG_NEAR, CONFIG.SCENE.FOG_FAR);
 
+  // active sky condition (CONFIG.SKY.CONDITIONS) — its light factors scale
+  // the seasonal light bases so dark clouds come with dimmed lights
+  let skyConditionKey: string = CONFIG.SKY.DEFAULT_CONDITION;
+
   // soft overcast lighting; the sun's midday elevation follows the season
-  scene.add(
-    new THREE.HemisphereLight(
-      CONFIG.SCENE.HEMI.SKY,
-      CONFIG.SCENE.HEMI.GROUND,
-      CONFIG.SCENE.HEMI.INTENSITY,
-    ),
+  const hemi = new THREE.HemisphereLight(
+    CONFIG.SCENE.HEMI.SKY,
+    CONFIG.SCENE.HEMI.GROUND,
+    CONFIG.SCENE.HEMI.INTENSITY,
   );
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight(CONFIG.SUN.COLOR, CONFIG.SUN.BASE_INTENSITY);
   sun.castShadow = true;
   sun.shadow.mapSize.set(CONFIG.SUN.SHADOW.MAP_SIZE, CONFIG.SUN.SHADOW.MAP_SIZE);
@@ -72,11 +76,15 @@ async function main(): Promise<void> {
     const R = CONFIG.SUN.ORBIT_R;
     sun.position.set(cx, cy + Math.sin(alt) * R, cz + Math.cos(alt) * R);
     sun.target.position.set(cx, cy, cz);
-    sun.intensity = CONFIG.SUN.INTENSITY_BASE + CONFIG.SUN.INTENSITY_AMP * Math.sin(alt);
+    sun.intensity =
+      (CONFIG.SUN.INTENSITY_BASE + CONFIG.SUN.INTENSITY_AMP * Math.sin(alt)) *
+      (CONFIG.SKY.CONDITIONS as Record<string, SkyCondition>)[skyConditionKey]
+        .SUN_FACTOR;
   }
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  scene.add(new THREE.AmbientLight(CONFIG.SCENE.AMBIENT.COLOR, CONFIG.SCENE.AMBIENT.INTENSITY));
+  const ambient = new THREE.AmbientLight(CONFIG.SCENE.AMBIENT.COLOR, CONFIG.SCENE.AMBIENT.INTENSITY);
+  scene.add(ambient);
 
   const rig = createCameraRig(renderer.domElement, window.innerWidth / window.innerHeight);
   // debug/testing hook: lets tooling move the camera programmatically
@@ -88,6 +96,47 @@ async function main(): Promise<void> {
 
   const sky: Sky = createSky(sceneRng());
   scene.add(sky.group);
+
+  // Apply a sky condition everywhere at once: dome + clouds (sky), fog and
+  // background colour, hemisphere/ambient levels, and the sun via updateSun.
+  const applySkyCondition = (key: string): void => {
+    if (!(key in CONFIG.SKY.CONDITIONS)) return;
+    skyConditionKey = key;
+    sky.setCondition(key);
+    const cond = (CONFIG.SKY.CONDITIONS as Record<string, SkyCondition>)[key];
+    skyColor.set(cond.FOG);
+    (scene.fog as THREE.Fog).color.set(cond.FOG);
+    hemi.intensity = CONFIG.SCENE.HEMI.INTENSITY * cond.HEMI_FACTOR;
+    ambient.intensity = CONFIG.SCENE.AMBIENT.INTENSITY * cond.AMBIENT_FACTOR;
+    const dayInput = document.getElementById('dayofyear') as HTMLInputElement | null;
+    updateSun(Number(dayInput?.value ?? 190));
+  };
+  // debug/dashboard hook: programmatic sky control without the UI
+  (window as unknown as Record<string, unknown>).__scene3 = {
+    ...(window as unknown as Record<string, unknown>).__scene3 as object,
+    sky: {
+      setCondition: applySkyCondition,
+      get condition() {
+        return skyConditionKey;
+      },
+    },
+  };
+  // sky condition dropdown next to the day slider
+  const seasonPanelEl = document.getElementById('season');
+  if (seasonPanelEl) {
+    const skySelect = document.createElement('select');
+    skySelect.id = 'skycondition';
+    skySelect.title = 'Himmelszustand';
+    for (const [key, cond] of Object.entries(CONFIG.SKY.CONDITIONS)) {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = cond.LABEL;
+      if (key === CONFIG.SKY.DEFAULT_CONDITION) opt.selected = true;
+      skySelect.appendChild(opt);
+    }
+    skySelect.addEventListener('change', () => applySkyCondition(skySelect.value));
+    seasonPanelEl.appendChild(skySelect);
+  }
 
   const structures = await createStructures();
   scene.add(structures.group);
@@ -106,7 +155,7 @@ async function main(): Promise<void> {
   scene.add(buildings.group);
   // debug/testing hook: direct access to the snow-driven scene parts
   (window as unknown as Record<string, unknown>).__scene3 =
-    { terrain, grass, structures, buildings };
+    { ...((window as unknown as Record<string, unknown>).__scene3 as object), terrain, grass, structures, buildings };
   // hand the lawn mask to the terrain so winter snow covers exactly the
   // grass region (same cells the blades are placed on)
   const lm = grass.getLawnMask();
