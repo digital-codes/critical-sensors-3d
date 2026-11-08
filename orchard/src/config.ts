@@ -278,6 +278,23 @@ export const CONFIG = {
     ROOF_TINT: 0xffffff,
   },
 
+  /** walking cat (cat.ts): seeded patrol loop between the tree rows */
+  CAT: {
+    /** hidden by default; "Katze" checkbox in the season panel */
+    ENABLED: false,
+    /** calm walk speed, m/s */
+    SPEED: 0.8,
+    /** real-size cat: normalized body length in metres (× SCALE) */
+    BODY_LENGTH: 0.5,
+    SCALE: 1,
+    /** patrol path seed (hash → mulberry32) */
+    SEED: 'katzenwedel',
+    /** min clearance to any orchard tree, m */
+    CLEARANCE: 3,
+    /** chase cam: distance behind (along -heading) and above, m */
+    FOLLOW: { BACK: 4, UP: 2.2 },
+  },
+
   /** German site-language label tables (main.ts, compare.ts) */
   UI: {
     MONTHS: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'],

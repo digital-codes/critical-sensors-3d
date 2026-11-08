@@ -12,6 +12,7 @@ import site from './site';
 import { createComparePanel } from './compare';
 import { createBirdFlight } from './flight';
 import { createCameraUI } from './cameraui';
+import { createCat, type Cat } from './cat';
 import { CONFIG, type SkyCondition } from './config';
 import { sceneRng } from './rng';
 
@@ -198,6 +199,12 @@ async function main(): Promise<void> {
   maskTex.needsUpdate = true;
   terrain.setSnowMask(maskTex);
 
+  // walking cat (hidden by default; "Katze" toggle below)
+  const cat: Cat = await createCat();
+  scene.add(cat.group);
+  (window as unknown as Record<string, unknown>).__scene3 =
+    { ...((window as unknown as Record<string, unknown>).__scene3 as object), cat };
+
   // season UI (hidden until the orchard is ready)
   const seasonInput = document.getElementById('dayofyear') as HTMLInputElement | null;
   const seasonValue = document.getElementById('seasonvalue') as HTMLElement | null;
@@ -216,6 +223,42 @@ async function main(): Promise<void> {
 
   createComparePanel(renderer, rig, seasonInput);
   createCameraUI(rig);
+
+  // "Katze" toggle in the season panel (hidden default, no page reload)
+  if (seasonPanel) {
+    const catToggle = document.createElement('input');
+    catToggle.type = 'checkbox';
+    catToggle.id = 'showcat';
+    catToggle.title = 'Katze zeigen';
+    catToggle.checked = CONFIG.CAT.ENABLED;
+    const catLabel = document.createElement('label');
+    catLabel.htmlFor = 'showcat';
+    catLabel.textContent = 'Katze';
+    catToggle.addEventListener('change', () => {
+      cat.setVisible(catToggle.checked);
+      if (!catToggle.checked) setFollow(false);
+    });
+    seasonPanel.appendChild(catToggle);
+    seasonPanel.appendChild(catLabel);
+  }
+
+  // "Katze folgen" chase cam: tracks the walking cat, cancels on user
+  // interaction (same UX as the Vogelflug)
+  let followActive = false;
+  let followBtn: HTMLButtonElement | null = null;
+  function setFollow(v: boolean): void {
+    followActive = v && cat.group.visible;
+    if (followBtn) followBtn.classList.toggle('active', followActive);
+  }
+  const presetsUi2 = document.getElementById('presets');
+  if (presetsUi2) {
+    followBtn = document.createElement('button');
+    followBtn.textContent = 'Katze folgen';
+    followBtn.dataset.preset = 'katze';
+    followBtn.addEventListener('click', () => setFollow(!followActive));
+    presetsUi2.appendChild(followBtn);
+  }
+  renderer.domElement.addEventListener('pointerdown', () => setFollow(false));
 
   // "Vogelflug": bird's-eye flight from the elevated NE tree over the
   // orchard; cancels on user interaction, hands the camera back to OrbitControls
@@ -295,10 +338,28 @@ async function main(): Promise<void> {
   const camDir = new THREE.Vector3();
 
   const clock = new THREE.Clock();
+  const followBehind = new THREE.Vector3();
+  const followTarget = new THREE.Vector3();
+  const followCam = new THREE.Vector3();
   renderer.setAnimationLoop(() => {
     const dt = clock.getDelta();
     const t = clock.elapsedTime;
     flight.update(dt);
+    cat.update(dt);
+    if (followActive && cat.group.visible) {
+      // chase pose: BACK metres behind (opposite the cat's heading), UP above.
+      // Exponential smoothing with dt (not per-frame lerp) so convergence is
+      // frame-rate independent — SwiftShader runs at a handful of fps.
+      const fp = cat.followPose();
+      followBehind.set(-Math.sin(fp.heading), 0, -Math.cos(fp.heading));
+      followCam.copy(fp.position).addScaledVector(followBehind, CONFIG.CAT.FOLLOW.BACK);
+      followCam.y += CONFIG.CAT.FOLLOW.UP;
+      followTarget.copy(fp.position);
+      followTarget.y += 0.3;
+      const k = 1 - Math.exp(-5 * dt);
+      rig.camera.position.lerp(followCam, k);
+      rig.controls.target.lerp(followTarget, Math.min(1, k * 2));
+    }
     rig.controls.update();
     if (needle) {
       rig.camera.getWorldDirection(camDir);

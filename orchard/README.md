@@ -211,6 +211,14 @@ Inputs: `geoimages/` (LGL-BW DGM/DOP GeoTIFFs + world files),
 - 26 LoD2 buildings around the orchard (west residential row incl.
   St.-Florian-Str. 2/4/6/12): real wall/roof volumes casting shadows, DOP-
   textured roofs, photo-calibrated facade colours.
+- A walking cat (`src/cat.ts`, hidden by default): a real-size (~0.5 m)
+  low-poly cat patrols a seeded closed loop between the tree rows
+  (`CONFIG.CAT` — speed, seed, clearance), clamped to the terrain surface
+  each frame and casting real shadows. Enabled via the "Katze" checkbox in
+  the season panel; **Katze folgen** chases it with a smoothed follow cam
+  (cancels on user interaction, like the Vogelflug). The walk/idle clips
+  come from the model's rigid-limb rig (body/tail/4 legs as animated
+  nodes); huge frames are clamped so tab switches don't teleport it.
 - ~90k instanced grass blades with wind sway, clipped to the lawn mask.
 - Overcast sky dome with procedural clouds.
 - Camera presets matching the real photo vantages: **Südende** (south-west,
@@ -253,6 +261,9 @@ Inputs: `geoimages/` (LGL-BW DGM/DOP GeoTIFFs + world files),
   (https://transparenz.karlsruhe.de/dataset/3d-gebaudemodell-der-stadt-karlsruhe).
 - Tree/structure fallback positions: © OpenStreetMap contributors (ODbL).
 - ez-tree: MIT.
+- Cat model (`public/models/cat.glb`): Agentshire contributors, MIT
+  (github.com/Agentshire/Agentshire, file
+  `town-frontend/public/assets/models/characters/character-pet-cat.glb`).
 
 Attribution is shown in the in-app footer (dynamic tree count).
 
