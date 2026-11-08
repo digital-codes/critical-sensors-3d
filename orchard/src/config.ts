@@ -190,16 +190,27 @@ export const CONFIG = {
       winter: 0x8a8a72,
       spring: 0x86a84a,
       summer: 0x6f9440,
+      earlyAutumn: 0xa89a4a,
+      midAutumn: 0xa89a4a,
       autumn: 0xa89a4a,
+      lateAutumn: 0x8a8a72,
+      dormant: 0x8a8a72,
     },
   },
 
-  /** season table (seasons.ts): day-of-year anchor, leaf density, canopy tint */
+  /** season table (seasons.ts): day-of-year anchor, leaf density, canopy
+   *  tint. Leaf-fall calendar: canopies stay full until Oct 1, then thin
+   *  continuously through October/November (baked variants at ~2-week
+   *  steps) and are bare from Dec 1 (wrap to winter). */
   SEASONS: [
     { key: 'winter', day: 15, leafFactor: 0, tint: 0x9ac95e },
     { key: 'spring', day: 110, leafFactor: 0.55, tint: 0x9ac95e },
     { key: 'summer', day: 190, leafFactor: 1, tint: 0x5f8f3e },
-    { key: 'autumn', day: 300, leafFactor: 0.85, tint: 0xc77f3a },
+    { key: 'earlyAutumn', day: 274, leafFactor: 1, tint: 0x5f8f3e },
+    { key: 'midAutumn', day: 290, leafFactor: 0.7, tint: 0xb08a3e },
+    { key: 'autumn', day: 305, leafFactor: 0.45, tint: 0xc77f3a },
+    { key: 'lateAutumn', day: 320, leafFactor: 0.2, tint: 0xc77f3a },
+    { key: 'dormant', day: 335, leafFactor: 0, tint: 0x9ac95e },
   ],
 
   /** Hocksitzcafe structures: shared materials + dimensions (structures.ts).
@@ -240,7 +251,11 @@ export const CONFIG = {
       winter: 'Winter',
       spring: 'Frühling',
       summer: 'Sommer',
+      earlyAutumn: 'Frühherbst',
+      midAutumn: 'Mittherbst',
       autumn: 'Herbst',
+      lateAutumn: 'Spätherbst',
+      dormant: 'Vegetationsruhe',
     },
   },
 } as const;

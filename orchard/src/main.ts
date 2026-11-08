@@ -217,7 +217,7 @@ async function main(): Promise<void> {
       if ((obj as THREE.Mesh).isMesh) obj.castShadow = true;
     });
     if (progressEl) {
-      progressEl.textContent = `${site.trees.length} Bäume generiert (4 Jahreszeiten-Varianten)`;
+      progressEl.textContent = `${site.trees.length} Bäume generiert (${CONFIG.SEASONS.length} Jahreszeiten-Varianten)`;
     }
     if (seasonPanel) seasonPanel.style.display = '';
     if (seasonValue && seasonInput) {
@@ -228,16 +228,7 @@ async function main(): Promise<void> {
   });
 
   function labelFor(key: string): string {
-    switch (key) {
-      case 'winter':
-        return 'Winter';
-      case 'spring':
-        return 'Frühling';
-      case 'autumn':
-        return 'Herbst';
-      default:
-        return 'Sommer';
-    }
+    return CONFIG.UI.SEASON_LABELS[key as keyof typeof CONFIG.UI.SEASON_LABELS] ?? 'Sommer';
   }
 
   seasonInput?.addEventListener('input', () => {

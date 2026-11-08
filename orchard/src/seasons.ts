@@ -1,6 +1,14 @@
 import { CONFIG } from './config';
 
-export type SeasonKey = 'winter' | 'spring' | 'summer' | 'autumn';
+export type SeasonKey =
+  | 'winter'
+  | 'spring'
+  | 'summer'
+  | 'earlyAutumn'
+  | 'midAutumn'
+  | 'autumn'
+  | 'lateAutumn'
+  | 'dormant';
 
 export interface SeasonDef {
   key: SeasonKey;
