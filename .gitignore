@@ -1,7 +1,5 @@
 # --- credentials & secrets: NEVER commit ---
 datatools/icosAuth.txt
-oldwww/icosAuth.txt
-oldwww/config.ini
 datatools/dburl.txt
 *.token
 *auth_conf.json
@@ -37,12 +35,9 @@ geoimages/**/*.aux.xml
 # --- large original photos (downscaled copies committed under orchard/public/photos) ---
 newimages/
 
-# --- caches (keep the small OSM snapshots referenced by site.json) ---
-.cache/*
-!.cache/opencode/
-.cache/opencode/*
-!.cache/opencode/*.json
-
+# --- legacy site + local caches (OSM/baumkataster snapshots stay local only) ---
+oldwww/
+.cache/
 # --- upstream repo internals (source itself IS committed) ---
 ideas/ez-tree/.git/
 ideas/ez-tree/node_modules/
