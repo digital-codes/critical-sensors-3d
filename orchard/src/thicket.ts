@@ -2,15 +2,25 @@
  * Dense thicket west of the orchard (between the residential row and the
  * meadow): too tight for individual ez-tree elements, so it is rendered as
  * a field of instanced low-poly canopy blobs. Placement is rejection-
- * sampled from the aerial orthophoto itself (dark-vegetation pixels inside
- * a config band), so the shape — including gaps and paths — follows the
- * real strip. Static geometry; the season only changes the tint.
+ * sampled inside CONFIG.THICKET.POLYGON (local metres, traced from the red
+ * "Bushes" outline in newimages/wiese-gebuesch.png — edit the polygon to
+ * reshape the strip). Static geometry; the season only changes the tint.
  */
 import * as THREE from 'three';
 import { CONFIG } from './config';
 import { mulberry32 } from './rng';
 import { snowAmount, type SeasonKey } from './seasons';
-import { X_MIN, Z_MIN } from './terrain';
+import site from './site';
+
+/** ray-casting point-in-polygon on the config polygon (local metres) */
+function inPolygon(px: number, pz: number, poly: readonly (readonly [number, number])[]): boolean {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], zi = poly[i][1], xj = poly[j][0], zj = poly[j][1];
+    if (zi > pz !== zj > pz && px < ((xj - xi) * (pz - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
+}
 
 export interface Thicket {
   group: THREE.Group;
@@ -25,28 +35,16 @@ export async function createThicket(
   const group = new THREE.Group();
   group.name = 'thicket';
   const cfg = CONFIG.THICKET;
+  const poly = cfg.POLYGON;
 
-  // rasterize the aerial once and rejection-sample dark vegetation pixels
-  // inside the configured band — same image the terrain uses (cache hit)
-  const img = new Image();
-  img.src = '/' + 'site/aerial.jpg';
-  await img.decode();
-  const cv = document.createElement('canvas');
-  cv.width = img.width;
-  cv.height = img.height;
-  const ctx = cv.getContext('2d', { willReadFrequently: true })!;
-  ctx.drawImage(img, 0, 0);
-  const data = ctx.getImageData(0, 0, cv.width, cv.height).data;
-  const pxOf = (x: number, z: number): [number, number] => [
-    Math.round((x - X_MIN) / 0.2),
-    Math.round((z - Z_MIN) / 0.2),
-  ];
-  const isThicketPx = (px: number, py: number): boolean => {
-    if (px < 0 || py < 0 || px >= cv.width || py >= cv.height) return false;
-    const i = (py * cv.width + px) * 4;
-    const r = data[i], g = data[i + 1], b = data[i + 2];
-    const lum = (r + g + b) / 3;
-    return g > r && g > b && lum < cfg.LUM_MAX;
+  // keep clear of the individually rendered orchard trees
+  const clearOfTrees = (x: number, z: number): boolean => {
+    const r2 = cfg.TREE_CLEARANCE * cfg.TREE_CLEARANCE;
+    for (const t of site.trees) {
+      const dx = t.x - x, dz = t.z - z;
+      if (dx * dx + dz * dz < r2) return false;
+    }
+    return true;
   };
 
   const rng = mulberry32(cfg.SEED);
@@ -65,12 +63,16 @@ export async function createThicket(
   const col = new THREE.Color();
   let placed = 0;
   let guard = 0;
-  while (placed < cfg.COUNT && guard < cfg.COUNT * 60) {
+  while (placed < cfg.COUNT && guard < cfg.COUNT * 80) {
     guard++;
-    const x = cfg.BAND.X_MIN + rng() * (cfg.BAND.X_MAX - cfg.BAND.X_MIN);
-    const z = cfg.BAND.Z_MIN + rng() * (cfg.BAND.Z_MAX - cfg.BAND.Z_MIN);
-    const [px, py] = pxOf(x, z);
-    if (!isThicketPx(px, py)) continue; // only on real (dark) vegetation
+    const xs = poly.map((p) => p[0]);
+    const zs = poly.map((p) => p[1]);
+    const bx0 = Math.min(...xs) - 4, bx1 = Math.max(...xs) + 4;
+    const bz0 = Math.min(...zs) - 4, bz1 = Math.max(...zs) + 4;
+    const x = bx0 + rng() * (bx1 - bx0);
+    const z = bz0 + rng() * (bz1 - bz0);
+    if (!inPolygon(x, z, poly)) continue; // only inside the traced outline
+    if (!clearOfTrees(x, z)) continue;
     const r = cfg.RADIUS_MIN + rng() * (cfg.RADIUS_MAX - cfg.RADIUS_MIN);
     pos.set(x, getHeight(x, z) + r * 0.25, z);
     scl.set(r, r * cfg.SQUASH, r * (0.75 + rng() * 0.5));
@@ -102,7 +104,7 @@ export async function createThicket(
         }
       }
       const tint = new THREE.Color(cfg.SEASON_TINT[best]);
-      tint.lerp(SNOW_TINT, snowAmount(day) * 0.7);
+      tint.lerp(SNOW_TINT, snowAmount(day) * 0.15); // stay dark — no snow-heap look
       mat.color.copy(tint);
       return best;
     },

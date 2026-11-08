@@ -202,25 +202,32 @@ export const CONFIG = {
    *  blobs rejection-sampled from dark vegetation in the aerial orthophoto
    *  inside this band — static shapes, season tint only */
   THICKET: {
-    /** placement band in local metres (west of the orchard tree line) */
-    BAND: { X_MIN: -70, X_MAX: -20, Z_MIN: -112, Z_MAX: 102 },
+    /** surrounding polygon of the bush strip in local metres (x east,
+     *  z south) — traced from the red "Bushes" outline in
+     *  newimages/wiese-gebuesch.png (DOP tile 4555426). Edit these
+     *  vertices to grow/shrink/move the strip; blobs are scattered
+     *  inside with a seeded rng. */
+    POLYGON: [
+      [7, -64], [-8, -62], [-30, 4], [-27, 11],
+      [-9, 17], [1, 16], [10, -14], [15, -54],
+    ],
     COUNT: 700,
     RADIUS_MIN: 1.6,
     RADIUS_MAX: 3.4,
     /** blob y squash (bushes are wider than tall) */
     SQUASH: 0.65,
-    /** aerial luminance threshold for 'dense dark vegetation' */
-    LUM_MAX: 95,
+    /** keep this far from the individually rendered orchard trees */
+    TREE_CLEARANCE: 5,
     SEED: 4711,
     SEASON_TINT: {
-      winter: 0x6a6a55,
+      winter: 0x565644,
       spring: 0x4f7a33,
       summer: 0x3f6428,
       earlyAutumn: 0x6f7a33,
       midAutumn: 0x7a6a2e,
       autumn: 0x7a5f2e,
       lateAutumn: 0x6a5530,
-      dormant: 0x6a6a55,
+      dormant: 0x565644,
     },
   },
 
