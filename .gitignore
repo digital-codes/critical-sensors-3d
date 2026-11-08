@@ -47,3 +47,9 @@ newimages/
 ideas/ez-tree/.git/
 ideas/ez-tree/node_modules/
 ideas/ez-tree/.cache/
+
+# --- generated analysis plots ---
+datatools/splom_*.png
+
+# --- throwaway UI mockups (sketch skill output) ---
+sketches/
