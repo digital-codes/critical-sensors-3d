@@ -198,6 +198,32 @@ export const CONFIG = {
     },
   },
 
+  /** dense thicket west of the orchard (thicket.ts): instanced canopy
+   *  blobs rejection-sampled from dark vegetation in the aerial orthophoto
+   *  inside this band — static shapes, season tint only */
+  THICKET: {
+    /** placement band in local metres (west of the orchard tree line) */
+    BAND: { X_MIN: -70, X_MAX: -20, Z_MIN: -112, Z_MAX: 102 },
+    COUNT: 700,
+    RADIUS_MIN: 1.6,
+    RADIUS_MAX: 3.4,
+    /** blob y squash (bushes are wider than tall) */
+    SQUASH: 0.65,
+    /** aerial luminance threshold for 'dense dark vegetation' */
+    LUM_MAX: 95,
+    SEED: 4711,
+    SEASON_TINT: {
+      winter: 0x6a6a55,
+      spring: 0x4f7a33,
+      summer: 0x3f6428,
+      earlyAutumn: 0x6f7a33,
+      midAutumn: 0x7a6a2e,
+      autumn: 0x7a5f2e,
+      lateAutumn: 0x6a5530,
+      dormant: 0x6a6a55,
+    },
+  },
+
   /** season table (seasons.ts): day-of-year anchor, leaf density, canopy
    *  tint. Leaf-fall calendar: canopies stay full until Oct 1, then thin
    *  continuously through October/November (baked variants at ~2-week

@@ -6,6 +6,7 @@ import { nearestSeason, snowAmount } from './seasons';
 import { createStructures } from './structures';
 import { createGrass, type Grass } from './grass';
 import { createBuildings } from './buildings';
+import { createThicket } from './thicket';
 import { createSky, type Sky } from './sky';
 import site from './site';
 import { createComparePanel } from './compare';
@@ -138,6 +139,9 @@ async function main(): Promise<void> {
     seasonPanelEl.appendChild(skySelect);
   }
 
+  const thicket = await createThicket(await getHeightSampler());
+  scene.add(thicket.group);
+
   const structures = await createStructures();
   scene.add(structures.group);
   structures.group.traverse((o) => {
@@ -155,7 +159,7 @@ async function main(): Promise<void> {
   scene.add(buildings.group);
   // debug/testing hook: direct access to the snow-driven scene parts
   (window as unknown as Record<string, unknown>).__scene3 =
-    { ...((window as unknown as Record<string, unknown>).__scene3 as object), terrain, grass, structures, buildings };
+    { ...((window as unknown as Record<string, unknown>).__scene3 as object), terrain, grass, structures, buildings, thicket };
   // hand the lawn mask to the terrain so winter snow covers exactly the
   // grass region (same cells the blades are placed on)
   const lm = grass.getLawnMask();
@@ -186,6 +190,7 @@ async function main(): Promise<void> {
   grass.setSeason(Number(seasonInput?.value ?? 190));
   terrain.setSnow(snowAmount(Number(seasonInput?.value ?? 190)));
   structures.setSnow(snowAmount(Number(seasonInput?.value ?? 190)));
+  thicket.setSeason(Number(seasonInput?.value ?? 190));
   updateSun(Number(seasonInput?.value ?? 190));
 
   createComparePanel(renderer, rig, seasonInput);
@@ -240,6 +245,7 @@ async function main(): Promise<void> {
     grass.setSeason(day);
     terrain.setSnow(snowAmount(day));
     structures.setSnow(snowAmount(day));
+    thicket.setSeason(day);
     updateSun(day);
     if (seasonValue) {
       seasonValue.textContent = seasonLabel(day);
