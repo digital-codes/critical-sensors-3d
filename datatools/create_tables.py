@@ -38,6 +38,9 @@ DDL_SENSORS = """CREATE TABLE IF NOT EXISTS sensors (
   wind FLOAT NULL,
   mastWind FLOAT NULL,
   mastRain FLOAT NULL,
+  solar FLOAT NULL,
+  soilMoist FLOAT NULL,
+  soilTemp FLOAT NULL,
   co2 FLOAT NULL,
   icosTemp FLOAT NULL,
   icosHum FLOAT NULL,
@@ -130,6 +133,21 @@ SEED_LOCATIONS = [
      "virtueller Verbund der echten Wiesensensoren (Wiese1 + Wiese2 + Wiesenstation); "
      "Kanäle sobald die Quellen liefern",
      1, None),
+    (8, "SensorCity 002 Hohenzollernstraße", "SensorCity 002", "sensorcity",
+     48.994009, 8.387011, None,
+     "soilMoist,soilTemp",
+     "SensorCity Bodenprofil, 457 m N; tiefster verlegter Sensor = depth_51 (61/71 unbestückt)",
+     1, None),
+    (9, "SensorCity 116 Breite Straße", "SensorCity 116", "sensorcity",
+     48.991566, 8.388714, None,
+     "temp,hum,pres,solar",
+     "SensorCity Luft (T/RH/p/solar), 212 m N",
+     1, None),
+    (10, "SensorCity 006 Lützenhardtstraße", "SensorCity 006", "sensorcity",
+     48.988934, 8.383011, None,
+     "temp,hum,pres,solar",
+     "SensorCity Luft (T/RH/p/solar), 332 m SW",
+     1, None),
 ]
 
 # physical measurement sites. Coordinates: DWD/ICOS from the operators'
@@ -209,6 +227,18 @@ SEED_SOURCES = [
     (7, "pres", "sensor", "6", "hPa", "mean", "aus Wiesenstation (geplant)"),
     (7, "light", "sensor", "6", "klx", "mean", "aus Wiesenstation (geplant)"),
     (7, "rgb", "sensor", "6", "rgb", "mean", "aus Wiesenstation (geplant)"),
+    (8, "soilMoist", "station", "SC-N-002", "%", None,
+     "Bodenfeuchte, tiefster Sensor (field soil_moisture_at_depth_51), Stundenmittel"),
+    (8, "soilTemp", "station", "SC-N-002", "°C", None,
+     "Bodentemperatur, tiefster Sensor (field soil_temperature_at_depth_51), Stundenmittel"),
+    (9, "temp", "station", "SC-N-116", "°C", None, "Stundenmittel"),
+    (9, "hum", "station", "SC-N-116", "%", None, "luftfeuchte, Stundenmittel"),
+    (9, "pres", "station", "SC-N-116", "hPa", None, "press in Pa -> /100, Stundenmittel"),
+    (9, "solar", "station", "SC-N-116", "W/m²", None, "sonnenstrahlung, Stundenmittel"),
+    (10, "temp", "station", "SC-SW-006", "°C", None, "Stundenmittel"),
+    (10, "hum", "station", "SC-SW-006", "%", None, "luftfeuchte, Stundenmittel"),
+    (10, "pres", "station", "SC-SW-006", "hPa", None, "press in Pa -> /100, Stundenmittel"),
+    (10, "solar", "station", "SC-SW-006", "W/m²", None, "sonnenstrahlung, Stundenmittel"),
 ]
 
 

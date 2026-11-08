@@ -1,4 +1,4 @@
-Kubistin, D., Plaß-Dülmer, C., Kneuer, T., Lindauer, M., Müller-Williams, J., Zwerschke, E. (2026). ICOS ATC NRT Meteo growing time series from Karlsruhe (2.5 m), 2026-04-01–2026-11-06, ICOS RI, https://hdl.handle.net/11676/HcCQqh8oBZseuHEzgj18pW5f
-PID: 11676/HcCQqh8oBZseuHEzgj18pW5f
-Landing page: https://meta.icos-cp.eu/objects/HcCQqh8oBZseuHEzgj18pW5f
+Kubistin, D., Plaß-Dülmer, C., Kneuer, T., Lindauer, M., Müller-Williams, J., Zwerschke, E. (2026). ICOS ATC NRT Meteo growing time series from Karlsruhe (2.5 m), 2026-04-01–2026-11-07, ICOS RI, https://hdl.handle.net/11676/NXwiLpVO4Uatjea4BMIe-11K
+PID: 11676/NXwiLpVO4Uatjea4BMIe-11K
+Landing page: https://meta.icos-cp.eu/objects/NXwiLpVO4Uatjea4BMIe-11K
 Licence: ICOS RI, licensed under CC BY 4.0 (https://www.icos-cp.eu/data-services/about-data-portal/data-license)

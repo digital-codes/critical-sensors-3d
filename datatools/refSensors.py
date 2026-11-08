@@ -542,6 +542,119 @@ except Exception as exc:
     print("SensorCity mast rain fetch failed:", exc, "- mastRain stays NULL")
     sensorCityRain = None
 
+checkShutdown("SensorCity neighbour stations fetch")
+# SensorCity neighbour stations around the orchard, stored as their OWN
+# sensor rows - NOT merged into the reference composition:
+#   id 8  SC-N-002  002 - Hohenzollernstraße  soil profile (layer 4, device
+#         6a2cd0fd-e3a6-49d8-bb7f-b94d70951d6f); deepest installed probe is
+#         depth_51 - depths 61/71 only report the -5 / -327.68 sentinels
+#   id 9  SC-N-116  116 - Breite Straße      air (layer 2, cb5264f2-...)
+#   id 10 SC-SW-006 006 - Lützenhardtstraße  air (layer 2, 5709d661-...)
+# Air units: temp °C, luftfeuchte %RH, press PA (-> /100 = hPa to match the
+# DWD 'pres' unit), sonnenstrahlung W/m² -> new 'solar' column (the DWD
+# 'light' column is percent sunshine, a different quantity).
+SC_BASE = ("https://geoportal.karlsruhe.de/ags04/rest/services/Hosted/"
+           "Sensordaten_NodeRED/FeatureServer")
+
+
+def scAirFrame(sid, dev, label):
+    """Hourly air means (temp/hum/pres/solar) for one SensorCity station."""
+    try:
+        r = requests.get(
+            SC_BASE + "/2/query",
+            params={
+                "where": "device_id='%s'" % dev,
+                "outFields": "measured_at,temp,luftfeuchte,press,sonnenstrahlung",
+                "returnGeometry": "false",
+                "f": "json",
+                "resultRecordCount": "2000",  # ~14 days at the 10-min cadence
+                "orderByFields": "measured_at DESC",
+            },
+            timeout=30,
+        )
+        r.raise_for_status()
+        feats = r.json().get("features", [])
+        if not feats:
+            print("SensorCity air %s: no records returned" % label)
+            return None
+        a = pd.DataFrame([f["attributes"] for f in feats])
+        a = a.dropna(subset=["temp"])  # rows without the core reading are parser noise
+        a = a.drop_duplicates(subset=["measured_at"]).sort_values("measured_at")
+        a["date"] = pd.to_datetime(a.pop("measured_at"), unit="ms")  # naive UTC
+        h = a.set_index("date")[["temp", "luftfeuchte", "press", "sonnenstrahlung"]]
+        h = h.resample("h").mean().dropna(how="all")
+        h = h.rename(columns={"luftfeuchte": "hum", "sonnenstrahlung": "solar",
+                              "press": "pres"})
+        h["pres"] = h["pres"] / 100.0  # Pa -> hPa (DWD 'pres' unit)
+        h["id"] = sid
+        print("SensorCity air %s: %d records -> %d hourly rows (id %d)"
+              % (label, len(a), len(h), sid))
+        return h.reset_index()
+    except Exception as exc:
+        print("SensorCity air %s fetch failed:" % label, exc,
+              "- id %d stays empty" % sid)
+        return None
+
+
+def scSoilFrame(sid, dev, label, depth="51"):
+    """Hourly soil means (soilMoist/soilTemp) at the deepest installed depth."""
+    try:
+        r = requests.get(
+            SC_BASE + "/4/query",
+            params={
+                "where": "device_id='%s'" % dev,
+                "outFields": "measured_at,soil_moisture_at_depth_%s,"
+                             "soil_temperature_at_depth_%s" % (depth, depth),
+                "returnGeometry": "false",
+                "f": "json",
+                "resultRecordCount": "2000",  # ~80 days at the ~1 h cadence
+                "orderByFields": "measured_at DESC",
+            },
+            timeout=30,
+        )
+        r.raise_for_status()
+        feats = r.json().get("features", [])
+        if not feats:
+            print("SensorCity soil %s: no records returned" % label)
+            return None
+        s = pd.DataFrame([f["attributes"] for f in feats])
+        s["date"] = pd.to_datetime(s.pop("measured_at"), unit="ms")  # naive UTC
+        s = s.drop_duplicates(subset=["date"]).sort_values("date")
+        moist = s.pop("soil_moisture_at_depth_%s" % depth)
+        temp = s.pop("soil_temperature_at_depth_%s" % depth)
+        # uninstalled-depth sentinels -> no-data
+        moist[(moist == -5) | (moist == -327.68)] = float("nan")
+        temp[(temp == -5) | (temp == -327.68)] = float("nan")
+        s["soilMoist"] = moist.values
+        s["soilTemp"] = temp.values
+        h = s.set_index("date")[["soilMoist", "soilTemp"]] \
+             .resample("h").mean().dropna(how="all")
+        h["id"] = sid
+        print("SensorCity soil %s: %d records -> %d hourly rows (id %d, depth_%s)"
+              % (label, len(s), len(h), sid, depth))
+        return h.reset_index()
+    except Exception as exc:
+        print("SensorCity soil %s fetch failed:" % label, exc,
+              "- id %d stays empty" % sid)
+        return None
+
+
+scFrames = [
+    scSoilFrame(8, "6a2cd0fd-e3a6-49d8-bb7f-b94d70951d6f",
+                "002 Hohenzollernstraße"),
+    scAirFrame(9, "cb5264f2-fd06-472c-b1de-3aacd878f4b3", "116 Breite Straße"),
+    scAirFrame(10, "5709d661-984b-4d68-bea3-ffd0e8e114c7",
+               "006 Lützenhardtstraße"),
+]
+scFrames = [f for f in scFrames if f is not None and len(f)]
+scNeighbours = None
+if scFrames:
+    scNeighbours = pd.concat(scFrames, ignore_index=True)
+    # same time convention as the reference rows: the +1 h CET shift happens
+    # once here at merge end (epoch-ms were converted to naive UTC above;
+    # current-era rows only - the pre-2020-10-25 CEST rule never applies)
+    scNeighbours["date"] += pd.Timedelta(hours=1)
+
 #print(icos)
 
 
@@ -589,6 +702,10 @@ if args.csv:
     refFile = os.path.join(scriptDir,"ref_" + ts + ".csv")
     ref.to_csv(refFile)
     print("wrote",refFile)
+    if scNeighbours is not None and len(scNeighbours):
+        scFile = os.path.join(scriptDir,"sc_" + ts + ".csv")
+        scNeighbours.to_csv(scFile, index=False)
+        print("wrote",scFile)
     sys.exit(0)
 
 
@@ -632,8 +749,9 @@ if len(df) > 0:
     ref = ref.drop(index=ref[ref.date <= limit].index)
     print("Remaining: ",ref)
     if ref.empty:
-        print("No new data")
-        sys.exit()
+        # no new reference hours - still continue: the SensorCity neighbour
+        # sensors (ids 8/9/10) fetch and write independently of DWD/ICOS
+        print("No new reference data")
 
    
 
@@ -702,42 +820,82 @@ checkShutdown("database write")
 # idempotently before appending
 existingCols = {c["name"] for c in inspect(engine).get_columns("sensors")}
 with engine.begin() as conn:
-    for col in ("icosTemp","icosHum","icosWind","wind","mastWind","rain","mastRain"):
+    for col in ("icosTemp","icosHum","icosWind","wind","mastWind","rain","mastRain",
+                "solar","soilMoist","soilTemp"):
         if col not in existingCols:
             print("ALTER TABLE sensors ADD COLUMN",col)
             conn.exec_driver_sql("ALTER TABLE sensors ADD COLUMN %s FLOAT" % col)
 
-# create new table from the dataframe
-ref.to_sql(
-    "sensors",
-    engine,
-    if_exists='append',
-    index=False, #True,
-    chunksize=500,
-    dtype={
-        "id":SmallInteger,
-        "req":SmallInteger,
-        "count":Integer,
-        "light":Float,
-        "temp":Float,
-        "co2":Float,
-        "rfu":Float,
-        "bat":Float,
-        "date":String(50),
-        "rssi":SmallInteger,
-        "pkt":Integer,
-        "raw":String(50),
-        "pres":Float,
-        "rep":SmallInteger,
-        "icosTemp":Float,
-        "icosHum":Float,
-        "icosWind":Float,
-        "wind":Float,
-        "mastWind":Float,
-        "rain":Float,
-        "mastRain":Float
+# create new table from the dataframe (empty when the reference dedup
+# filtered everything - skip instead of appending an empty frame)
+if len(ref):
+    ref.to_sql(
+        "sensors",
+        engine,
+        if_exists='append',
+        index=False, #True,
+        chunksize=500,
+        dtype={
+            "id":SmallInteger,
+            "req":SmallInteger,
+            "count":Integer,
+            "light":Float,
+            "temp":Float,
+            "co2":Float,
+            "rfu":Float,
+            "bat":Float,
+            "date":String(50),
+            "rssi":SmallInteger,
+            "pkt":Integer,
+            "raw":String(50),
+            "pres":Float,
+            "rep":SmallInteger,
+            "icosTemp":Float,
+            "icosHum":Float,
+            "icosWind":Float,
+            "wind":Float,
+            "mastWind":Float,
+            "rain":Float,
+            "mastRain":Float,
+            "solar":Float,
+            "soilMoist":Float,
+            "soilTemp":Float
         }
-)
+    )
+# the SensorCity neighbour rows land under their own ids (8/9/10) - same
+# latest-date dedup per sensor id as the reference rows above; each station
+# failed-fetch leaves its id empty (logged at fetch time)
+if scNeighbours is not None and len(scNeighbours):
+    checkShutdown("SensorCity neighbour write")
+    scCols = [c for c in ("date", "id", "temp", "hum", "pres", "solar",
+                          "soilMoist", "soilTemp") if c in scNeighbours.columns]
+    scNeighbours = scNeighbours[scCols]
+    scDtype = {"id": SmallInteger, "temp": Float, "hum": Float, "pres": Float,
+               "solar": Float, "soilMoist": Float, "soilTemp": Float}
+    for sid in sorted(scNeighbours.id.unique()):
+        rows = scNeighbours[scNeighbours.id == sid].copy()
+        srcQry = ("select date from sensors where id = %d "
+                  "order by date desc limit 1;" % sid)
+        df = pd.read_sql(srcQry, db)
+        if len(df) > 0:
+            limit = str(df.date.values[0])
+            print("SensorCity neighbour id %d: removing old entries before %s"
+                  % (sid, limit))
+            rows = rows.drop(index=rows[rows.date <= limit].index)
+        if rows.empty:
+            print("SensorCity neighbour id %d: no new data" % sid)
+            continue
+        rows = rows.reset_index(drop=True)
+        print("SensorCity neighbour id %d: adding %d rows" % (sid, len(rows)))
+        rows.to_sql(
+            "sensors",
+            engine,
+            if_exists="append",
+            index=False,
+            chunksize=500,
+            dtype=scDtype,
+        )
+
 # compose the virtual sensors (id 7 Wiese-Verbund) from the new data the
 # real sensors wrote since the last run - independent of whether the
 # external reference fetch above found anything new

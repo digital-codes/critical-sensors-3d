@@ -23,9 +23,11 @@ like any device.
   NRT objects publish roughly daily — the newest ICOS row is the last
   midnight, so `co2` always trails realtime by ~12–30 h.
 - **SensorCity (Stadt Karlsruhe)** — the wind mast at 008 Weiherfeldstraße
-  (`mastWind`, ~10-min cadence, ~52-day rolling archive) and the rain gauge
-  at Grünwettersbach (`mastRain`, cumulative tip counter). Details in the
-  wind/rain sections below.
+  (`mastWind`, ~10-min cadence, ~52-day rolling archive), the rain gauge
+  at Grünwettersbach (`mastRain`, cumulative tip counter), and three
+  neighbour stations stored as their own sensor ids 8–10 (soil profile +
+  two air stations; section below). Details in the wind/rain/neighbour
+  sections.
 
 ## Setup
 
@@ -67,7 +69,8 @@ URL) plus licence and landing-page links.
 ```sh
 # database mode (default): append new rows to the 'sensors' MySQL table
 .venv/bin/python datatools/refSensors.py
-# offline mode: no database, writes ref_<ts>.csv + co2_<ts>.csv next to the script
+# offline mode: no database, writes ref_<ts>.csv + co2_<ts>.csv +
+# sc_<ts>.csv (SensorCity neighbours) next to the script
 .venv/bin/python datatools/refSensors.py --csv
 ```
 
@@ -114,10 +117,13 @@ Four tables, built by `datatools/create_tables.py`:
 
 - `sensors` — measurement rows, one row per hour per sensor id. `index` is a
   plain AUTO_INCREMENT primary key; refSensors never writes it (older pandas
-  versions materialised it and crashed with duplicate-PK errors).
-- `sensor_locations` — the sensor/device registry, ids 0–7. `kind` says what
+  versions materialised it and crashed with duplicate-PK errors). Readings
+  columns: `temp/hum/pres/light/rain/wind/mastWind/mastRain/solar/soilMoist/
+  soilTemp/co2/icosTemp/icosHum/icosWind` + the IoT housekeeping columns.
+- `sensor_locations` — the sensor/device registry, ids 0–10. `kind` says what
   a row is: `reference` (id 0), `virtual` (id 7 „Wiese-Verbund"), `iot`
-  (real devices), `station` (the planned meadow station). Id 0 carries no
+  (real devices), `station` (the planned meadow station), `sensorcity`
+  (city-sensor neighbour stations, ids 8–10). Id 0 carries no
   position — its channels come from several physical stations (below).
 - `stations` — physical measurement stations with real coordinates: DWD 04177
   Rheinstetten (48.9726, 8.3301, 116.06 m), ICOS AS_KIT KIT campus
@@ -283,6 +289,35 @@ hourly sum, `mastRain` the gauge's hourly sum):
   [AC1F09FFFE0E25FC]'** at Rintheim (4.5 km NE), is **UNUSABLE**: `clicks` is
   implausible (12 980 tips/90 d vs DWD 102 mm), correlation 0.25, 28 counter
   anomalies, and `niederschlag_stdl` was never populated in 40 209 rows.
+
+## SensorCity neighbour stations (implemented 2026-11-08)
+
+Three neighbour stations north/southwest of the orchard are stored as their
+OWN sensor rows (ids 8–10, kind `sensorcity`) — not merged into the
+reference composition. Registered in `sensor_locations`/`sensor_sources`,
+sourced from the `stations` rows `SC-N-002` / `SC-N-116` / `SC-SW-006`:
+
+| id | station | layer | channels |
+|---|---|---|---|
+| 8 | SC-N-002 — 002 Hohenzollernstraße (457 m N) | 4 soil | `soilMoist` (%), `soilTemp` (°C) at the deepest installed probe `depth_51` (61/71 unbestückt — sentinels −5/−327.68 filtered) |
+| 9 | SC-N-116 — 116 Breite Straße (212 m N) | 2 air | `temp` (°C), `hum` (%), `pres` (hPa), `solar` (W/m²) |
+| 10 | SC-SW-006 — 006 Lützenhardtstraße (332 m SW) | 2 air | as id 9 |
+
+- `pres` arrives in **Pa** and is divided by 100 to match the DWD `pres`
+  unit (hPa). `sonnenstrahlung` goes into the new `solar` column (W/m²) —
+  NOT into DWD `light`, which is percent sunshine, a different quantity.
+- Air stations report ~10-min cadence (hourly mean), the soil profile ~1 h;
+  ~2-week (air) / ~80-day (soil) rolling archive — the first run after the
+  change wrote that whole window, later runs append only new hours
+  (latest-date dedup per sensor id, same discipline as the reference).
+- A failed fetch logs and leaves that sensor id untouched; the rest of the
+  pipeline continues. The virtual composites (ids 0/7) are unaffected —
+  folding these stations into „Referenz" would be a separate decision.
+- Migration for the live database (pre-change schema):
+  `.venv/bin/python datatools/migrate_add_sensorcity_neighbours.py` —
+  idempotent (columns via inspect, rows via `INSERT IGNORE`), per-statement
+  transactions, prints before/after row counts; safe to re-run. Fresh
+  databases already get everything from `create_tables.py`.
 
 ## Timezone convention
 

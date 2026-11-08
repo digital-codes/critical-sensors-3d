@@ -66,9 +66,10 @@ an idempotent migration for the live server database.
 - No change to the virtual composites: Referenz (id 0) and Wiese-Verbund
   (id 7) composition stays exactly as configured; folding the new stations
   into Referenz is a later, separate decision.
-- Data starts at the first post-deploy run (no backfill from the archive
-  layers); the archives keep months of history, so a backfill can be added
-  later without schema changes.
+- No explicit backfill: data starts at the first post-deploy run. The
+  FeatureServer archives are rolling windows (~2 weeks air, ~80 days soil),
+  so the first run naturally wrote the whole window back; anything older
+  stays fetchable later without schema changes.
 
 ## Verification plan
 

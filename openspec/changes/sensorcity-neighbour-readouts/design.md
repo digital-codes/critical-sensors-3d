@@ -95,8 +95,9 @@ old-db + migration. Units: `solar` W/m², `soilMoist` %vol, `soilTemp` °C,
   fetch filter + sensor_sources note.
 - `solar` stays NULL for all other sensors (column sparsity is consistent
   with icosTemp/mastWind precedent).
-- No backfill: history starts at deploy; the archives retain months, so a
-  backfill task can be added later without schema changes.
+- No explicit backfill: the first run wrote the archives' rolling windows
+  (~2 weeks air, ~80 days soil) as a natural side effect; older history
+  stays fetchable later without schema changes.
 
 ## Migration Plan
 
