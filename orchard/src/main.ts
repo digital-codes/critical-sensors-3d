@@ -161,17 +161,38 @@ async function main(): Promise<void> {
   (window as unknown as Record<string, unknown>).__scene3 =
     { ...((window as unknown as Record<string, unknown>).__scene3 as object), terrain, grass, structures, buildings, thicket };
   // hand the lawn mask to the terrain so winter snow covers exactly the
-  // grass region (same cells the blades are placed on)
+  // grass region (same cells the blades are placed on) — minus the thicket
+  // strip: its dense bushes are green in the DOP (so the lawn mask includes
+  // them) but must not carry ground snow
   const lm = grass.getLawnMask();
+  const cellW = (site.window.eMax - site.window.eMin) / lm.w;
+  const cellD = (site.window.nMax - site.window.nMin) / lm.h;
+  const thicketInPolygon = (x: number, z: number): boolean => {
+    const poly = CONFIG.THICKET.POLYGON;
+    for (const [dx, dz] of [[0, 0], [cellW * 4, 0], [-cellW * 4, 0], [0, cellD * 4], [0, -cellD * 4]]) {
+      let inside = false;
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        const xi = poly[i][0], zi = poly[i][1], xj = poly[j][0], zj = poly[j][1];
+        if (zi > z + dz !== zj > z + dz && x + dx < ((xj - xi) * (z + dz - zi)) / (zj - zi) + xi) inside = !inside;
+      }
+      if (inside) return true;
+    }
+    return false;
+  };
   // RGBA so each 250 px row stays 4-byte aligned (RedFormat rows of 250 B
   // need unpackAlignment tricks); luminance replicated into all channels
   const maskData = new Uint8Array(lm.w * lm.h * 4);
-  for (let k = 0; k < lm.w * lm.h; k++) {
-    const v = lm.data[k] ? 255 : 0;
-    maskData[k * 4] = v;
-    maskData[k * 4 + 1] = v;
-    maskData[k * 4 + 2] = v;
-    maskData[k * 4 + 3] = 255;
+  for (let gz = 0; gz < lm.h; gz++) {
+    for (let gx = 0; gx < lm.w; gx++) {
+      const k = gz * lm.w + gx;
+      const cx = site.window.eMin - site.origin.utmE + (gx + 0.5) * cellW;
+      const cz = site.origin.utmN - site.window.nMax + (gz + 0.5) * cellD;
+      const v = lm.data[k] && !thicketInPolygon(cx, cz) ? 255 : 0;
+      maskData[k * 4] = v;
+      maskData[k * 4 + 1] = v;
+      maskData[k * 4 + 2] = v;
+      maskData[k * 4 + 3] = 255;
+    }
   }
   const maskTex = new THREE.DataTexture(maskData, lm.w, lm.h, THREE.RGBAFormat, THREE.UnsignedByteType);
   maskTex.needsUpdate = true;
