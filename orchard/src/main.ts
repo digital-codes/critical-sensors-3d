@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createTerrain, getHeightSampler } from './terrain';
-import { createCameraRig } from './camera';
+import { createCameraRig, logPose } from './camera';
 import { createOrchard, type Orchard } from './trees';
 import { nearestSeason, snowAmount } from './seasons';
 import { createStructures } from './structures';
@@ -8,6 +8,7 @@ import { createGrass, type Grass } from './grass';
 import { createBuildings } from './buildings';
 import { createThicket } from './thicket';
 import { createStueckle } from './stueckle';
+import { createPanel } from './panel';
 import { createSky, type Sky } from './sky';
 import site from './site';
 import { createComparePanel } from './compare';
@@ -203,6 +204,9 @@ export async function mountOrchard(
   }
 
   const rig = createCameraRig(renderer.domElement, initialW / initialH, presetsEl);
+  // camera-pose console log on every orbit gesture end (presets + Kamera
+  // panel log from their own apply paths)
+  rig.controls.addEventListener('end', () => logPose(rig, ' orbit'));
   // debug/testing hook: lets tooling move the camera programmatically
   (window as unknown as Record<string, unknown>).__rig = rig;
 
@@ -256,6 +260,12 @@ export async function mountOrchard(
   scene.add(thicket.group);
   const stueckle = await createStueckle();
   scene.add(stueckle.group);
+
+  // the real information board at the meadow (position from CONFIG.PANEL)
+  const panel = await createPanel(await getHeightSampler());
+  scene.add(panel.group);
+  (window as unknown as Record<string, unknown>).__scene3 =
+    { ...((window as unknown as Record<string, unknown>).__scene3 as object), panel };
 
   const structures = await createStructures();
   scene.add(structures.group);
