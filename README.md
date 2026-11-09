@@ -13,6 +13,8 @@ driven through `opencode` for a complete change trace.
 |---|---|
 | `datatools/` | `refSensors.py` — assembles a virtual reference sensor from DWD (Kollsberg 04177) + ICOS (KIT tower @30 m CO₂, @2.5 m meteo) + two wind sources (DWD 10-min wind, SensorCity mast) and writes it into the sensor DB. `sensorcity_pick.py`/`sensorcity_read.py` — SensorCity neighbour-station probe (exploratory). See `datatools/README.md`. |
 | `orchard/` | Three.js + ez-tree realtime 3D model of the orchard (terrain from LGL-BW DGM 0.25 m, aerial from DOP20 2024, 39 curated Baumkataster trees with photo-calibrated heights, LoD2 buildings, seasons, compare mode). See `orchard/README.md`. |
+| `orchard/public/php/` | `api.php` — sensor API for the dashboard: daily min/mean/max per channel from the `wiese.sensors` DB as JSON; channel→sensor map inside as the single switch point; credentials via `config.ini` (gitignored; template committed). Deployment + security notes: `orchard/public/php/README.md`. |
+| `www/` | New dashboard (Vue 3 + Vite, dev port 5212; `publicDir` → `orchard/public`): header with global day-of-year slider, data pane fed live by the PHP sensor API (six real channels + the dummy Licht & Lichtfarbe card), 3D pane + photo streak follow in later steps of `openspec/changes/dashboard-prototype`. |
 | `oldwww/` | Current live PHP site (https://critical-sensors.de/) + weekly orchard photos 2020–2022. Reference for the new dashboard. |
 | `newimages/` | New 2026 reference photos (Hocksitzcafe, other directions). Too large for git; 9 downscaled copies live in `orchard/public/photos/`. |
 | `geoimages/` | LGL-BW open geodata (DGM, DOP, nDOM). Too large for git — re-download from https://opengeodata.lgl-bw.de/; see `geoimages/info.txt`. |

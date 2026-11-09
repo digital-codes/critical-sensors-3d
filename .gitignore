@@ -14,6 +14,7 @@ datatools/refsensors.lock
 oldwww/img/
 orchard/public/photos/
 orchard/screenshots/
+www/screenshots/
 orchard/public/textures/bark/*
 !orchard/public/textures/bark/Bark001_1K-JPG/
 !orchard/public/textures/bark/Bark002_1K-JPG/

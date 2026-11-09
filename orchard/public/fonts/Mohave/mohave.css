@@ -1,0 +1,25 @@
+/* Mohave — self-hosted (SIL OFL, see 'SIL Open Font License.txt'). */
+@font-face {
+  font-family: 'Mohave';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('Mohave-Regular.woff2') format('woff2'),
+       url('Mohave-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Mohave';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('Mohave-Italic.woff2') format('woff2'),
+       url('Mohave-Italic.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Mohave';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('Mohave-Bold.woff2') format('woff2'),
+       url('Mohave-Bold.ttf') format('truetype');
+}

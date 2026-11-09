@@ -1,0 +1,86 @@
+<script setup lang="ts">
+import { onMounted, ref } from 'vue';
+import { fetchSeries, type ChannelSeries, type ChannelKey } from '../api';
+import SeriesCard from './SeriesCard.vue';
+import LightCard from './LightCard.vue';
+
+const loading = ref(true);
+const error = ref<string | null>(null);
+const series = ref<Partial<Record<ChannelKey, ChannelSeries>>>({});
+
+const CARD_ORDER: ChannelKey[] = ['co2', 'temperature', 'humidity', 'solar', 'wind'];
+
+onMounted(async () => {
+  try {
+    const data = await fetchSeries();
+    series.value = data.channels;
+  } catch (e) {
+    error.value =
+      'Sensorwerte nicht erreichbar. Läuft der PHP-Sensorserver? ' +
+      '(Entwicklung: `php -S 127.0.0.1:9000 -t ../orchard/public/php ../orchard/public/php/router.php`)';
+    console.error(e);
+  } finally {
+    loading.value = false;
+  }
+});
+
+const got = (k: ChannelKey) => series.value[k]?.days ?? [];
+</script>
+
+<template>
+  <aside class="data-pane" aria-label="Messwerte">
+    <div v-if="loading" class="data-loading">Messwerte werden geladen …</div>
+    <div v-else-if="error" class="data-error">{{ error }}</div>
+
+    <template v-else>
+      <SeriesCard
+        title="CO₂"
+        :subtitle="series.co2?.source ?? ''"
+        unit="ppm"
+        :days="got('co2')"
+        color="#6b6428"
+        :decimals="0"
+      />
+      <SeriesCard
+        title="Lufttemperatur"
+        :subtitle="series.temperature?.source ?? ''"
+        unit="°C"
+        :days="got('temperature')"
+        color="#c23a2b"
+      />
+      <SeriesCard
+        title="Luftfeuchte"
+        :subtitle="series.humidity?.source ?? ''"
+        unit="%"
+        :days="got('humidity')"
+        color="#3f6fa8"
+        :decimals="0"
+      />
+      <SeriesCard
+        title="Solar"
+        :subtitle="series.solar?.source ?? ''"
+        unit="W/m²"
+        :days="got('solar')"
+        color="#d9a410"
+        :decimals="0"
+      />
+      <SeriesCard
+        title="Wind"
+        :subtitle="series.wind?.source ?? ''"
+        unit="m/s"
+        :days="got('wind')"
+        color="#4a7a5f"
+      />
+      <SeriesCard
+        title="Boden"
+        :subtitle="series.soilMoist?.source ?? ''"
+        unit="%"
+        label="Bodenfeuchte"
+        :days="got('soilMoist')"
+        color="#5b7fb5"
+        :secondary="{ days: got('soilTemp'), unit: '°C', color: '#c97b3d', label: 'Bodentemperatur' }"
+      />
+      <LightCard />
+    </template>
+  </aside>
+</template>

@@ -36,26 +36,26 @@
 
 ## 4. www app skeleton
 
-- [ ] 4.1 Scaffold `www/` (Vue 3 + Vite + TS, port 5212, publicDir →
+- [x] 4.1 Scaffold `www/` (Vue 3 + Vite + TS, port 5212, publicDir →
       orchard/public, alias to imgsmear, /php proxy), deps: vue,
       @capacitor/device, three@0.170, @vitejs/plugin-vue; Mohave fonts
       from `oldwww/fonts/Mohave/` into `orchard/public/fonts/Mohave/`
-- [ ] 4.2 Design tokens + layout grid in `styles.css` (cz palette, red
+- [x] 4.2 Design tokens + layout grid in `styles.css` (cz palette, red
       accent, fixed-width readouts); global time store `store.ts`
 - [ ] 4.3 `OrchardPane.vue` mounts `mountOrchard(paneEl, {embed: true})`
       and wires the controller to the store
 
 ## 5. Header + data pane (real data + dummy Licht card)
 
-- [ ] 5.1 `App.vue` + `TimeSlider.vue`: header with title, global slider,
+- [x] 5.1 `App.vue` + `TimeSlider.vue`: header with title, global slider,
       date readout (German month names, tabular-nums fixed width)
-- [ ] 5.2 `api.ts` fetch layer + `curves.ts` (only the Licht dummy:
+- [x] 5.2 `api.ts` fetch layer + `curves.ts` (only the Licht dummy:
       mulberry32 intensity + RGB triplet, convoluted colour)
-- [ ] 5.3 `DataPane.vue` + `SeriesCard.vue`: six real cards (CO₂, temp,
+- [x] 5.3 `DataPane.vue` + `SeriesCard.vue`: six real cards (CO₂, temp,
       hum, solar, wind, Boden with moist+temp) — SVG curve over the
       data range, month ticks, red cursor at global day, value readout
       (— where empty), source subtitle from the endpoint
-- [ ] 5.4 `LightCard.vue`: single intensity chart (0–100 %) coloured by
+- [x] 5.4 `LightCard.vue`: single intensity chart (0–100 %) coloured by
       rgb × intensity/100, ONE combined colour bar (not 3 separate),
       labeled "Dummy-Daten — Wiesenstation (geplant)"
 
