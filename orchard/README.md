@@ -15,6 +15,11 @@ upstream recorded one leaf per tip unconditionally, so the bare winter
 variant (count 0) still carried ~280 green tufts. Re-apply that gate when
 updating the vendored copy.
 
+## Demo site 
+
+[Critical Sensors 3D](https://3d.critical-sensors.de)
+
+
 ## Run
 
 ```sh
