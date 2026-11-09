@@ -21,6 +21,7 @@ html,
 body {
   margin: 0;
   padding: 0;
+  height: 100%;
 }
 
 body {
@@ -28,13 +29,18 @@ body {
   background-image: linear-gradient(var(--olive-pale), var(--olive-light), var(--olive-mid), var(--olive-dark));
   background-attachment: fixed;
   color: var(--ink);
-  min-height: 100vh;
+  /* the whole app fits the browser window — no page scroll (desktop+mobile) */
+  overflow: hidden;
 }
 
 #app {
   max-width: 1920px;
   margin: 0 auto;
-  padding: 12px 16px 24px;
+  padding: 10px 16px 8px;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ---------- header ---------- */
@@ -44,7 +50,8 @@ body {
   align-items: center;
   gap: 18px;
   flex-wrap: wrap;
-  padding: 6px 4px 14px;
+  padding: 2px 4px 10px;
+  flex: 0 0 auto;
 }
 
 .hdr h1 {
@@ -99,32 +106,45 @@ body {
 /* ---------- main grid ---------- */
 
 .main {
+  flex: 1 1 auto;
+  min-height: 0; /* let the panes shrink to the window height */
   display: grid;
   grid-template-columns: 60fr 40fr;
-  gap: 14px;
+  gap: 12px;
   align-items: stretch;
 }
 
 .pane3d {
   position: relative;
   overflow: hidden;
-  min-height: 420px;
+  min-height: 0; /* fits the row; the canvas follows via ResizeObserver */
+  height: 100%;
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.25);
 }
 
 /* ---------- data pane ---------- */
 
+/* 8 cards (7 sensors + Licht) as a 2×4 grid; rows share the pane height so
+ * everything stays inside the window — short windows shrink the charts */
 .data-pane {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(4, minmax(0, 1fr));
   gap: 10px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .card {
   background: var(--panel);
   border-radius: 10px;
-  padding: 7px 14px 6px;
+  padding: 6px 12px;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .card .card-hd {
@@ -166,19 +186,26 @@ body {
 .chart-wrap {
   position: relative;
   margin-top: 4px;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: flex-end;
 }
 
 .chart-wrap svg {
   display: block;
   width: 100%;
-  height: 74px;
+  height: 100%;
+  max-height: 74px; /* grows on tall windows, shrinks on short ones */
+  min-height: 40px;
 }
 
 .ticks {
   position: relative;
-  height: 1.35em;
-  font-size: 1.05em;
+  height: 1.3em;
+  font-size: 1em;
   color: #333;
+  flex: 0 0 auto;
 }
 
 .ticks span {
@@ -243,24 +270,95 @@ body {
 }
 
 .sources-footer {
-  margin-top: 16px;
-  font-size: 0.95em;
+  margin-top: 8px;
+  font-size: 0.85em;
   color: #111;
+  flex: 0 0 auto;
 }
 
 /* ---------- responsive ---------- */
 
 @media (max-width: 1023px), (orientation: portrait) and (max-width: 1366px) {
+  /* single column: cards first (2×4 compact grid), 3D pane below at a
+   * fixed share of the window height — everything visible, no page scroll */
   .main {
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) minmax(170px, 30dvh);
   }
 
   .pane3d {
     order: 2;
-    min-height: 320px;
+    height: auto;
   }
 
   .data-pane {
     order: 1;
+  }
+
+  .hdr h1 {
+    font-size: 1.15em;
+  }
+
+  .hdr {
+    gap: 8px;
+  }
+
+  .time-ctl input[type='range'] {
+    width: min(280px, 52vw);
+    min-height: 36px;
+  }
+
+  .card {
+    padding: 4px 9px;
+  }
+
+  .card .card-hd h2 {
+    font-size: 0.95em;
+  }
+
+  .card .src {
+    font-size: 0.78em;
+  }
+
+  .card .value {
+    font-size: 1em;
+  }
+
+  .chart-wrap svg {
+    max-height: 40px;
+  }
+
+  .ticks {
+    font-size: 0.78em;
+  }
+
+  .colorbar {
+    height: 7px;
+    margin-top: 3px;
+  }
+
+  .caption {
+    font-size: 0.72em;
+    margin-top: 2px;
+  }
+
+  .legend {
+    gap: 8px;
+    font-size: 0.72em;
+  }
+
+  .sources-footer {
+    font-size: 0.68em;
+  }
+}
+
+/* very short desktop windows: shrink the header and charts further */
+@media (min-width: 1024px) and (max-height: 780px) {
+  .hdr h1 {
+    font-size: 1.4em;
+  }
+
+  .chart-wrap svg {
+    max-height: 52px;
   }
 }
