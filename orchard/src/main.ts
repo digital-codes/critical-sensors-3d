@@ -28,12 +28,44 @@ function monthDay(day: number): string {
   return `${MONTHS[m]} ${d + 1}`;
 }
 
-async function main(): Promise<void> {
+/** Handle returned to an embedder (the www dashboard). `scene3` is a live
+ *  getter — the underlying window.__scene3 object is replaced (spread) as
+ *  scene parts finish loading, so always read it fresh. */
+export type OrchardController = {
+  setDay(day: number): void;
+  onDay(fn: (day: number) => void): () => void;
+  rig: import('./camera').CameraRig;
+  scene3: Record<string, unknown>;
+};
+
+/**
+ * Build the orchard scene into `host` (standalone: null → document.body).
+ *
+ * embed mode mounts into the given container with its OWN in-scene chrome
+ * (preset buttons, day slider + readout, sky dropdown, cat toggle, compass)
+ * positioned absolutely inside the host; the standalone fixed chrome
+ * (compare panel, Kamera panel, footer) is skipped. The standalone path is
+ * byte-for-byte the old behaviour: chrome comes from index.html, canvas is
+ * appended to document.body and sized to the window.
+ */
+export async function mountOrchard(
+  host: HTMLElement | null,
+  opts: { embed?: boolean } = {},
+): Promise<OrchardController> {
+  const embed = opts.embed === true;
+  const root: HTMLElement = host ?? document.body;
+
   const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  const initialW = embed ? root.clientWidth : window.innerWidth;
+  const initialH = embed ? root.clientHeight : window.innerHeight;
+  renderer.setSize(initialW, initialH);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  document.body.appendChild(renderer.domElement);
+  root.appendChild(renderer.domElement);
+  if (embed) {
+    // the pane keeps its own layout; the canvas fills it absolutely
+    renderer.domElement.style.cssText = 'position:absolute;inset:0;display:block;';
+  }
 
   const scene = new THREE.Scene();
   // sky/fog colour starts at the default sky condition's fog value
@@ -89,7 +121,88 @@ async function main(): Promise<void> {
   const ambient = new THREE.AmbientLight(CONFIG.SCENE.AMBIENT.COLOR, CONFIG.SCENE.AMBIENT.INTENSITY);
   scene.add(ambient);
 
-  const rig = createCameraRig(renderer.domElement, window.innerWidth / window.innerHeight);
+  // ------------------------------------------------------------------
+  // chrome resolution — standalone reads the fixed elements from
+  // index.html; embed builds an in-scene panel inside the host (the ids
+  // keep the capture-ready verification waits working: #dayofyear,
+  // #seasonvalue, #treeprogress are unique per page since www has none).
+  let seasonInput: HTMLInputElement | null = null;
+  let seasonValue: HTMLElement | null = null;
+  let seasonPanel: HTMLElement | null = null;
+  let progressEl: HTMLElement | null = null;
+  let presetsEl: HTMLElement | null = null;
+
+  if (embed) {
+    if (!document.getElementById('w3d-embed-styles')) {
+      const st = document.createElement('style');
+      st.id = 'w3d-embed-styles';
+      st.textContent = [
+        '.w3d-panel{position:absolute;top:10px;right:10px;z-index:10;display:flex;',
+        'flex-direction:column;align-items:flex-end;gap:8px;font:13px system-ui,sans-serif;',
+        'color:#eef2f5;pointer-events:none;max-width:calc(100% - 20px);}',
+        '.w3d-panel>*{pointer-events:auto;}',
+        '.w3d-presets{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}',
+        '.w3d-presets button{font:13px system-ui,sans-serif;padding:6px 12px;',
+        'border:1px solid rgba(255,255,255,.25);border-radius:6px;',
+        'background:rgba(20,24,28,.65);color:#eef2f5;cursor:pointer;}',
+        '.w3d-presets button:hover{background:rgba(50,60,70,.75);}',
+        '.w3d-presets button.active{background:rgba(154,201,94,.55);}',
+        '.w3d-season{display:flex;align-items:center;gap:8px;padding:6px 12px;',
+        'border:1px solid rgba(255,255,255,.25);border-radius:6px;background:rgba(20,24,28,.65);}',
+        ".w3d-season input[type='range']{width:160px;accent-color:#9ac95e;}",
+        '.w3d-season .value{width:232px;white-space:nowrap;overflow:hidden;',
+        'font-variant-numeric:tabular-nums;text-align:right;}',
+        '.w3d-controls{display:flex;align-items:center;gap:8px;padding:6px 12px;',
+        'border:1px solid rgba(255,255,255,.25);border-radius:6px;background:rgba(20,24,28,.65);}',
+        '.w3d-progress{font-size:11px;color:rgba(255,255,255,.75);',
+        'background:rgba(0,0,0,.45);padding:3px 8px;border-radius:6px;}',
+      ].join('');
+      document.head.appendChild(st);
+    }
+    const panel = document.createElement('div');
+    panel.className = 'w3d-panel';
+    const presetsRow = document.createElement('div');
+    presetsRow.className = 'w3d-presets';
+    panel.appendChild(presetsRow);
+    const seasonRow = document.createElement('div');
+    seasonRow.className = 'w3d-season';
+    const dayLabel = document.createElement('label');
+    dayLabel.htmlFor = 'dayofyear';
+    dayLabel.textContent = 'Tag';
+    seasonInput = document.createElement('input');
+    seasonInput.type = 'range';
+    seasonInput.min = '0';
+    seasonInput.max = '364';
+    seasonInput.step = '1';
+    seasonInput.value = '190';
+    seasonInput.id = 'dayofyear';
+    seasonInput.title = 'Jahreszeit (Tag des Jahres)';
+    seasonValue = document.createElement('span');
+    seasonValue.className = 'value';
+    seasonValue.id = 'seasonvalue';
+    seasonValue.textContent = 'Tag 190';
+    seasonRow.append(dayLabel, seasonInput, seasonValue);
+    panel.appendChild(seasonRow);
+    progressEl = document.createElement('div');
+    progressEl.className = 'w3d-progress';
+    progressEl.id = 'treeprogress';
+    panel.appendChild(progressEl);
+    // sky dropdown + cat toggle land here (see below), like #season standalone
+    const controlsRow = document.createElement('div');
+    controlsRow.className = 'w3d-controls';
+    panel.appendChild(controlsRow);
+    root.appendChild(panel);
+    seasonPanel = controlsRow;
+    presetsEl = presetsRow;
+  } else {
+    seasonInput = document.getElementById('dayofyear') as HTMLInputElement | null;
+    seasonValue = document.getElementById('seasonvalue');
+    seasonPanel = document.getElementById('season');
+    progressEl = document.getElementById('treeprogress');
+    presetsEl = document.getElementById('presets');
+  }
+
+  const rig = createCameraRig(renderer.domElement, initialW / initialH, presetsEl);
   // debug/testing hook: lets tooling move the camera programmatically
   (window as unknown as Record<string, unknown>).__rig = rig;
 
@@ -111,8 +224,7 @@ async function main(): Promise<void> {
     (scene.fog as THREE.Fog).color.set(cond.FOG);
     hemi.intensity = CONFIG.SCENE.HEMI.INTENSITY * cond.HEMI_FACTOR;
     ambient.intensity = CONFIG.SCENE.AMBIENT.INTENSITY * cond.AMBIENT_FACTOR;
-    const dayInput = document.getElementById('dayofyear') as HTMLInputElement | null;
-    updateSun(Number(dayInput?.value ?? 190));
+    updateSun(Number(seasonInput?.value ?? 190));
   };
   // debug/dashboard hook: programmatic sky control without the UI
   (window as unknown as Record<string, unknown>).__scene3 = {
@@ -125,8 +237,7 @@ async function main(): Promise<void> {
     },
   };
   // sky condition dropdown next to the day slider
-  const seasonPanelEl = document.getElementById('season');
-  if (seasonPanelEl) {
+  if (seasonPanel) {
     const skySelect = document.createElement('select');
     skySelect.id = 'skycondition';
     skySelect.title = 'Himmelszustand';
@@ -138,7 +249,7 @@ async function main(): Promise<void> {
       skySelect.appendChild(opt);
     }
     skySelect.addEventListener('change', () => applySkyCondition(skySelect.value));
-    seasonPanelEl.appendChild(skySelect);
+    seasonPanel.appendChild(skySelect);
   }
 
   const thicket = await createThicket(await getHeightSampler());
@@ -211,10 +322,6 @@ async function main(): Promise<void> {
     { ...((window as unknown as Record<string, unknown>).__scene3 as object), cat };
 
   // season UI (hidden until the orchard is ready)
-  const seasonInput = document.getElementById('dayofyear') as HTMLInputElement | null;
-  const seasonValue = document.getElementById('seasonvalue') as HTMLElement | null;
-  const seasonPanel = document.getElementById('season') as HTMLElement | null;
-  const progressEl = document.getElementById('treeprogress') as HTMLElement | null;
   if (seasonPanel) seasonPanel.style.display = 'none';
   if (seasonValue && seasonInput) {
     const day = Number(seasonInput.value);
@@ -226,8 +333,12 @@ async function main(): Promise<void> {
   thicket.setSeason(Number(seasonInput?.value ?? 190));
   updateSun(Number(seasonInput?.value ?? 190));
 
-  createComparePanel(renderer, rig, seasonInput);
-  createCameraUI(rig);
+  // standalone only: the compare panel and the Kamera panel live in the
+  // fixed page chrome; embed mode renders its own in-scene controls
+  if (!embed) {
+    createComparePanel(renderer, rig, seasonInput);
+    createCameraUI(rig);
+  }
 
   // "Katze" toggle in the season panel (hidden default, no page reload)
   if (seasonPanel) {
@@ -255,26 +366,24 @@ async function main(): Promise<void> {
     followActive = v && cat.group.visible;
     if (followBtn) followBtn.classList.toggle('active', followActive);
   }
-  const presetsUi2 = document.getElementById('presets');
-  if (presetsUi2) {
+  if (presetsEl) {
     followBtn = document.createElement('button');
     followBtn.textContent = 'Katze folgen';
     followBtn.dataset.preset = 'katze';
     followBtn.addEventListener('click', () => setFollow(!followActive));
-    presetsUi2.appendChild(followBtn);
+    presetsEl.appendChild(followBtn);
   }
   renderer.domElement.addEventListener('pointerdown', () => setFollow(false));
 
   // "Vogelflug": bird's-eye flight from the elevated NE tree over the
   // orchard; cancels on user interaction, hands the camera back to OrbitControls
   const flight = await createBirdFlight(rig, await getHeightSampler());
-  const presetsUi = document.getElementById('presets');
-  if (presetsUi) {
+  if (presetsEl) {
     const btn = document.createElement('button');
     btn.textContent = 'Vogelflug';
     btn.dataset.preset = 'vogelflug';
     btn.addEventListener('click', () => (flight.active ? flight.stop() : flight.start()));
-    presetsUi.appendChild(btn);
+    presetsEl.appendChild(btn);
   }
   (window as unknown as Record<string, unknown>).__scene3 =
     { ...(window as unknown as Record<string, unknown>).__scene3 as object, flight };
@@ -286,7 +395,7 @@ async function main(): Promise<void> {
     orchard = o;
     scene.add(o.group);
     (window as unknown as Record<string, unknown>).__scene3 =
-      { ...(window as unknown as Record<string, unknown>).__scene3 as object, orchard: o };
+      { ...((window as unknown as Record<string, unknown>).__scene3 as object), orchard: o };
     o.group.traverse((obj) => {
       if ((obj as THREE.Mesh).isMesh) obj.castShadow = true;
     });
@@ -309,6 +418,8 @@ async function main(): Promise<void> {
   const seasonLabel = (day: number): string =>
     `Tag ${String(day).padStart(3, '0')} (${monthDay(day)})${orchard ? ` · ${labelFor(orchard.setSeason(day))}` : ''}`;
 
+  // global-day subscribers (embed controller); the in-scene slider emits here
+  const dayListeners = new Set<(day: number) => void>();
   seasonInput?.addEventListener('input', () => {
     const day = Number(seasonInput.value);
     grass.setSeason(day);
@@ -319,13 +430,27 @@ async function main(): Promise<void> {
     if (seasonValue) {
       seasonValue.textContent = seasonLabel(day);
     }
+    for (const fn of dayListeners) fn(day);
   });
 
-  window.addEventListener('resize', () => {
-    rig.camera.aspect = window.innerWidth / window.innerHeight;
-    rig.camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  });
+  // sizing: standalone follows the window; embed follows the host element
+  if (embed) {
+    const ro = new ResizeObserver(() => {
+      const w = root.clientWidth;
+      const h = root.clientHeight;
+      if (w === 0 || h === 0) return;
+      rig.camera.aspect = w / h;
+      rig.camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+    ro.observe(root);
+  } else {
+    window.addEventListener('resize', () => {
+      rig.camera.aspect = window.innerWidth / window.innerHeight;
+      rig.camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  }
 
   // Compass HUD: an "N" arrow that always points toward world north (+z),
   // so the view orientation is verifiable in any orbit position.
@@ -335,10 +460,10 @@ async function main(): Promise<void> {
     '<svg viewBox="0 0 40 40" width="40" height="40">' +
     '<circle cx="20" cy="20" r="18" fill="rgba(0,0,0,0.45)"/>' +
     '<path id="compass-needle" d="M20 5 L25 26 L20 22 L15 26 Z" fill="#e05555"/></svg>';
-  compass.style.cssText =
-    'position:fixed;left:12px;top:12px;width:40px;height:40px;z-index:20;' +
-    'pointer-events:none;';
-  document.body.appendChild(compass);
+  compass.style.cssText = embed
+    ? 'position:absolute;left:12px;top:12px;width:40px;height:40px;z-index:20;pointer-events:none;'
+    : 'position:fixed;left:12px;top:12px;width:40px;height:40px;z-index:20;pointer-events:none;';
+  root.appendChild(compass);
   const needle = compass.querySelector('#compass-needle') as SVGPathElement | null;
   const camDir = new THREE.Vector3();
 
@@ -377,6 +502,30 @@ async function main(): Promise<void> {
     sky.update(dt);
     renderer.render(scene, rig.camera);
   });
+
+  return {
+    setDay(day: number): void {
+      if (!seasonInput) return;
+      const d = Math.max(0, Math.min(364, Math.round(day)));
+      if (Number(seasonInput.value) === d) return;
+      seasonInput.value = String(d);
+      seasonInput.dispatchEvent(new Event('input'));
+    },
+    onDay(fn: (day: number) => void): () => void {
+      dayListeners.add(fn);
+      return () => dayListeners.delete(fn);
+    },
+    rig,
+    // live getter: __scene3 is replaced (spread) while scene parts load
+    get scene3() {
+      return (window as unknown as Record<string, unknown>).__scene3 as Record<string, unknown>;
+    },
+  };
 }
 
-main();
+// standalone entry: the orchard page (index.html) auto-mounts on load.
+// The www dashboard defines VITE_WIESE_EMBED=1 so importing this module
+// there does NOT start a second, body-attached scene.
+if (!import.meta.env.VITE_WIESE_EMBED) {
+  void mountOrchard(null, { embed: false });
+}

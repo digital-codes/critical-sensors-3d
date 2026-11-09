@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import TimeSlider from './components/TimeSlider.vue';
 import DataPane from './components/DataPane.vue';
+import OrchardPane from './components/OrchardPane.vue';
 </script>
 
 <template>
@@ -11,14 +12,7 @@ import DataPane from './components/DataPane.vue';
   </header>
 
   <main class="main">
-    <!-- 3D-Pane: die eingebettete Orchardszene folgt (mountOrchard-Refactor,
-             eigener Arbeitsauftrag im Changeset "dashboard-prototype"). -->
-    <section class="pane3d" aria-label="3D-Ansicht">
-      <div>
-        <strong>3D-Modell der Streuobstwiese</strong><br />
-        (eingebettete Szene folgt im nächsten Schritt)
-      </div>
-    </section>
+    <OrchardPane />
 
     <DataPane />
   </main>

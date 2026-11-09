@@ -4,6 +4,11 @@ import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
   plugins: [vue()],
+  // the orchard scene module must not auto-mount standalone inside the
+  // dashboard bundle — mountOrchard() is called explicitly by OrchardPane
+  define: {
+    'import.meta.env.VITE_WIESE_EMBED': JSON.stringify('1'),
+  },
   // photos, site.json, textures and the php dir resolve from the orchard
   // public tree without copying (see dashboard-prototype design)
   publicDir: fileURLToPath(new URL('../orchard/public', import.meta.url)),

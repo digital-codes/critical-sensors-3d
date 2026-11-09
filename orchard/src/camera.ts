@@ -27,7 +27,11 @@ const PRESETS: Record<string, Preset> = Object.fromEntries(
   ]),
 );
 
-export function createCameraRig(dom: HTMLElement, aspect: number): CameraRig {
+export function createCameraRig(
+  dom: HTMLElement,
+  aspect: number,
+  presetsUi?: HTMLElement | null,
+): CameraRig {
   const camera = new THREE.PerspectiveCamera(CONFIG.CAMERA.FOV, aspect, CONFIG.CAMERA.NEAR, CONFIG.CAMERA.FAR);
   const controls = new OrbitControls(camera, dom);
   controls.enableDamping = true;
@@ -47,7 +51,9 @@ export function createCameraRig(dom: HTMLElement, aspect: number): CameraRig {
 
   applyPreset(PRESETS.southEnd);
 
-  const ui = document.getElementById('presets');
+  // embed mode passes its own in-scene presets row; standalone falls back
+  // to the fixed #presets container from index.html
+  const ui = presetsUi !== undefined ? presetsUi : document.getElementById('presets');
   if (ui) {
     for (const [name, preset] of Object.entries(PRESETS)) {
       const btn = document.createElement('button');

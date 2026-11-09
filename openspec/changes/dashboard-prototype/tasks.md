@@ -19,13 +19,13 @@
 
 ## 2. Orchard embed refactor
 
-- [ ] 2.1 Refactor `orchard/src/main.ts`: export `mountOrchard(host, opts)`
+- [x] 2.1 Refactor `orchard/src/main.ts`: export `mountOrchard(host, opts)`
       with `{embed}` mode (hide compare panel/Kamera/footer; keep presets,
       cat, sky, scene day slider, compass), return controller
       `{setDay, onDay, rig, scene3}`; standalone path unchanged
-- [ ] 2.2 Regression-verify standalone orchard (5199): season label, presets,
+- [x] 2.2 Regression-verify standalone orchard (5199): season label, presets,
       Kamera panel, compare panel, cat, `__scene3` keys, `npm run build`
-- [ ] 2.3 Commit the refactor as its own commit (safe rollback point)
+- [x] 2.3 Commit the refactor as its own commit (safe rollback point)
 
 ## 3. imgsmear wrapped emit (submodule)
 
@@ -42,7 +42,7 @@
       from `oldwww/fonts/Mohave/` into `orchard/public/fonts/Mohave/`
 - [x] 4.2 Design tokens + layout grid in `styles.css` (cz palette, red
       accent, fixed-width readouts); global time store `store.ts`
-- [ ] 4.3 `OrchardPane.vue` mounts `mountOrchard(paneEl, {embed: true})`
+- [x] 4.3 `OrchardPane.vue` mounts `mountOrchard(paneEl, {embed: true})`
       and wires the controller to the store
 
 ## 5. Header + data pane (real data + dummy Licht card)
