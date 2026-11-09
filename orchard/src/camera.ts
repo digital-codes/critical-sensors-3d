@@ -7,6 +7,12 @@ export interface CameraRig {
   camera: THREE.PerspectiveCamera;
   controls: OrbitControls;
   applyPreset(name: string): void;
+  /** register a runtime preset (e.g. the info-board view) — appends the
+   *  button to the active presets row (embed row or #presets) */
+  addPreset(name: string, position: readonly number[], lookAt: readonly number[], label?: string): void;
+  /** drop a preset (and its button) — used to replace the generated
+   *  site.json vantages with CONFIG-driven ones */
+  removePreset(name: string): void;
 }
 
 /** minimal pose source (CameraRig satisfies this structurally) */
@@ -96,5 +102,22 @@ export function createCameraRig(
     }
   }
 
-  return { camera, controls, applyPreset: applyPresetByName };
+  function addPreset(name: string, position: readonly number[], lookAt: readonly number[], label?: string): void {
+    const preset: Preset = { label: label ?? PRESET_LABELS[name] ?? name, position: [...position], lookAt: [...lookAt] };
+    PRESETS[name] = preset;
+    if (ui) {
+      const btn = document.createElement('button');
+      btn.textContent = preset.label;
+      btn.dataset.preset = name;
+      btn.addEventListener('click', () => applyPreset(preset));
+      ui.appendChild(btn);
+    }
+  }
+
+  function removePreset(name: string): void {
+    delete PRESETS[name];
+    ui?.querySelector(`button[data-preset="${name}"]`)?.remove();
+  }
+
+  return { camera, controls, applyPreset: applyPresetByName, addPreset, removePreset };
 }

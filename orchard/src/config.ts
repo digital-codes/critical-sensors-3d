@@ -89,12 +89,27 @@ export const CONFIG = {
       POS: [-0.1, 116.4, 22.5],
       TARGET: [62.3, 97.7, -94.3],
     },
-    /** UI labels for the site.json cameraPresets (German site language) */
+    /** UI labels for the preset buttons (German site language). Südende and
+     *  Nordwest were dropped per user request — the site.json vantages are
+     *  replaced at runtime by CONFIG.CAMERA.PRESETS (see main.ts). */
     PRESET_LABELS: {
-      southEnd: 'Südende',
-      erhoeht: 'Erhöht',
-      nordwest: 'Nordwest',
       vergleich: 'Fotostandpunkt',
+      erhoeht: 'Erhöht',
+      tafel: 'Tafel',
+    },
+
+    /** runtime preset poses replacing the generated site.json vantages:
+     *  "Fotostandpunkt" = the initial camera pose (START above); "Erhöht" =
+     *  an ELEVATED vantage at this WGS84 spot (a rise NE of the meadow,
+     *  ground ~121.5 m) looking down at the initial view's focus. */
+    PRESETS: {
+      // 48.990387, 8.387737
+      ERHOEHT: {
+        LAT: 48.990387,
+        LON: 8.387737,
+        /** eye above the local ground, m (standing person) */
+        EYE_ABOVE_GROUND: 1.6,
+      },
     },
   },
 
@@ -411,10 +426,20 @@ export const CONFIG = {
     /** board position, WGS84 → EPSG:25832 → local ≈ (24.0, 28.0) */
     LAT: 48.98965,
     LON: 8.387631,
+    /** jump-to-board preset ("Tafel"): camera DIST in front of the face,
+     *  EYE_H above the ground; target = board centre height.
+     *  START_DIST = the app's initial view: the board from closer up. */
+    VIEW: {
+      DIST: 3.2,
+      EYE_H: 1.55,
+      START_DIST: 1.5,
+    },
     /** compass direction the board FACE points toward, degrees (0=N, 90=E).
-     *  Face toward the path junction SW of it (position photo) — tune in
-     *  the app via the [kamera] console lines if needed. */
-    AZIMUTH_DEG: 255,
+     *  Rotated so the three Hochsitz towers (meadow, ~N of the board) form
+     *  the backdrop when reading it — face toward the path junction S of
+     *  the board; keeps the Stückle south hut (E) out of the sight line.
+     *  (= bearing panel→Hochsitz centroid + 180, from site.json structures) */
+    AZIMUTH_DEG: 171,
     /** board face size, m — the graphic is 1280×1024 (5:4 landscape) */
     BOARD_W: 0.76,
     BOARD_H: 0.61,

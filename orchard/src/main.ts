@@ -8,7 +8,7 @@ import { createGrass, type Grass } from './grass';
 import { createBuildings } from './buildings';
 import { createThicket } from './thicket';
 import { createStueckle } from './stueckle';
-import { createPanel } from './panel';
+import { createPanel, utm32 } from './panel';
 import { createSky, type Sky } from './sky';
 import site from './site';
 import { createComparePanel } from './compare';
@@ -266,6 +266,50 @@ export async function mountOrchard(
   scene.add(panel.group);
   (window as unknown as Record<string, unknown>).__scene3 =
     { ...((window as unknown as Record<string, unknown>).__scene3 as object), panel };
+
+  // preset pose overrides (CONFIG-driven, replacing the generated site.json
+  // vantages): drop Südende/Nordwest; "Fotostandpunkt" = the initial pose;
+  // "Erhöht" = elevated vantage (CONFIG.CAMERA.PRESETS.ERHOEHT) looking down
+  // at the initial view's focus. Runs before the "Tafel" registration below.
+  for (const name of ['southEnd', 'nordwest', 'erhoeht', 'vergleich']) {
+    rig.removePreset(name);
+  }
+  rig.addPreset('vergleich', CONFIG.CAMERA.START.POS, CONFIG.CAMERA.START.TARGET);
+  {
+    const e = CONFIG.CAMERA.PRESETS.ERHOEHT;
+    const [ue, un] = utm32(e.LAT, e.LON);
+    const x = ue - site.origin.utmE;
+    const z = site.origin.utmN - un;
+    const ground = await getHeightSampler();
+    // look at the initial camera position (the Fotostandpunkt spot), so the
+    // elevated view sweeps across the meadow down onto that vantage
+    rig.addPreset('erhoeht', [x, ground(x, z) + e.EYE_ABOVE_GROUND, z], CONFIG.CAMERA.START.POS);
+  }
+
+  // "Tafel" preset: fly to the reading side of the board (camera on the
+  // face normal, offsets from CONFIG.PANEL.VIEW) — the board is hard to
+  // spot from the overview distances otherwise
+  {
+    const n = new THREE.Vector3(0, 0, 1).applyEuler(panel.group.rotation).normalize();
+    const g = panel.group.position;
+    rig.addPreset(
+      'tafel',
+      [g.x + n.x * CONFIG.PANEL.VIEW.DIST, g.y + CONFIG.PANEL.VIEW.EYE_H, g.z + n.z * CONFIG.PANEL.VIEW.DIST],
+      [g.x, g.y + CONFIG.PANEL.BOARD_CENTRE_H, g.z],
+    );
+
+    // the app STARTS on the board: same reading-side view, but closer
+    // (CONFIG.PANEL.VIEW.START_DIST) — overrides the boot pose from
+    // CONFIG.CAMERA.START (which remains the "Fotostandpunkt" preset)
+    rig.camera.position.set(
+      g.x + n.x * CONFIG.PANEL.VIEW.START_DIST,
+      g.y + CONFIG.PANEL.VIEW.EYE_H,
+      g.z + n.z * CONFIG.PANEL.VIEW.START_DIST,
+    );
+    rig.controls.target.set(g.x, g.y + CONFIG.PANEL.BOARD_CENTRE_H, g.z);
+    rig.controls.update();
+    logPose(rig, ' start');
+  }
 
   const structures = await createStructures();
   scene.add(structures.group);
