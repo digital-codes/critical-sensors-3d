@@ -24,6 +24,8 @@ interface HutSpec {
 
 export interface Stueckle {
   group: THREE.Group;
+  /** world positions + top y of every fence post (cat jump-off anchors) */
+  fencePosts: THREE.Vector3[];
 }
 
 const hex = (c: number): string => `#${c.toString(16).padStart(6, '0')}`;
@@ -139,6 +141,7 @@ export async function createStueckle(): Promise<Stueckle> {
   // --- fence: posts + translucent mesh strip along the polygon edges ---
   const postGeo = new THREE.BoxGeometry(0.06, cfg.FENCE.HEIGHT + 0.15, 0.06);
   const postMat = new THREE.MeshLambertMaterial({ color: cfg.FENCE.POST });
+  const fencePosts: THREE.Vector3[] = [];
   const meshTex = canvasTexture(64, 64, (ctx) => {
     ctx.clearRect(0, 0, 64, 64);
     ctx.strokeStyle = hex(cfg.FENCE.MESH);
@@ -179,6 +182,9 @@ export async function createStueckle(): Promise<Stueckle> {
       post.position.set(x0 + ex * t, groundY + (cfg.FENCE.HEIGHT + 0.15) / 2, z0 + ez * t);
       post.castShadow = true;
       group.add(post);
+      fencePosts.push(new THREE.Vector3(
+        x0 + ex * t, groundY + cfg.FENCE.HEIGHT + 0.15, z0 + ez * t,
+      ));
     }
     // mesh strip
     const strip = new THREE.Mesh(
@@ -250,5 +256,5 @@ export async function createStueckle(): Promise<Stueckle> {
 
   console.info(`stueckle: plot at (${cx.toFixed(0)}, ${cz.toFixed(0)}), ground y ${groundY.toFixed(2)}`);
   void site;
-  return { group };
+  return { group, fencePosts };
 }

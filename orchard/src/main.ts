@@ -309,6 +309,19 @@ export async function mountOrchard(
     rig.controls.target.set(g.x, g.y + CONFIG.PANEL.BOARD_CENTRE_H, g.z);
     rig.controls.update();
     logPose(rig, ' start');
+
+    // small warm spot on the board only — keeps the panel text readable
+    // when the board sits in shade (CONFIG.PANEL.LIGHT)
+    {
+      const L = CONFIG.PANEL.LIGHT;
+      const spot = new THREE.SpotLight(
+        new THREE.Color(L.COLOR), L.INTENSITY, L.DISTANCE,
+        (L.ANGLE_DEG * Math.PI) / 180, L.PENUMBRA, 2,
+      );
+      spot.position.set(g.x + n.x * L.OUT, g.y + L.HEIGHT, g.z + n.z * L.OUT);
+      spot.target.position.set(g.x, g.y + CONFIG.PANEL.BOARD_CENTRE_H, g.z);
+      scene.add(spot, spot.target);
+    }
   }
 
   const structures = await createStructures();
@@ -370,8 +383,9 @@ export async function mountOrchard(
   terrain.setSnowMask(maskTex);
 
   // walking cat (hidden by default; "Katze" toggle below)
-  const cat: Cat = await createCat();
+  const cat: Cat = await createCat(stueckle.fencePosts);
   scene.add(cat.group);
+  scene.add(cat.stillLife);
   (window as unknown as Record<string, unknown>).__scene3 =
     { ...((window as unknown as Record<string, unknown>).__scene3 as object), cat };
 

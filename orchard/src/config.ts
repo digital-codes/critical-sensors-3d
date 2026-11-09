@@ -313,7 +313,6 @@ export const CONFIG = {
     RAIL_ABOVE_DECK: 0.6,
     SLAT_ABOVE_DECK: 0.3,
   },
-
   /** fallback for OSM trees without a calibrated height, in metres (trees.ts) */
   TREES: {
     SIZE_SCALE: { small: 4.5, medium: 6.0, large: 7.5 },
@@ -449,6 +448,18 @@ export const CONFIG = {
       EYE_H: 1.55,
       START_DIST: 1.5,
     },
+    /** small warm spot aimed at the board only — keeps the text readable
+     *  when the board sits in shade (main.ts). Position: board centre +
+     *  face normal*OUT + up*HEIGHT; decay 2 (physical). */
+    LIGHT: {
+      COLOR: '#fff1cf',
+      INTENSITY: 2.2,
+      DISTANCE: 6,
+      ANGLE_DEG: 36,
+      PENUMBRA: 0.7,
+      OUT: 1.05,
+      HEIGHT: 1.15,
+    },
     /** compass direction the board FACE points toward, degrees (0=N, 90=E).
      *  Rotated so the three Hochsitz towers (meadow, ~N of the board) form
      *  the backdrop when reading it — face toward the path junction S of
@@ -480,12 +491,25 @@ export const CONFIG = {
     /** real-size cat: normalized body length in metres (× SCALE) */
     BODY_LENGTH: 0.5,
     SCALE: 1,
-    /** patrol path seed (hash → mulberry32) */
-    SEED: 'katzenwedel',
-    /** min clearance to any orchard tree, m */
-    CLEARANCE: 3,
     /** chase cam: distance behind (along -heading) and above, m */
     FOLLOW: { BACK: 4, UP: 2.2 },
+    /** one-shot route (user choreography): jump off a Stückle fence post,
+     *  walk through the middle of the orchard, stop facing a Hochsitz */
+    ROUTE: {
+      /** jump off the fence post nearest this anchor (Stückle west fence) */
+      JUMP_FROM: [36.5, 9.5],
+      /** ballistic hop parameters */
+      JUMP_DURATION: 0.9,
+      JUMP_APEX: 0.35,
+      /** landing point relative to the post top (towards the orchard) */
+      LAND_OFFSET: [-2.4, -0.9],
+      /** the meadow middle the cat walks through first */
+      MID: [20, 3],
+      /** Hochsitz to walk to and face */
+      HOCHSITZ: [19.8, -1.6],
+      /** stop this far from the Hochsitz */
+      STAND_OFF: 1.8,
+    },
   },
 
   /** German site-language label tables (main.ts, compare.ts) */
