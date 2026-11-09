@@ -81,11 +81,13 @@ async function buildStillLife(): Promise<THREE.Group> {
   g.add(handle);
   // label base (plain ceramic) + REAL extruded "MOST" letters standing off
   // the surface (user: bump-only text was unreadable; wants visible relief)
+  // NOTE: belly radius at label height (y 0.09) is ~0.0772 — both must sit
+  // OUTSIDE that or they vanish inside the jug
   const label = new THREE.Mesh(
     new THREE.PlaneGeometry(0.085, 0.032),
     new THREE.MeshStandardMaterial({ color: 0x9a8878, roughness: 0.55 }),
   );
-  label.position.set(0, 0.09, 0.0755);
+  label.position.set(0, 0.09, 0.0776);
   g.add(label);
   // helvetiker_bold parsed from the bundled JSON module (no network fetch)
   const font = new FontLoader().parse(helvetikerBold as never);
@@ -110,7 +112,7 @@ async function buildStillLife(): Promise<THREE.Group> {
     textGeo,
     new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5 }),
   );
-  letters.position.set(0, 0.09, 0.0762);
+  letters.position.set(0, 0.09, 0.0783);
   g.add(letters);
 
   // --- five apples beside the jug ---------------------------------------
