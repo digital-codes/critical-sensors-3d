@@ -2,17 +2,17 @@
 
 ## 1. PHP sensor endpoint
 
-- [ ] 1.1 `orchard/public/php/api.php`: config.ini reader (flat DBUSER/
+- [x] 1.1 `orchard/public/php/api.php`: config.ini reader (flat DBUSER/
       DBPASS/DBSCHEMA/DBHOST/DBPORT), whitelisted channel map (temp/hum/
       wind/co2 → id 0, solar → id 9, soilMoist/soilTemp → id 8), prepared
       daily min/mean/max queries, JSON response with per-channel
       source/unit metadata
-- [ ] 1.2 Hardening: GET-only, input validation (channel whitelist, date
+- [x] 1.2 Hardening: GET-only, input validation (channel whitelist, date
       regex + span cap 800 d), generic JSON errors (details to error_log
       only), nosniff header, no CORS/sessions; `router.php` dev router
       (403 on *.ini/dotfiles) + `.htaccess` (deny *.ini, -Indexes);
       `config.ini.template` committed, real config.ini gitignored
-- [ ] 1.3 Vite proxy `/php` → `127.0.0.1:9000` in orchard + www configs;
+- [x] 1.3 Vite proxy `/php` → `127.0.0.1:9000` in orchard + www configs;
       verify via `php -S 127.0.0.1:9000` + curl: valid query, unknown
       channel, bad date, POST, `GET /php/config.ini` (403), and daily
       aggregates match a direct SQL readback

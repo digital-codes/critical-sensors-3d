@@ -1,0 +1,12 @@
+# wiese3d sensor API — Apache hardening (Apache 2.4).
+# Copy this file together with api.php into the deployment directory
+# (e.g. /var/www/files/wiese3d/). It keeps the database credentials in
+# config.ini and any notes unreachable over HTTP and disables listing.
+
+<IfModule mod_authz_core.c>
+  <FilesMatch "\.(ini|txt|md|log)$">
+    Require all denied
+  </FilesMatch>
+</IfModule>
+
+Options -Indexes

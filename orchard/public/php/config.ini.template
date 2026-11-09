@@ -1,0 +1,9 @@
+; wiese3d sensor API — database credentials (flat key = value, no sections).
+; Copy to config.ini NEXT TO api.php. Never make config.ini web-readable:
+; ship the .htaccess of this directory with it (the dev router.php also
+; refuses *.ini). Recommended: use a READ-ONLY MariaDB account here.
+DBUSER = wiese
+DBPASS = change-me
+DBSCHEMA = wiese
+DBHOST = localhost
+DBPORT = 3306

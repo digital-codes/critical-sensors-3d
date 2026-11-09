@@ -1,6 +1,7 @@
 # --- credentials & secrets: NEVER commit ---
 datatools/icosAuth.txt
 datatools/dburl.txt
+orchard/public/php/config.ini
 *.token
 *auth_conf.json
 
