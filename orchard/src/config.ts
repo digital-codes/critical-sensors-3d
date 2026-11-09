@@ -131,7 +131,9 @@ export const CONFIG = {
   /** "Vogelflug" bird glide (flight.ts). Waypoints are local metres
    *  (x east, y up, z south); y is filled from the DGM at start() as
    *  terrain(x, z) + clearance — the start sits ~1.5 m above the crown of
-   *  the NE ridge tree (bk01345, 11 m tall on the ~121 m ridge). */
+   *  the NE ridge tree (bk01345, 11 m tall on the ~121 m ridge), the
+   *  arrival hovers just above the EAST Hochsitz (osmway124028005, 4.6 m
+   *  tall, at (24.7, 5.4)) looking north. */
   FLIGHT: {
     WAYPOINTS: [
       [66, 12.5, -45], // the elevated NE tree's crown (bk01345)
@@ -139,10 +141,13 @@ export const CONFIG = {
       [30, 14, -22], // NE meadow corner (clears bk02868)
       [17, 14, -1], // over the Hocksitzcafe towers (clears bk02839)
       [3, 14.5, 18], // mid-meadow pass (clears bk01274)
-      [6, 13.5, 40], // south meadow, ends above open grass
+      [6, 13.5, 40], // south meadow
+      [15, 13.5, 44], // swing east along the south edge
+      [24, 8.5, 30], // descend, turn north on the east side (levels the final leg)
+      [24.7, 5.5, 5.4], // arrive above the east Hochsitz — tangent points north
     ] as [number, number, number][],
-    /** ~4 m/s glide */
-    DURATION_S: 36,
+    /** ~4 m/s glide over the ~160 m route */
+    DURATION_S: 42,
     BOB_AMP_M: 0.35, // wing-beat vertical float
     BOB_HZ: 0.9,
     SWAY_AMP_M: 0.5, // slow lateral drift

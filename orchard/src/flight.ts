@@ -6,11 +6,14 @@ import { CONFIG } from './config';
  * "Vogelflug" camera flight: a bird's glide that starts at the elevated
  * tree on the north-east ridge (Baumkataster bk01345 at local (65, -47),
  * ~11 m tall on ~121 m DGM ground -> crown ~132 m absolute), sweeps
- * south-west over the orchard past the Hocksitzcafe towers and pulls up at
- * the south meadow edge. Position and look-target follow two Catmull-Rom
- * curves over the DGM terrain; a small wing-beat bob and slow lateral sway
- * sell the bird feel. Any pointer interaction cancels the flight and hands
- * the camera back to OrbitControls.
+ * south-west over the orchard past the Hocksitzcafe towers and the south
+ * meadow, then turns north on the east side and arrives just above the
+ * EAST Hochsitz (osmway124028005, 4.6 m, at (24.7, 5.4)) — the final
+ * tangent points north, so the bird ends looking north over the orchard.
+ * Position and look-target follow two Catmull-Rom curves over the DGM
+ * terrain; a small wing-beat bob and slow lateral sway sell the bird
+ * feel. Any pointer interaction cancels the flight and hands the camera
+ * back to OrbitControls.
  */
 
 export interface BirdFlight {
@@ -46,13 +49,17 @@ export async function createBirdFlight(
   // curve smoothly instead of swinging with every beat. Near the end the
   // tangent extrapolates past the path end, keeping the heading constant
   // through arrival (a clamped ahead-point used to whip the yaw around).
-  function lookFor(s: number, out: THREE.Vector3): THREE.Vector3 {
-    const sc = Math.min(0.999, s);
-    path.getPointAt(sc, out);
-    path.getTangentAt(sc, tmpTangent);
-    out.addScaledVector(tmpTangent, CONFIG.FLIGHT.LOOK_AHEAD_M);
-    out.y -= CONFIG.FLIGHT.LOOK_DIP_M;
-    return out;
+  // The bird aims along its own path tangent, a fixed distance ahead. The
+  // target is defined RELATIVE to the camera position, so wing-beat bob and
+  // lateral sway translate the view without rotating it: yaw follows the
+  // curve smoothly instead of swinging with every beat. Near the end the
+  // tangent extrapolates past the path end, keeping the heading constant
+  // through arrival (a clamped ahead-point used to whip the yaw around).
+  // On arrival the downward gaze tapers away so the bird ends looking
+  // north OVER the orchard (horizon in frame), not down at its feet.
+  function lookDip(s: number): number {
+    const arrived = THREE.MathUtils.smoothstep(s, 0.8, 1);
+    return CONFIG.FLIGHT.LOOK_DIP_M * (1 - arrived) + 0.5;
   }
 
   let active = false;
@@ -74,7 +81,7 @@ export async function createBirdFlight(
     if (!gazeDir.lengthSq() || dt <= 0) gazeDir.copy(tmpTangent);
     else gazeDir.lerp(tmpTangent, 1 - Math.exp(-dt / CONFIG.FLIGHT.YAW_TAU_S)).normalize();
     const look = tmpLook.copy(pos).addScaledVector(gazeDir, CONFIG.FLIGHT.LOOK_AHEAD_M);
-    look.y -= CONFIG.FLIGHT.LOOK_DIP_M;
+    look.y -= lookDip(u01);
     // wing-beat + sway, phase-locked to flight time
     const bob = Math.sin(progress * CONFIG.FLIGHT.BOB_HZ * 2 * Math.PI) * CONFIG.FLIGHT.BOB_AMP_M;
     const sway = Math.sin(progress * CONFIG.FLIGHT.SWAY_HZ * 2 * Math.PI) * CONFIG.FLIGHT.SWAY_AMP_M;
