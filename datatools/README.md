@@ -307,9 +307,13 @@ sourced from the `stations` rows `SC-N-002` / `SC-N-116` / `SC-SW-006`:
   unit (hPa). `sonnenstrahlung` goes into the new `solar` column (W/m²) —
   NOT into DWD `light`, which is percent sunshine, a different quantity.
 - Air stations report ~10-min cadence (hourly mean), the soil profile ~1 h;
-  ~2-week (air) / ~80-day (soil) rolling archive — the first run after the
-  change wrote that whole window, later runs append only new hours
-  (latest-date dedup per sensor id, same discipline as the reference).
+  both archives reach back months. Each run fetches a **30-day window**
+  (the FeatureServer caps queries at 2000 records, so the fetch pages with
+  `resultOffset`) and the dedup is **gap-tolerant**: every hour already
+  stored for that id inside the window is dropped from the FETCHED FRAME
+  (nothing is ever deleted from the database), the rest is inserted. This
+  backfills outage gaps inside the window instead of only appending at the
+  newest boundary.
 - A failed fetch logs and leaves that sensor id untouched; the rest of the
   pipeline continues. The virtual composites (ids 0/7) are unaffected —
   folding these stations into „Referenz" would be a separate decision.

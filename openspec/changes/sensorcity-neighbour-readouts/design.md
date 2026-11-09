@@ -54,6 +54,18 @@ composition stays untouched by construction.
   after checking which depths the station actually reports. Adding more
   depths later = more columns + sensor_sources rows, no migration rethink.
 
+### 30-day fetch window with gap-tolerant dedup
+
+The FeatureServer caps every query at 2000 records (14 days of 10-min air
+data), so the neighbour fetches page with `resultOffset` over a bounded
+30-day `measured_at > timestamp '…'` window. The per-id dedup drops every
+hour already stored inside that window (date-set comparison — cheap at
+≤720 rows) instead of only guarding the newest boundary: a pure
+"> latest" guard never backfills outage gaps mid-window. Rows older than
+the window are never fetched, so the stored-dates query stays bounded.
+"Removing old entries" always refers to the fetched frame — the pipeline
+never issues a DELETE.
+
 ### Column wiring follows the measured-source rule
 
 The skill's five-places rule (fetch block, `ref` merge with `how="left"`,

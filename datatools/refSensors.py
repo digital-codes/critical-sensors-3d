@@ -6,7 +6,7 @@ import csv
 import time
 import argparse
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pandas as pd
 import numpy as np
 
@@ -556,28 +556,62 @@ checkShutdown("SensorCity neighbour stations fetch")
 SC_BASE = ("https://geoportal.karlsruhe.de/ags04/rest/services/Hosted/"
            "Sensordaten_NodeRED/FeatureServer")
 
+# fetch window for the neighbour stations: the FeatureServer caps every
+# query at 2000 records (ArcGIS maxRecordCount - 14 days of 10-min air
+# data), so the window is bounded server-side and paged with resultOffset
+SC_WINDOW_DAYS = 30
 
-def scAirFrame(sid, dev, label):
-    """Hourly air means (temp/hum/pres/solar) for one SensorCity station."""
-    try:
+
+def scSinceStr():
+    """Naive-UTC string SC_WINDOW_DAYS back (timezone-aware now() without
+    the py3.12 utcnow deprecation)."""
+    return (datetime.now(timezone.utc).replace(tzinfo=None)
+            - timedelta(days=SC_WINDOW_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def scQueryPaged(layer, where, outFields, label):
+    """All records matching `where`, paged through the 2000-record cap."""
+    rows = []
+    offset = 0
+    for _page in range(10):  # safety cap: 10 pages = ~80 days of 10-min data
         r = requests.get(
-            SC_BASE + "/2/query",
+            SC_BASE + "/%d/query" % layer,
             params={
-                "where": "device_id='%s'" % dev,
-                "outFields": "measured_at,temp,luftfeuchte,press,sonnenstrahlung",
+                "where": where,
+                "outFields": outFields,
                 "returnGeometry": "false",
                 "f": "json",
-                "resultRecordCount": "2000",  # ~14 days at the 10-min cadence
+                "resultRecordCount": "2000",
+                "resultOffset": str(offset),
                 "orderByFields": "measured_at DESC",
             },
             timeout=30,
         )
         r.raise_for_status()
         feats = r.json().get("features", [])
+        rows.extend(f["attributes"] for f in feats)
+        if len(feats) < 2000:
+            break
+        offset += 2000
+    print("SensorCity %s: %d records fetched (window: last %d days)"
+          % (label, len(rows), SC_WINDOW_DAYS))
+    return rows
+
+
+def scAirFrame(sid, dev, label):
+    """Hourly air means (temp/hum/pres/solar) for one SensorCity station."""
+    try:
+        feats = scQueryPaged(
+            2,
+            "device_id='%s' AND measured_at > timestamp '%s'"
+            % (dev, scSinceStr()),
+            "measured_at,temp,luftfeuchte,press,sonnenstrahlung",
+            "air %s" % label,
+        )
         if not feats:
             print("SensorCity air %s: no records returned" % label)
             return None
-        a = pd.DataFrame([f["attributes"] for f in feats])
+        a = pd.DataFrame(feats)  # scQueryPaged already unwrapped .attributes
         a = a.dropna(subset=["temp"])  # rows without the core reading are parser noise
         a = a.drop_duplicates(subset=["measured_at"]).sort_values("measured_at")
         a["date"] = pd.to_datetime(a.pop("measured_at"), unit="ms")  # naive UTC
@@ -599,25 +633,18 @@ def scAirFrame(sid, dev, label):
 def scSoilFrame(sid, dev, label, depth="51"):
     """Hourly soil means (soilMoist/soilTemp) at the deepest installed depth."""
     try:
-        r = requests.get(
-            SC_BASE + "/4/query",
-            params={
-                "where": "device_id='%s'" % dev,
-                "outFields": "measured_at,soil_moisture_at_depth_%s,"
-                             "soil_temperature_at_depth_%s" % (depth, depth),
-                "returnGeometry": "false",
-                "f": "json",
-                "resultRecordCount": "2000",  # ~80 days at the ~1 h cadence
-                "orderByFields": "measured_at DESC",
-            },
-            timeout=30,
+        feats = scQueryPaged(
+            4,
+            "device_id='%s' AND measured_at > timestamp '%s'"
+            % (dev, scSinceStr()),
+            "measured_at,soil_moisture_at_depth_%s,"
+            "soil_temperature_at_depth_%s" % (depth, depth),
+            "soil %s" % label,
         )
-        r.raise_for_status()
-        feats = r.json().get("features", [])
         if not feats:
             print("SensorCity soil %s: no records returned" % label)
             return None
-        s = pd.DataFrame([f["attributes"] for f in feats])
+        s = pd.DataFrame(feats)  # scQueryPaged already unwrapped .attributes
         s["date"] = pd.to_datetime(s.pop("measured_at"), unit="ms")  # naive UTC
         s = s.drop_duplicates(subset=["date"]).sort_values("date")
         moist = s.pop("soil_moisture_at_depth_%s" % depth)
@@ -874,14 +901,23 @@ if scNeighbours is not None and len(scNeighbours):
                "solar": Float, "soilMoist": Float, "soilTemp": Float}
     for sid in sorted(scNeighbours.id.unique()):
         rows = scNeighbours[scNeighbours.id == sid].copy()
-        srcQry = ("select date from sensors where id = %d "
-                  "order by date desc limit 1;" % sid)
-        df = pd.read_sql(srcQry, db)
-        if len(df) > 0:
-            limit = str(df.date.values[0])
-            print("SensorCity neighbour id %d: removing old entries before %s"
-                  % (sid, limit))
-            rows = rows.drop(index=rows[rows.date <= limit].index)
+        # gap-tolerant dedup: drop every hour ALREADY STORED for this id
+        # within the fetch window - not just the newest boundary. A pure
+        # "> latest" guard never backfills outage gaps in the middle of the
+        # window; the 30-day fetch makes the full-date-set comparison cheap.
+        # Rows older than the window are never fetched, so the query stays
+        # bounded; "removing old entries" filters the FETCHED FRAME only -
+        # nothing is ever deleted from the database.
+        winStart = scSinceStr()
+        stored = pd.read_sql(
+            "select date from sensors where id = %d and date >= '%s'"
+            % (sid, winStart), db)
+        before = len(rows)
+        if len(stored):
+            have = set(pd.to_datetime(stored.date))
+            rows = rows[~rows.date.isin(have)]
+        print("SensorCity neighbour id %d: %d fetched, %d already stored, "
+              "%d to add" % (sid, before, before - len(rows), len(rows)))
         if rows.empty:
             print("SensorCity neighbour id %d: no new data" % sid)
             continue

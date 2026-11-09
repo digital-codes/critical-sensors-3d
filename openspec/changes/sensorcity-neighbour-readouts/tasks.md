@@ -26,6 +26,10 @@
       sensor_sources note
 - [x] 2.3 Fetch block SC-SW-006 (layer 2, device `5709d661-…`): same air
       mapping as SC-N-116 → temp/hum/pres/solar, id 10
+- [x] 2.3a 30-day fetch window with resultOffset paging + gap-tolerant
+      per-id dedup (drop already-stored hours inside the window; no DELETE
+      ever touches the database) — backfilled the first window after the
+      2000-record page cap left ids 9/10 starting Oct 25
 - [x] 2.4 Append per-sensor frames (ids 8/9/10) with the same NULL
       placeholder convention; wire the three columns through the five places
       (fetch, merge, NULL fallback, ALTER tuple, dtype dict)
