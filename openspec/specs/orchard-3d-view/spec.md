@@ -109,21 +109,38 @@ The view SHALL support four named sky conditions defined in `config.ts`
 the default), and `gewitter` (heavy dark clouds, thunderstorm mood). Each
 condition SHALL define dome top/horizon colours, cloud count, cloud tint and
 opacity range, fog/background colour, and sun/hemisphere/ambient light
-factors; no other module SHALL carry sky look values.
+factors; no other module SHALL carry sky look values. The conditions SHALL
+have distinct light characters: Klar is the brightest variant and uses
+mostly direct sunlight (crisp shadows); Heiter is nearly as bright with a
+larger ambient share (soft shadows); Bedeckt has only little direct sun
+(flat diffuse light); Gewitter has no direct light at all and stays visible
+through hemisphere + ambient light.
 
 #### Scenario: Dropdown switches the whole sky coherently
 
 - **WHEN** the user selects a condition in the sky dropdown
 - **THEN** the dome gradient, the number and tint of cloud sprites, the fog
   and background colour, and the sun/hemisphere/ambient light levels all
-  change together to the configured preset (dark clouds come with dimmed
-  lights, blue sky with bright sun)
+  change together to the configured preset
 
 #### Scenario: Default preserves the current look
 
 - **WHEN** the page is loaded with the default condition (`leichtBedeckt`)
-- **THEN** the rendered sky is pixel-identical to the build before this
-  change (same dome colours, 12 clouds, same light levels)
+- **THEN** the rendered sky uses this change's retuned light levels (little
+  direct sun, flat diffuse lighting) with the unchanged dome colours and
+  12 clouds
+
+#### Scenario: Klar reads as direct-dominant
+
+- **WHEN** the Klar preset is active
+- **THEN** sunlit and shadowed surfaces differ strongly and Klar is the
+  brightest variant
+
+#### Scenario: Gewitter keeps the scene visible without direct sun
+
+- **WHEN** the Gewitter preset is active
+- **THEN** the directional (sun) light intensity is 0 and the scene stays
+  legible via hemisphere + ambient light
 
 ### Requirement: Programmatic sky control hook
 
@@ -240,3 +257,89 @@ walking cat so it stays visible from up close.
 - **WHEN** "Katze folgen" is activated while the cat walks
 - **THEN** the camera keeps the cat in frame as it patrols, and the user
   can leave the preset (orbiting stays functional)
+
+### Requirement: Realistic building facades
+
+The LoD2 building walls SHALL carry a procedural facade kit derived from the
+St.-Florian-Straße photo (`newimages/20261028_164047.jpg`): vertical
+white-framed windows (~1 : 1.5, double-casement), ~4–5 window axes per
+floor, storey height ~3 m with the storey count derived from the CityJSON
+`measuredHeight`, and a dark plinth band. Walls SHALL be laid out by wall
+class (front / side / back). Buildings below a configurable height
+(garages, sheds) SHALL keep their plain colour. Facade colours and the
+DOP-textured roofs SHALL stay unchanged. Roof-attic detail remains the real
+DOP roof pixels.
+
+#### Scenario: Photo-typical front facade
+
+- **WHEN** the south building row is viewed from the orchard-side camera
+  preset matching the photo vantage
+- **THEN** the visible walls show multi-storey white-framed window grids
+  over a dark plinth band, reading like the photo's row rather than flat
+  slabs
+
+#### Scenario: Small buildings stay plain
+
+- **WHEN** a building's measuredHeight is below the configured minimum
+  (garages, sheds)
+- **THEN** its walls keep the flat facade colour without windows or plinth
+
+#### Scenario: Facades differ but stay in typology
+
+- **WHEN** two neighbouring houses of similar height are compared
+- **THEN** their window axis counts, shutter states and pane brightness
+  differ (seeded noise) while both follow the same storey/window typology
+
+#### Scenario: Deterministic rendering
+
+- **WHEN** the scene is rendered twice with the same `?seed=<n>`
+- **THEN** the facade layouts are identical (noise is seeded per building,
+  not randomised per load)
+
+### Requirement: Facade configuration
+
+The facade kit's tunables (storey height, plinth height, window width/height
+ratios, frame and plinth colours, shutter probability and colours, minimum
+facade height for the kit, noise seed) SHALL live in the central config
+(`CONFIG.BUILDINGS.FACADE`), not in module code.
+
+#### Scenario: Tuning without code changes
+
+- **WHEN** a facade parameter in `CONFIG.BUILDINGS.FACADE` is edited
+- **THEN** the rendered facades change accordingly without touching
+  `buildings.ts` logic
+
+### Requirement: Stückle garden plot
+
+The garden plot east of the orchard (towards the small trail; extent from
+the editable `CONFIG.STUECKLE.POLYGON`, traced from the DOP) SHALL carry
+simple procedural structures, all seeded and deterministic: a perimeter
+wire-mesh fence (~1.2–1.5 m), two gable-roofed tool huts (2–2.5 m tall,
+dark-grey and light-grey roofs per the aerial), a low translucent
+greenhouse/cold-frame row, dark soil bed rectangles on the plot ground,
+compost heaps along the east fence and one ~5 m conifer. The rest of the
+scene stays untouched.
+
+#### Scenario: Plot reads as an allotment from the meadow
+
+- **WHEN** the area east of the orchard is viewed from the meadow or the
+  bird flight
+- **THEN** a fenced plot with two small huts, beds and a conifer stands
+  where the aerial shows it, instead of bare terrain
+
+#### Scenario: Deterministic placement
+
+- **WHEN** the scene is rendered twice with the same `?seed=<n>`
+- **THEN** hut and bed placement are identical
+
+### Requirement: Garden plot snow exclusion
+
+The Stückle plot's ground SHALL be excluded from the terrain winter snow
+gate (the lawn mask claims the garden's green DOP pixels), so winter snow
+renders on the meadow, not on the fenced beds.
+
+#### Scenario: Snow stays off the beds
+
+- **WHEN** the day-of-year is set to a winter date
+- **THEN** the plot ground inside the fence stays snow-free while the
+  meadow keeps its snow cover
