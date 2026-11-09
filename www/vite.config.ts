@@ -2,18 +2,22 @@ import { defineConfig, type Plugin } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { fileURLToPath, URL } from 'node:url';
 
-/** The orchard sources live outside this root and Vite does not watch them
- *  by default — out-of-root edits (camera.ts, panel.ts, …) would keep being
- *  served from the transform cache. Add them to the watcher explicitly. */
-const watchOrchardSources = (): Plugin => ({
-  name: 'watch-orchard-sources',
+/** Out-of-root sources that this app imports: the orchard scene and the
+ *  imgsmear submodule. Vite only watches files inside its root by default,
+ *  so edits there would keep being served from the transform cache (stale
+ *  presets/panel, missing component emits). Add them to the watcher. */
+const watchExternalSources = (): Plugin => ({
+  name: 'watch-external-sources',
   configureServer(server) {
-    server.watcher.add(fileURLToPath(new URL('../orchard/src', import.meta.url)));
+    server.watcher.add([
+      fileURLToPath(new URL('../orchard/src', import.meta.url)),
+      fileURLToPath(new URL('../ideas/imgsmear/src', import.meta.url)),
+    ]);
   },
 });
 
 export default defineConfig({
-  plugins: [vue(), watchOrchardSources()],
+  plugins: [vue(), watchExternalSources()],
   // the orchard scene module must not auto-mount standalone inside the
   // dashboard bundle — mountOrchard() is called explicitly by OrchardPane
   define: {

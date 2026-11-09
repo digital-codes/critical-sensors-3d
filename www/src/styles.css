@@ -269,6 +269,59 @@ body {
   color: #444;
 }
 
+/* ---------- photo streak (image animation only — no simulation sync) ---------- */
+
+.streak-panel {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  min-height: 0;
+}
+
+.streak-stage {
+  height: clamp(150px, 24dvh, 260px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--panel);
+}
+
+.streak-stage canvas {
+  /* fill the strip: the 4:3 photos crop to a wide band (ImgSmear's
+   * sizeCanvas sets inline width/height — override for the strip look) */
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+}
+
+.streak-markers {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.streak-marker {
+  font: inherit;
+  font-size: 0.9em;
+  color: #111;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 6px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.streak-marker.active {
+  background: var(--accent-red);
+  border-color: var(--accent-red);
+  color: #fff;
+  font-weight: 700;
+}
+
 .sources-footer {
   margin-top: 8px;
   font-size: 0.85em;
@@ -349,6 +402,16 @@ body {
 
   .sources-footer {
     font-size: 0.68em;
+  }
+
+  .streak-stage {
+    height: 18dvh;
+    min-height: 110px;
+  }
+
+  .streak-marker {
+    font-size: 0.75em;
+    padding: 2px 7px;
   }
 }
 

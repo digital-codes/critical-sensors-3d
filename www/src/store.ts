@@ -15,7 +15,9 @@ function todayIndex(): number {
 /** Global day-of-year control (0–364), initialised to the current date. */
 const state = reactive({ day: todayIndex() });
 
-type DaySource = 'slider' | 'streak' | 'scene';
+/** Day-change sources: the streak panel is a pure image animation and does
+ *  NOT move the simulation day (user decision), so only these two remain. */
+type DaySource = 'slider' | 'scene';
 const listeners = new Set<(day: number, src: DaySource) => void>();
 
 export function useTime(): { day: number } {

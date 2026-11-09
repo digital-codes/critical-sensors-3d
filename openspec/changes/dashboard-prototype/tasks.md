@@ -61,11 +61,12 @@
 
 ## 6. Photo streak
 
-- [ ] 6.1 `StreakPanel.vue`: ImgSmear 6-photo sequencer (auto-advance on
+- [x] 6.1 `StreakPanel.vue`: ImgSmear 6-photo sequencer (auto-advance on
       wrapped, band 0.12, forward-only), six date markers with click-to-
       jump, active marker highlight
-- [ ] 6.2 Month sync both directions with loop guard: streak completion →
-      setDay(photo doy, 'streak'); slider change → nearest-photo switch
+- [x] 6.2 ~~Month sync both directions with loop guard~~ REWRITTEN per user
+      decision: no simulation sync — streak only animates through images;
+      store DaySource reduced to 'slider' | 'scene'
 
 ## 7. Menu + info page
 

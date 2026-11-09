@@ -2,6 +2,7 @@
 import TimeSlider from './components/TimeSlider.vue';
 import DataPane from './components/DataPane.vue';
 import OrchardPane from './components/OrchardPane.vue';
+import StreakPanel from './components/StreakPanel.vue';
 </script>
 
 <template>
@@ -16,6 +17,8 @@ import OrchardPane from './components/OrchardPane.vue';
 
     <DataPane />
   </main>
+
+  <StreakPanel />
 
   <footer class="sources-footer">
     Quellen: DWD (© Deutscher Wetterdienst) · ICOS ERIC AS_KIT (CC BY 4.0, PID je Diagramm) ·
