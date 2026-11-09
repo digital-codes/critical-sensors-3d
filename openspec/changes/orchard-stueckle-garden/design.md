@@ -19,6 +19,24 @@ heaps along the east fence, one ~5 m conifer.
 - Non-Goals: individual beds' crops, garden tools, people, exact hut
   architecture; interactive anything.
 
+## Placement (mesh-derived, applied)
+
+The Karlsruhe 3D twin (ags05 `3D_Mesh_aus_Luftbildern_Fruehjahr_2024`,
+I3S meshpyramids, WGS84 vertex CRS) settles the position exactly: leaf
+nodes over the east strip were decoded (offsets from the node OBB centre,
+lon/lat degrees + height metres) and validated against the simulated tree
+positions (canopy clusters align). The real structures sit at
+**x 96–138, z −14…+15** — the fenced yard the mesh shows at
+x 110–128 / z +15…+35 is a neighbouring enclosure; the two hut-scale
+clusters (1.7–3 m above ground) are at (96–101, +6…+12) and
+(117–123, −8…−2). POLYGON/huts/greenhouse/compost/conifer follow these.
+Recipe: BFS from node 0 through `nodepages/{n}` (page = nodeIndex // 64),
+prune by OBB sphere against the target box, fetch
+`nodes/{id}/geometries/0` (8-byte header: vertexCount+featureCount
+UInt32, then Float32 position triples = lon/lat degree offsets + height
+metres). Note: `stueckle.png` is a viewer screenshot — orientation/scale
+dubious, used only as a layout reference, not for placement.
+
 ## Decisions
 
 ### One module, one config group

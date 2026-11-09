@@ -7,6 +7,7 @@ import { createStructures } from './structures';
 import { createGrass, type Grass } from './grass';
 import { createBuildings } from './buildings';
 import { createThicket } from './thicket';
+import { createStueckle } from './stueckle';
 import { createSky, type Sky } from './sky';
 import site from './site';
 import { createComparePanel } from './compare';
@@ -142,6 +143,8 @@ async function main(): Promise<void> {
 
   const thicket = await createThicket(await getHeightSampler());
   scene.add(thicket.group);
+  const stueckle = await createStueckle();
+  scene.add(stueckle.group);
 
   const structures = await createStructures();
   scene.add(structures.group);
@@ -160,23 +163,25 @@ async function main(): Promise<void> {
   scene.add(buildings.group);
   // debug/testing hook: direct access to the snow-driven scene parts
   (window as unknown as Record<string, unknown>).__scene3 =
-    { ...((window as unknown as Record<string, unknown>).__scene3 as object), terrain, grass, structures, buildings, thicket };
+    { ...((window as unknown as Record<string, unknown>).__scene3 as object), terrain, grass, structures, buildings, thicket, stueckle };
   // hand the lawn mask to the terrain so winter snow covers exactly the
   // grass region (same cells the blades are placed on) — minus the thicket
-  // strip: its dense bushes are green in the DOP (so the lawn mask includes
-  // them) but must not carry ground snow
+  // strip and the Stückle garden plot: both are green in the DOP (so the
+  // lawn mask includes them) but must not carry ground snow
   const lm = grass.getLawnMask();
   const cellW = (site.window.eMax - site.window.eMin) / lm.w;
   const cellD = (site.window.nMax - site.window.nMin) / lm.h;
-  const thicketInPolygon = (x: number, z: number): boolean => {
-    const poly = CONFIG.THICKET.POLYGON;
-    for (const [dx, dz] of [[0, 0], [cellW * 4, 0], [-cellW * 4, 0], [0, cellD * 4], [0, -cellD * 4]]) {
-      let inside = false;
-      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-        const xi = poly[i][0], zi = poly[i][1], xj = poly[j][0], zj = poly[j][1];
-        if (zi > z + dz !== zj > z + dz && x + dx < ((xj - xi) * (z + dz - zi)) / (zj - zi) + xi) inside = !inside;
+  const EXCLUDE_POLYGONS = [CONFIG.THICKET.POLYGON, CONFIG.STUECKLE.POLYGON];
+  const inExcludedPolygon = (x: number, z: number): boolean => {
+    for (const poly of EXCLUDE_POLYGONS) {
+      for (const [dx, dz] of [[0, 0], [cellW * 4, 0], [-cellW * 4, 0], [0, cellD * 4], [0, -cellD * 4]]) {
+        let inside = false;
+        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+          const xi = poly[i][0], zi = poly[i][1], xj = poly[j][0], zj = poly[j][1];
+          if (zi > z + dz !== zj > z + dz && x + dx < ((xj - xi) * (z + dz - zi)) / (zj - zi) + xi) inside = !inside;
+        }
+        if (inside) return true;
       }
-      if (inside) return true;
     }
     return false;
   };
@@ -188,7 +193,7 @@ async function main(): Promise<void> {
       const k = gz * lm.w + gx;
       const cx = site.window.eMin - site.origin.utmE + (gx + 0.5) * cellW;
       const cz = site.origin.utmN - site.window.nMax + (gz + 0.5) * cellD;
-      const v = lm.data[k] && !thicketInPolygon(cx, cz) ? 255 : 0;
+      const v = lm.data[k] && !inExcludedPolygon(cx, cz) ? 255 : 0;
       maskData[k * 4] = v;
       maskData[k * 4 + 1] = v;
       maskData[k * 4 + 2] = v;
