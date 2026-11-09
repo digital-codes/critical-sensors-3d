@@ -63,6 +63,19 @@ photo. The street-side azimuth is derived from the building addresses
 against the photo during apply; the mapping lives in one constant so a
 wrong guess is a one-line fix.
 
+### Photo-pinned colours (COLOUR_OVERRIDES)
+
+The buildings visible in `newimages/20261028_164047.jpg` get their actual
+colours (the image is newer than the geoportal textures): identified via
+the DOP roof shapes — the yellow-ochre house (mansard-like roof) is
+St.-Florian-Straße 7, the blue-grey house (large gable + dormers) is
+Nr. 9, the pale one further west is Nr. 11. Colours sampled from the
+photo with a golden-hour blue lift; `COLOUR_OVERRIDES` in
+`CONFIG.BUILDINGS.FACADE` matches by centre (nearest within 8 m).
+Nr. 12 (user report) is green with a light-blue base band on its
+north-facing walls (`base` in the override); its silver roof comes from
+the DOP pixels.
+
 ### Storeys from measuredHeight, ~3 m each
 
 Storeys = round of the wall height (measuredHeight minus roof) over

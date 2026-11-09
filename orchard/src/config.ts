@@ -276,6 +276,108 @@ export const CONFIG = {
   /** building roofs take the DOP pixels as-is (buildings.ts) */
   BUILDINGS: {
     ROOF_TINT: 0xffffff,
+    /**
+     * Procedural facade kit for LoD2 walls — photo typology from
+     * newimages/20261028_164047.jpg (St.-Florian-Straße row): vertical
+     * white-framed windows in ~3 m storeys over a dark plinth band.
+     * Facade palette colours and the DOP roofs stay as they are.
+     */
+    FACADE: {
+      /** kit applies to buildings at least this tall (m); smaller
+       *  structures (garages, sheds) keep their plain colour */
+      MIN_HEIGHT: 7,
+      /** storey height (m) — German typical ~3 m */
+      FLOOR_H: 3.0,
+      /** dark plinth band height (m) and its shade (0 = black .. 1 = base) */
+      PLINTH_H: 0.7,
+      PLINTH_SHADE: 0.45,
+      /** window size: width as fraction of the axis pitch, height as
+       *  fraction of the storey height */
+      WIN_W: 0.44,
+      WIN_H: 0.52,
+      FRAME: 0xf2f0ea,
+      GLASS: 0x39434e,
+      /** fraction of windows carrying shutters, and their colours */
+      SHUTTER_CHANCE: 0.22,
+      SHUTTER_COLOURS: [0xd8d3c8, 0x6b6f66, 0x7a5c44],
+      /** per-window chance of a distinctly darker (curtained) pane */
+      DARK_PANE_CHANCE: 0.18,
+      /** facade tint jitter around the palette colour, drawn per building */
+      TINT_JITTER: 0.05,
+      /** window axes per wall class [min, max] */
+      AXES: { front: [4, 5], back: [4, 5], side: [2, 3] } as Record<
+        'front' | 'back' | 'side',
+        [number, number]
+      >,
+      /** front walls get an entrance door on the ground floor */
+      FRONT_DOOR: true,
+      /** photo-pinned colours: buildings visible in
+       *  newimages/20261028_164047.jpg (St.-Florian-Straße row; the image is
+       *  newer than the geoportal textures). Matched by centre (nearest
+       *  within 8 m): Nr. 7 = the yellow-ochre house (mansard-like roof,
+       *  photo left), Nr. 9 = the blue-grey house (large gable + dormers,
+       *  photo right), Nr. 11 = the pale house further west. Colours
+       *  sampled from the photo with golden-hour blue lift. */
+      COLOUR_OVERRIDES: [
+        { at: [-38, 28], colour: 0xd2b06a },
+        { at: [-48, 21], colour: 0x647a9e },
+        { at: [-58, 15], colour: 0xd8d5ce },
+        // Nr. 12 (user report): green house, light-blue base on the
+        // north-facing side; its silver roof comes from the DOP pixels
+        { at: [-59, -16], colour: 0x9aa88a, base: 0xa9c6d8 },
+      ] as Array<{
+        at: [number, number];
+        colour: number;
+        /** optional light base-band colour (drawn on north-facing walls) */
+        base?: number;
+      }>,
+      /** pixels per metre for the generated facade textures (capped) */
+      PX_PER_M: 24,
+      /** noise seed offset (noise itself is seeded per building id) */
+      SEED: 20261028,
+    },
+  },
+
+  /**
+   * The Stückle: small private garden plot east of the orchard towards the
+   * trail (src/stueckle.ts, aerial newimages/stueckle.png). No LoD data —
+   * procedural fence, huts, greenhouse, compost, conifer. Polygon in local
+   * metres (x east, z south), traced from the DOP; edit to nudge.
+   */
+  STUECKLE: {
+    /** plot outline (local metres, clockwise-ish); trail runs along the NW side */
+    POLYGON: [
+      [96, -14], [122, -16], [138, -8], [140, 2], [132, 13],
+      [112, 15], [98, 12], [94, 0],
+    ],
+    FENCE: {
+      HEIGHT: 1.35,
+      POST_SPACING: 2.5,
+      POST: 0x6b6258,
+      MESH: 0x8a857c,
+      MESH_OPACITY: 0.35,
+    },
+    /** tool huts: pos, footprint [w, d] (w = ridge direction), wall height,
+     *  roof/wall colours, ridge axis */
+    HUTS: [
+      { pos: [98, 9], size: [4.5, 3.0], WALL_H: 2.2, ROOF: 0x4a4f55, WALL: 0xd8d2c4, RIDGE: 'x' },
+      { pos: [120, -5], size: [3.5, 3.0], WALL_H: 2.0, ROOF: 0xb9bdbd, WALL: 0xc9c4b8, RIDGE: 'z' },
+    ] as Array<{
+      pos: [number, number];
+      size: [number, number];
+      WALL_H: number;
+      ROOF: number;
+      WALL: number;
+      RIDGE: 'x' | 'z';
+    }>,
+    /** low translucent greenhouse: pos, footprint [w, d], height, rotation */
+    GREENHOUSE: { pos: [132, 1], size: [4.0, 1.6], H: 1.4, ROT: -0.4 },
+    /** compost heaps [x, z] along the east fence */
+    COMPOST: [[136, -6], [135, 4]] as Array<[number, number]>,
+    /** one conifer inside the plot [x, z] */
+    CONIFER: [116, 3] as [number, number],
+    /** noise seed for hut weathering etc. */
+    SEED: 20261028,
   },
 
   /** walking cat (cat.ts): seeded patrol loop between the tree rows */

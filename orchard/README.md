@@ -181,6 +181,21 @@ Inputs: `geoimages/` (LGL-BW DGM/DOP GeoTIFFs + world files),
 
 ## Features
 
+- Stückle garden plot east of the orchard (`src/stueckle.ts`): procedural
+  wire-mesh fence around `CONFIG.STUECKLE.POLYGON`, two gable-roofed tool
+  huts (2–2.5 m), translucent greenhouse, compost heaps, one conifer —
+  placed from the photogrammetric 3D mesh (ags05, see the change design);
+  snow-excluded like the thicket strip.
+- Procedural facades on the LoD2 city buildings
+  (`src/buildings.ts`, photo typology from `newimages/20261028_164047.jpg`,
+  St.-Florian-Straße row): white-framed double-casement windows in ~3 m
+  storeys over a dark plinth band, drawn per wall into small canvas
+  textures (wall-plane UVs, front/side/back layouts from the wall's outward
+  direction — front = away from the meadow = the street side). Noise
+  (window axis counts, shutters, pane brightness, ±5 % tint jitter) is
+  seeded per building id, so facades are stable across loads. Buildings
+  below `CONFIG.BUILDINGS.FACADE.MIN_HEIGHT` (garages, sheds) keep their
+  plain palette colour; roofs stay the exact DOP pixels (real dormers).
 - Terrain mesh from real DGM heights, textured with the aerial orthophoto.
 - 39 procedural trees (ez-tree presets), rescaled at runtime to the
   calibrated per-tree heights (photo-based, 5.4–15.6 m).
