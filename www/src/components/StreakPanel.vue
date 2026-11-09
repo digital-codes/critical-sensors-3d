@@ -1,12 +1,22 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import ImgSmear from '@imgsmear/components/ImgSmear.vue';
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue';
+import { CONFIG } from '../config';
 import photos from '../../../orchard/src/photos.json';
 
 /** The six archived meadow photos (2020/21 series) — the later 2026
  *  entries in photos.json are tower-measurement shots, not part of the
  *  streak. Per decision the streak is a pure image animation: it does NOT
- *  drive the 3D simulation day (no store sync either way). */
+ *  drive the 3D simulation day (no store sync either way).
+ *
+ *  CONFIG.STREAK.MODE picks the renderer:
+ *  - 'cycle' (default): plain <img> crossfade — cheap enough for phones
+ *  - 'smear': ImgSmear sweep (loaded lazily, only when configured)
+ *  - 'off': strip hidden */
+const MODE = CONFIG.STREAK.MODE;
+const ImgSmear = MODE === 'smear'
+  ? defineAsyncComponent(() => import('@imgsmear/components/ImgSmear.vue'))
+  : null;
+
 const PHOTOS = photos.filter((p) => p.date < '2022-01-01');
 
 const idx = ref(0);
@@ -25,17 +35,36 @@ function advance(): void {
 
 function jump(i: number): void {
   idx.value = i;
+  restartCycle();
 }
+
+// ---- cycle mode: auto-advance timer (no smear sweep involved) ----
+let cycleTimer: number | undefined;
+function restartCycle(): void {
+  if (MODE !== 'cycle') return;
+  window.clearInterval(cycleTimer);
+  cycleTimer = window.setInterval(advance, CONFIG.STREAK.CYCLE_SECONDS * 1000);
+}
+onMounted(restartCycle);
+onBeforeUnmount(() => window.clearInterval(cycleTimer));
 
 const label = (date: string): string =>
   new Date(date).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: '2-digit' });
 </script>
 
 <template>
-  <section class="streak-panel" aria-label="Wiesen-Fotoreihe">
+  <section v-if="MODE !== 'off'" class="streak-panel" aria-label="Wiesen-Fotoreihe">
     <div ref="stage" class="streak-stage">
+      <Transition v-if="MODE === 'cycle'" name="streak-fade">
+        <img
+          :key="active.file"
+          class="streak-photo"
+          :src="active.file"
+          :alt="`Wiese am ${label(active.date)}`"
+        />
+      </Transition>
       <ImgSmear
-        v-if="ready"
+        v-else-if="ImgSmear && ready"
         mode="shader"
         :img="active.file"
         :img-b="PHOTOS[(idx + 1) % PHOTOS.length].file"

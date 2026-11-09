@@ -68,6 +68,11 @@
       decision: no simulation sync — streak only animates through images;
       store DaySource reduced to 'slider' | 'scene'
 
+- [x] 6.3 Streak modes per user decision: CONFIG.STREAK.MODE 'cycle'
+      (default, plain crossfade img, full photo centred, no crop) /
+      'smear' (ImgSmear, lazy) / 'off'; info icon in the header opens a
+      credits popup overlay (no separate page — keeps the sim alive)
+
 ## 7. Menu + info page
 
 - [ ] 7.1 `MenuButton.vue` + `InfoPage.vue`: overlay with about text, link

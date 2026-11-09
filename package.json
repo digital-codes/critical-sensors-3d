@@ -1,0 +1,11 @@
+{
+  "name": "katzenwedelwiesen",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix www",
+    "dev:www": "npm run dev --prefix www",
+    "dev:scene": "npm run dev --prefix orchard",
+    "build": "npm run build --prefix orchard && npm run build --prefix www",
+    "preview": "npm run preview --prefix www"
+  }
+}

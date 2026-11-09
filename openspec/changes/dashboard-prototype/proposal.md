@@ -41,7 +41,7 @@ of docs/dashboard-plan.md as a reviewable prototype.
   statements, server-side channel whitelist, date-range caps, generic JSON
   errors, `.htaccess` denying direct access to `*.ini`.
 - New `www/` app (Vue 3 + Vite + TypeScript, dev port 5212): the dashboard
-  shell with German-only UI — header (KATZENWEDDELWIESEN — Umweltbeobachtung,
+  shell with German-only UI — header (KATZENWEDELWIESEN — Umweltbeobachtung,
   global "Zeit" day-of-year slider, date readout), 3D pane left, data pane
   right, photo-streak section below, sources footer.
 - Photo streak below: the six archived weekly photos

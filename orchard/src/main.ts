@@ -454,7 +454,7 @@ export async function mountOrchard(
       if ((obj as THREE.Mesh).isMesh) obj.castShadow = true;
     });
     if (progressEl) {
-      progressEl.textContent = `${site.trees.length} Bäume generiert (${CONFIG.SEASONS.length} Jahreszeiten-Varianten)`;
+      progressEl.textContent = `${o.treeCount} Bäume generiert (${CONFIG.SEASONS.length} Jahreszeiten-Varianten)`;
     }
     if (seasonPanel) seasonPanel.style.display = '';
     if (seasonValue && seasonInput) {
@@ -525,6 +525,7 @@ export async function mountOrchard(
   const followBehind = new THREE.Vector3();
   const followTarget = new THREE.Vector3();
   const followCam = new THREE.Vector3();
+  const camGround = await getHeightSampler();
   renderer.setAnimationLoop(() => {
     const dt = clock.getDelta();
     const t = clock.elapsedTime;
@@ -545,6 +546,11 @@ export async function mountOrchard(
       rig.controls.target.lerp(followTarget, Math.min(1, k * 2));
     }
     rig.controls.update();
+    // never see the orchard from below: keep the camera above the terrain
+    // (orbit/presets/dolly can otherwise dip under the heightmap on slopes)
+    const cp = rig.camera.position;
+    const minY = camGround(cp.x, cp.z) + CONFIG.CAMERA.GROUND_MARGIN;
+    if (cp.y < minY) cp.y = minY;
     if (needle) {
       rig.camera.getWorldDirection(camDir);
       // heading: 0 = looking north (+z), pi = south; rotate needle by -heading

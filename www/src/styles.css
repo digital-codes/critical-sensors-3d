@@ -291,11 +291,36 @@ body {
 }
 
 .streak-stage canvas {
-  /* fill the strip: the 4:3 photos crop to a wide band (ImgSmear's
-   * sizeCanvas sets inline width/height — override for the strip look) */
+  /* smear mode: fill the strip — the 4:3 photos crop to a wide band
+   * (ImgSmear's sizeCanvas sets inline width/height — override) */
   width: 100% !important;
   height: 100% !important;
   object-fit: cover;
+}
+
+.streak-stage .streak-photo {
+  /* cycle mode: show the FULL photo, scaled to fit and centred — no crop */
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+/* cycle mode: stacked crossfade between consecutive photos */
+.streak-stage {
+  position: relative;
+}
+.streak-stage .streak-photo {
+  position: absolute;
+  inset: 0;
+}
+.streak-fade-enter-active,
+.streak-fade-leave-active {
+  transition: opacity 0.8s ease;
+}
+.streak-fade-enter-from,
+.streak-fade-leave-to {
+  opacity: 0;
 }
 
 .streak-markers {

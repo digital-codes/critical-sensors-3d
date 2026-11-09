@@ -3,13 +3,15 @@ import TimeSlider from './components/TimeSlider.vue';
 import DataPane from './components/DataPane.vue';
 import OrchardPane from './components/OrchardPane.vue';
 import StreakPanel from './components/StreakPanel.vue';
+import InfoPopup from './components/InfoPopup.vue';
 </script>
 
 <template>
   <header class="hdr">
-    <h1>KATZENWEDDELWIESEN<span class="dash"> —</span><span class="sub">Umweltbeobachtung</span></h1>
+    <h1>KATZENWEDELWIESEN<span class="dash"> —</span><span class="sub">Umweltbeobachtung</span></h1>
     <div class="spacer"></div>
     <TimeSlider />
+    <InfoPopup />
   </header>
 
   <main class="main">

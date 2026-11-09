@@ -13,6 +13,9 @@ interface SiteTree {
   heightM?: number;
   speciesBase: string;
   seed: number;
+  /** set in site.json: do not render (e.g. kataster trees crowded at the
+   *  thicket wood edge that would visually merge with the blob) */
+  skipRender?: boolean;
 }
 
 import { CONFIG } from './config';
@@ -24,6 +27,8 @@ const SIZE_SCALE: Record<string, number> = CONFIG.TREES.SIZE_SCALE;
 
 export interface Orchard {
   group: THREE.Group;
+  /** trees actually rendered (site.json list minus thicket-wood skips) */
+  readonly treeCount: number;
   activeSeason: SeasonKey;
   setSeason(day: number): SeasonKey;
   update(elapsedTime: number): void;
@@ -89,10 +94,18 @@ export async function createOrchard(
     seasonTrees.set(s.key, []);
   }
 
-  const entries = (site.trees as SiteTree[]).filter(
+  const entries = (site.trees as SiteTree[]).filter((e) => {
     // trees inside the thicket wood (OSM way 1022385974 boundary) would be
-    // buried in the blob mass - skip them to save geometry
-    (e) => !inThicketWood(e.x, e.z),
+    // buried in the blob mass, and site.json can flag extra skips (edge
+    // trees that would visually merge with the blob) — both save geometry
+    if (inThicketWood(e.x, e.z)) return false;
+    return !e.skipRender;
+  });
+  const skippedThicket = (site.trees as SiteTree[]).filter((e) => inThicketWood(e.x, e.z)).length;
+  const skippedFlagged = (site.trees as SiteTree[]).length - skippedThicket - entries.length;
+  console.info(
+    `orchard: ${entries.length} trees rendered ` +
+      `(${skippedThicket} inside thicket wood, ${skippedFlagged} flagged skipRender)`,
   );
 
     const buildTree = (entry: SiteTree): void => {
@@ -154,6 +167,7 @@ export async function createOrchard(
 
   return {
     group,
+    treeCount: entries.length,
     get activeSeason(): SeasonKey {
       return activeSeason;
     },

@@ -1,814 +1,819 @@
 {
- "aerial": {
-  "file": "site/aerial.jpg",
-  "gridM": 0.2,
-  "originPx": [
-   199,
-   1850
-  ]
- },
- "buildingsLod2": {
-  "file": "site/buildings_lod2.json",
-  "note": "LoD2 city buildings around the window (tools/convert_cityjson.py), see sources"
- },
- "cameraPresets": {
-  "erhoeht": {
-   "lookAt": [
-    -6.157,
-    121.738,
-    -71.107
-   ],
-   "position": [
-    -61.157,
-    120.015,
-    73.123
-   ]
-  },
-  "nordwest": {
-   "lookAt": [
-    20.372,
-    115.829,
-    -9.224
-   ],
-   "position": [
-    -56.157,
-    117.972,
-    -71.107
-   ]
-  },
-  "southEnd": {
-   "lookAt": [
-    -6.157,
-    121.738,
-    -71.107
-   ],
-   "position": [
-    -53.157,
-    115.79,
-    61.123
-   ]
-  },
-  "vergleich": {
-   "lookAt": [
-    2.0,
-    122.9,
-    -72.0
-   ],
-   "position": [
-    -32.2,
-    123.8,
-    -46.3
-   ]
-  }
- },
- "crs": "EPSG:25832",
- "generatedAt": "2026-11-06",
- "heightmap": {
-  "encoding": "uint16 millimetres above hmin",
-  "file": "site/heightmap.png",
-  "gridM": 0.25,
-  "hmax": 122.403,
-  "hmin": 111.582,
-  "originPx": [
-   160,
-   1480
-  ]
- },
- "lawnMask": {
-  "file": "site/lawn_mask.png",
-  "h": 225,
-  "note": "green-dominant cells of the ORIGINAL DOP (not the shadow-flattened aerial - that tints paths green); drives grass placement and the terrain snow gate, so paths/trails stay bare in winter",
-  "w": 250
- },
- "localAxes": {
-  "x": "easting (m)",
-  "y": "height (m)",
-  "z": "southing (m, +z = south - right-handed for three.js)"
- },
- "origin": {
-  "lat": 48.9899,
-  "lon": 8.3873,
-  "utmE": 455176.632,
-  "utmN": 5426513.864
- },
- "snowNoise": {
-  "file": "site/snow_noise.png",
-  "note": "tileable Perlin (ideas/perlin/repeat.py); mean 0.462 std 0.145",
-  "octaves": 4,
-  "period": 8,
-  "sizePx": 256
- },
- "sources": [
-  {
-   "file": "geoimages/dgm025_32_455_5426_2_bw/dgm025_32_455_5426_1_bw_2022.tif",
-   "licence": "Datenlizenz Deutschland - Namensnennung - 2.0 (https://www.govdata.de/dl-de/by-2-0)",
-   "role": "terrain heights 0.25 m"
-  },
-  {
-   "file": "geoimages/dgm025_32_455_5426_2_bw/dgm025_32_456_5427_1_bw_2022.tif",
-   "licence": "Datenlizenz Deutschland - Namensnennung - 2.0 (https://www.govdata.de/dl-de/by-2-0)",
-   "role": "adjacent DGM tile (unused, window inside tile 455_5426)"
-  },
-  {
-   "file": "geoimages/dop20rgbi_32_455_5426_2_bw/dop20rgbi_32_455_5426_1_bw_2024.tif",
-   "licence": "Datenlizenz Deutschland - Namensnennung - 2.0 (https://www.govdata.de/dl-de/by-2-0)",
-   "role": "aerial texture 0.2 m RGBI (2024-08-22)"
-  },
-  {
-   "file": ".cache/opencode/baumkataster_selected.json",
-   "licence": "CC BY 4.0 (Stadt Karlsruhe / Code for Karlsruhe)",
-   "role": "orchard tree positions + species (Baumkataster Karlsruhe, https://codeforkarlsruhe.github.io/baumkataster/, Stadt Karlsruhe tree register)"
-  },
-  {
-   "file": "/mnt_ai/data/odd26/ka3d/hauenstein-20260127/CityJSON/gebaeude_lod2_455000_5426000.json",
-   "licence": "CC BY 4.0 (Stadt Karlsruhe 3D-Gebäudemodell)",
-   "role": "3D building models LoD2 (CityJSON 1.0.1, EPSG:25832), official dataset https://transparenz.karlsruhe.de/dataset/3d-gebaudemodell-der-stadt-karlsruhe, converted via tools/convert_cityjson.py -> site/buildings_lod2.json"
-  },
-  {
-   "file": ".cache/opencode/osm_orchard_nodes.json",
-   "licence": "(c) OpenStreetMap contributors (ODbL), osm.org/copyright",
-   "role": "orchard tree positions (fallback)"
-  },
-  {
-   "file": ".cache/opencode/osm_ways.json",
-   "licence": "(c) OpenStreetMap contributors (ODbL), osm.org/copyright",
-   "role": "Hocksitzcafe structure footprints"
-  }
- ],
- "structures": [
-  {
-   "footprint": [
-    [
-     18.6,
-     -2.8
-    ],
-    [
-     21.0,
-     -2.8
-    ],
-    [
-     21.0,
-     -0.4
-    ],
-    [
-     18.6,
-     -0.4
+  "aerial": {
+    "file": "site/aerial.jpg",
+    "gridM": 0.2,
+    "originPx": [
+      199,
+      1850
     ]
-   ],
-   "heightEst": 4.0,
-   "id": "osmway124028003",
-   "note": "roofed platform tower: deck ~2.5 m, slat railing, dark shed roof, blue tarp awning (visible from S and NE), table beneath (NE photo right tower / south photo middle)",
-   "osmWay": 124028003,
-   "positionSource": "DOP 2024-08-22 spot measurement (OSM way is a garden shed east of the orchard)",
-   "x": 19.8,
-   "z": -1.6
   },
-  {
-   "footprint": [
-    [
-     14.4,
-     0.7
-    ],
-    [
-     16.8,
-     0.7
-    ],
-    [
-     16.8,
-     3.1
-    ],
-    [
-     14.4,
-     3.1
+  "buildingsLod2": {
+    "file": "site/buildings_lod2.json",
+    "note": "LoD2 city buildings around the window (tools/convert_cityjson.py), see sources"
+  },
+  "cameraPresets": {
+    "erhoeht": {
+      "lookAt": [
+        -6.157,
+        121.738,
+        -71.107
+      ],
+      "position": [
+        -61.157,
+        120.015,
+        73.123
+      ]
+    },
+    "nordwest": {
+      "lookAt": [
+        20.372,
+        115.829,
+        -9.224
+      ],
+      "position": [
+        -56.157,
+        117.972,
+        -71.107
+      ]
+    },
+    "southEnd": {
+      "lookAt": [
+        -6.157,
+        121.738,
+        -71.107
+      ],
+      "position": [
+        -53.157,
+        115.79,
+        61.123
+      ]
+    },
+    "vergleich": {
+      "lookAt": [
+        2.0,
+        122.9,
+        -72.0
+      ],
+      "position": [
+        -32.2,
+        123.8,
+        -46.3
+      ]
+    }
+  },
+  "crs": "EPSG:25832",
+  "generatedAt": "2026-11-06",
+  "heightmap": {
+    "encoding": "uint16 millimetres above hmin",
+    "file": "site/heightmap.png",
+    "gridM": 0.25,
+    "hmax": 122.403,
+    "hmin": 111.582,
+    "originPx": [
+      160,
+      1480
     ]
-   ],
-   "heightEst": 3.4,
-   "id": "osmway124028004",
-   "note": "deck ~2.0 m, cream vertical fabric strips on the SOUTH face, lighter timber (south photo left tower)",
-   "osmWay": 124028004,
-   "positionSource": "DOP 2024-08-22 spot measurement (OSM way is a garden shed east of the orchard)",
-   "x": 15.6,
-   "z": 1.9
   },
-  {
-   "footprint": [
-    [
-     23.5,
-     4.2
-    ],
-    [
-     25.9,
-     4.2
-    ],
-    [
-     25.9,
-     6.6
-    ],
-    [
-     23.5,
-     6.6
-    ]
-   ],
-   "heightEst": 4.6,
-   "id": "osmway124028005",
-   "note": "tallest: two-level platform, slat railing, purple fabric valance over the top crossbeam (south side), ladder on WEST side, diagonal bracing, bench beneath (south photo right tower / NE photo left tower)",
-   "osmWay": 124028005,
-   "positionSource": "DOP 2024-08-22 spot measurement (OSM way is a garden shed east of the orchard)",
-   "x": 24.7,
-   "z": 5.4
+  "lawnMask": {
+    "file": "site/lawn_mask.png",
+    "h": 225,
+    "note": "green-dominant cells of the ORIGINAL DOP (not the shadow-flattened aerial - that tints paths green); drives grass placement and the terrain snow gate, so paths/trails stay bare in winter",
+    "w": 250
+  },
+  "localAxes": {
+    "x": "easting (m)",
+    "y": "height (m)",
+    "z": "southing (m, +z = south - right-handed for three.js)"
+  },
+  "origin": {
+    "lat": 48.9899,
+    "lon": 8.3873,
+    "utmE": 455176.632,
+    "utmN": 5426513.864
+  },
+  "snowNoise": {
+    "file": "site/snow_noise.png",
+    "note": "tileable Perlin (ideas/perlin/repeat.py); mean 0.462 std 0.145",
+    "octaves": 4,
+    "period": 8,
+    "sizePx": 256
+  },
+  "sources": [
+    {
+      "file": "geoimages/dgm025_32_455_5426_2_bw/dgm025_32_455_5426_1_bw_2022.tif",
+      "licence": "Datenlizenz Deutschland - Namensnennung - 2.0 (https://www.govdata.de/dl-de/by-2-0)",
+      "role": "terrain heights 0.25 m"
+    },
+    {
+      "file": "geoimages/dgm025_32_455_5426_2_bw/dgm025_32_456_5427_1_bw_2022.tif",
+      "licence": "Datenlizenz Deutschland - Namensnennung - 2.0 (https://www.govdata.de/dl-de/by-2-0)",
+      "role": "adjacent DGM tile (unused, window inside tile 455_5426)"
+    },
+    {
+      "file": "geoimages/dop20rgbi_32_455_5426_2_bw/dop20rgbi_32_455_5426_1_bw_2024.tif",
+      "licence": "Datenlizenz Deutschland - Namensnennung - 2.0 (https://www.govdata.de/dl-de/by-2-0)",
+      "role": "aerial texture 0.2 m RGBI (2024-08-22)"
+    },
+    {
+      "file": ".cache/opencode/baumkataster_selected.json",
+      "licence": "CC BY 4.0 (Stadt Karlsruhe / Code for Karlsruhe)",
+      "role": "orchard tree positions + species (Baumkataster Karlsruhe, https://codeforkarlsruhe.github.io/baumkataster/, Stadt Karlsruhe tree register)"
+    },
+    {
+      "file": "/mnt_ai/data/odd26/ka3d/hauenstein-20260127/CityJSON/gebaeude_lod2_455000_5426000.json",
+      "licence": "CC BY 4.0 (Stadt Karlsruhe 3D-Gebäudemodell)",
+      "role": "3D building models LoD2 (CityJSON 1.0.1, EPSG:25832), official dataset https://transparenz.karlsruhe.de/dataset/3d-gebaudemodell-der-stadt-karlsruhe, converted via tools/convert_cityjson.py -> site/buildings_lod2.json"
+    },
+    {
+      "file": ".cache/opencode/osm_orchard_nodes.json",
+      "licence": "(c) OpenStreetMap contributors (ODbL), osm.org/copyright",
+      "role": "orchard tree positions (fallback)"
+    },
+    {
+      "file": ".cache/opencode/osm_ways.json",
+      "licence": "(c) OpenStreetMap contributors (ODbL), osm.org/copyright",
+      "role": "Hocksitzcafe structure footprints"
+    }
+  ],
+  "structures": [
+    {
+      "footprint": [
+        [
+          18.6,
+          -2.8
+        ],
+        [
+          21.0,
+          -2.8
+        ],
+        [
+          21.0,
+          -0.4
+        ],
+        [
+          18.6,
+          -0.4
+        ]
+      ],
+      "heightEst": 4.0,
+      "id": "osmway124028003",
+      "note": "roofed platform tower: deck ~2.5 m, slat railing, dark shed roof, blue tarp awning (visible from S and NE), table beneath (NE photo right tower / south photo middle)",
+      "osmWay": 124028003,
+      "positionSource": "DOP 2024-08-22 spot measurement (OSM way is a garden shed east of the orchard)",
+      "x": 19.8,
+      "z": -1.6
+    },
+    {
+      "footprint": [
+        [
+          14.4,
+          0.7
+        ],
+        [
+          16.8,
+          0.7
+        ],
+        [
+          16.8,
+          3.1
+        ],
+        [
+          14.4,
+          3.1
+        ]
+      ],
+      "heightEst": 3.4,
+      "id": "osmway124028004",
+      "note": "deck ~2.0 m, cream vertical fabric strips on the SOUTH face, lighter timber (south photo left tower)",
+      "osmWay": 124028004,
+      "positionSource": "DOP 2024-08-22 spot measurement (OSM way is a garden shed east of the orchard)",
+      "x": 15.6,
+      "z": 1.9
+    },
+    {
+      "footprint": [
+        [
+          23.5,
+          4.2
+        ],
+        [
+          25.9,
+          4.2
+        ],
+        [
+          25.9,
+          6.6
+        ],
+        [
+          23.5,
+          6.6
+        ]
+      ],
+      "heightEst": 4.6,
+      "id": "osmway124028005",
+      "note": "tallest: two-level platform, slat railing, purple fabric valance over the top crossbeam (south side), ladder on WEST side, diagonal bracing, bench beneath (south photo right tower / NE photo left tower)",
+      "osmWay": 124028005,
+      "positionSource": "DOP 2024-08-22 spot measurement (OSM way is a garden shed east of the orchard)",
+      "x": 24.7,
+      "z": 5.4
+    }
+  ],
+  "trees": [
+    {
+      "heightM": 11.0,
+      "id": "bk00677",
+      "lat": 48.9903711,
+      "lon": 8.3883714,
+      "nameDe": "Feld-Ahorn",
+      "nameSci": "Acer campestre",
+      "seed": 84400,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 78.805,
+      "z": -51.734
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk00709",
+      "lat": 48.9903037,
+      "lon": 8.3880726,
+      "nameDe": "Feld-Ahorn",
+      "nameSci": "Acer campestre",
+      "seed": 83895,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 56.884,
+      "z": -44.427
+    },
+    {
+      "heightM": 11.9,
+      "id": "bk00868",
+      "lat": 48.9896037,
+      "lon": 8.3884142,
+      "nameDe": "Gemeine Esche",
+      "nameSci": "Fraxinus excelsior",
+      "seed": 85149,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Ash Medium",
+      "trunkCircumference": "1.4",
+      "x": 81.245,
+      "z": 33.592
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk01035",
+      "lat": 48.9896121,
+      "lon": 8.3875326,
+      "nameDe": "Kaiser-Linde",
+      "nameSci": "Tilia x intermedia 'Pallida'",
+      "seed": 86112,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 16.755,
+      "z": 32.143
+    },
+    {
+      "heightM": 15.2,
+      "id": "bk01185",
+      "lat": 48.9904796,
+      "lon": 8.3872203,
+      "nameDe": "Winter-Linde",
+      "nameSci": "Tilia cordata",
+      "seed": 83355,
+      "sizeClass": "large",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Large",
+      "trunkCircumference": "2.1",
+      "x": -5.312,
+      "z": -64.475
+    },
+    {
+      "heightM": 10.6,
+      "id": "bk01202",
+      "lat": 48.9895727,
+      "lon": 8.3883697,
+      "nameDe": "Sand-Birke",
+      "nameSci": "Betula pendula",
+      "seed": 85141,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Aspen Medium",
+      "trunkCircumference": "1.1",
+      "x": 77.963,
+      "z": 37.018
+    },
+    {
+      "heightM": 10.6,
+      "id": "bk01203",
+      "lat": 48.9895707,
+      "lon": 8.3882401,
+      "nameDe": "Sand-Birke",
+      "nameSci": "Betula pendula",
+      "seed": 85266,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Aspen Medium",
+      "trunkCircumference": "1.1",
+      "x": 68.48,
+      "z": 37.159
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk01227",
+      "lat": 48.9895246,
+      "lon": 8.3872883,
+      "nameDe": "Kaiser-Linde",
+      "nameSci": "Tilia x intermedia 'Pallida'",
+      "seed": 86412,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": -1.194,
+      "z": 41.722
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk01273",
+      "lat": 48.9897339,
+      "lon": 8.3871314,
+      "nameDe": "Kaiser-Linde",
+      "nameSci": "Tilia x intermedia 'Pallida'",
+      "seed": 85534,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": -12.486,
+      "z": 18.365
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk01274",
+      "lat": 48.9896776,
+      "lon": 8.387299,
+      "nameDe": "Kaiser-Linde",
+      "nameSci": "Tilia x intermedia 'Pallida'",
+      "seed": 86286,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": -0.27,
+      "z": 24.721
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk01345",
+      "lat": 48.9903279,
+      "lon": 8.388183,
+      "nameDe": "Feld-Ahorn",
+      "nameSci": "Acer campestre",
+      "seed": 84000,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 64.984,
+      "z": -47.049
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk01347",
+      "lat": 48.9904673,
+      "lon": 8.3873145,
+      "nameDe": "Feld-Ahorn",
+      "nameSci": "Acer campestre",
+      "seed": 83441,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 1.569,
+      "z": -63.057
+    },
+    {
+      "heightM": 10.6,
+      "id": "bk01403",
+      "lat": 48.9901057,
+      "lon": 8.3883455,
+      "nameDe": "Sand-Birke",
+      "nameSci": "Betula pendula",
+      "seed": 84832,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Aspen Medium",
+      "trunkCircumference": "1.1",
+      "x": 76.67,
+      "z": -22.251
+    },
+    {
+      "heightM": 11.9,
+      "id": "bk01671",
+      "lat": 48.9895764,
+      "lon": 8.3880157,
+      "nameDe": "Gemeine Esche",
+      "nameSci": "Fraxinus excelsior",
+      "seed": 84519,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Ash Medium",
+      "trunkCircumference": "1.4",
+      "x": 52.067,
+      "z": 36.393
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk01749",
+      "lat": 48.9899189,
+      "lon": 8.3882493,
+      "nameDe": "Weide Spec.",
+      "nameSci": "Salix spec.",
+      "seed": 84551,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Aspen Medium",
+      "trunkCircumference": "",
+      "x": 69.463,
+      "z": -1.542
+    },
+    {
+      "heightM": 5.4,
+      "id": "bk01809",
+      "lat": 48.9904332,
+      "lon": 8.3872311,
+      "nameDe": "Kirsche/pflaume Spec.",
+      "nameSci": "Prunus spec.",
+      "seed": 83070,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "1.1",
+      "x": -4.563,
+      "z": -59.31
+    },
+    {
+      "heightM": 15.2,
+      "id": "bk02208",
+      "lat": 48.989514,
+      "lon": 8.3876642,
+      "nameDe": "Hainbuche",
+      "nameSci": "Carpinus betulus",
+      "seed": 84762,
+      "sizeClass": "large",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Aspen Large",
+      "trunkCircumference": "2.1",
+      "x": 26.3,
+      "z": 43.123
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk02545",
+      "lat": 48.9899406,
+      "lon": 8.3880953,
+      "nameDe": "Feld-Ahorn",
+      "nameSci": "Acer campestre",
+      "seed": 85259,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 58.218,
+      "z": -4.041
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk02600",
+      "lat": 48.9898238,
+      "lon": 8.3875736,
+      "nameDe": "Obstbaum",
+      "nameSci": "Obstbaum",
+      "seed": 85898,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 19.945,
+      "z": 8.628
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk02602",
+      "lat": 48.9899118,
+      "lon": 8.3876554,
+      "nameDe": "Obstbaum",
+      "nameSci": "Obstbaum",
+      "seed": 85136,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 26.014,
+      "z": -1.104
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk02608",
+      "lat": 48.9899597,
+      "lon": 8.3873598,
+      "nameDe": "Obstbaum",
+      "nameSci": "Obstbaum",
+      "seed": 85528,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 4.426,
+      "z": -6.604
+    },
+    {
+      "heightM": 5.5,
+      "id": "bk02625",
+      "lat": 48.9904932,
+      "lon": 8.3870272,
+      "nameDe": "unbekannt",
+      "nameSci": "unbekannt",
+      "seed": 82638,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": -19.425,
+      "z": -66.107
+    },
+    {
+      "heightM": 5.5,
+      "id": "bk02647",
+      "lat": 48.99035,
+      "lon": 8.3869096,
+      "nameDe": "unbekannt",
+      "nameSci": "unbekannt",
+      "seed": 82899,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": -28.154,
+      "z": -50.259,
+      "skipRender": true
+    },
+    {
+      "heightM": 5.5,
+      "id": "bk02679",
+      "lat": 48.9904108,
+      "lon": 8.387066,
+      "nameDe": "unbekannt",
+      "nameSci": "unbekannt",
+      "seed": 82736,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": -16.66,
+      "z": -56.916
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk02683",
+      "lat": 48.9898306,
+      "lon": 8.3877761,
+      "nameDe": "Obstbaum",
+      "nameSci": "Obstbaum",
+      "seed": 85062,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 34.768,
+      "z": 7.993
+    },
+    {
+      "heightM": 5.5,
+      "id": "bk02690",
+      "lat": 48.990314,
+      "lon": 8.386869,
+      "nameDe": "unbekannt",
+      "nameSci": "unbekannt",
+      "seed": 82780,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": -31.157,
+      "z": -46.273,
+      "skipRender": true
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk02715",
+      "lat": 48.9898253,
+      "lon": 8.3872794,
+      "nameDe": "Obstbaum",
+      "nameSci": "Obstbaum",
+      "seed": 85582,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": -1.574,
+      "z": 8.293
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk02739",
+      "lat": 48.9897362,
+      "lon": 8.3875545,
+      "nameDe": "Obstbaum",
+      "nameSci": "Obstbaum",
+      "seed": 85962,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 18.475,
+      "z": 18.354
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk02794",
+      "lat": 48.9898697,
+      "lon": 8.3873866,
+      "nameDe": "Obstbaum",
+      "nameSci": "Obstbaum",
+      "seed": 85911,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 6.311,
+      "z": 3.415
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk02800",
+      "lat": 48.9900095,
+      "lon": 8.3875171,
+      "nameDe": "Obstbaum",
+      "nameSci": "Obstbaum",
+      "seed": 85636,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 15.981,
+      "z": -12.049
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk02801",
+      "lat": 48.9898998,
+      "lon": 8.3875215,
+      "nameDe": "Obstbaum",
+      "nameSci": "Obstbaum",
+      "seed": 85770,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 16.206,
+      "z": 0.149
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk02816",
+      "lat": 48.98968,
+      "lon": 8.3877185,
+      "nameDe": "Obstbaum",
+      "nameSci": "Obstbaum",
+      "seed": 84854,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 30.422,
+      "z": 24.699
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk02817",
+      "lat": 48.9901056,
+      "lon": 8.3874903,
+      "nameDe": "Obstbaum",
+      "nameSci": "Obstbaum",
+      "seed": 85563,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 14.109,
+      "z": -22.746
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk02839",
+      "lat": 48.9898067,
+      "lon": 8.3874446,
+      "nameDe": "Obstbaum",
+      "nameSci": "Obstbaum",
+      "seed": 85786,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 10.495,
+      "z": 10.454
+    },
+    {
+      "heightM": 5.5,
+      "id": "bk02843",
+      "lat": 48.9903553,
+      "lon": 8.38702,
+      "nameDe": "unbekannt",
+      "nameSci": "unbekannt",
+      "seed": 82776,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": -20.076,
+      "z": -50.779,
+      "skipRender": true
+    },
+    {
+      "heightM": 5.5,
+      "id": "bk02859",
+      "lat": 48.9902586,
+      "lon": 8.386895,
+      "nameDe": "unbekannt",
+      "nameSci": "unbekannt",
+      "seed": 82812,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": -29.31,
+      "z": -40.099,
+      "skipRender": true
+    },
+    {
+      "heightM": 5.5,
+      "id": "bk02864",
+      "lat": 48.9902402,
+      "lon": 8.3870213,
+      "nameDe": "unbekannt",
+      "nameSci": "unbekannt",
+      "seed": 82925,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": -20.083,
+      "z": -37.984,
+      "skipRender": true
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk02867",
+      "lat": 48.9897484,
+      "lon": 8.3877353,
+      "nameDe": "Obstbaum",
+      "nameSci": "Obstbaum",
+      "seed": 85155,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 31.711,
+      "z": 17.114
+    },
+    {
+      "heightM": 11.0,
+      "id": "bk02868",
+      "lat": 48.9900303,
+      "lon": 8.3876607,
+      "nameDe": "Obstbaum",
+      "nameSci": "Obstbaum",
+      "seed": 85250,
+      "sizeClass": "medium",
+      "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
+      "speciesBase": "Oak Medium",
+      "trunkCircumference": "",
+      "x": 26.507,
+      "z": -14.273
+    }
+  ],
+  "window": {
+    "eMax": 455320.0,
+    "eMin": 455040.0,
+    "nMax": 5426630.0,
+    "nMin": 5426410.0
   }
- ],
- "trees": [
-  {
-   "heightM": 11.0,
-   "id": "bk00677",
-   "lat": 48.9903711,
-   "lon": 8.3883714,
-   "nameDe": "Feld-Ahorn",
-   "nameSci": "Acer campestre",
-   "seed": 84400,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 78.805,
-   "z": -51.734
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk00709",
-   "lat": 48.9903037,
-   "lon": 8.3880726,
-   "nameDe": "Feld-Ahorn",
-   "nameSci": "Acer campestre",
-   "seed": 83895,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 56.884,
-   "z": -44.427
-  },
-  {
-   "heightM": 11.9,
-   "id": "bk00868",
-   "lat": 48.9896037,
-   "lon": 8.3884142,
-   "nameDe": "Gemeine Esche",
-   "nameSci": "Fraxinus excelsior",
-   "seed": 85149,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Ash Medium",
-   "trunkCircumference": "1.4",
-   "x": 81.245,
-   "z": 33.592
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk01035",
-   "lat": 48.9896121,
-   "lon": 8.3875326,
-   "nameDe": "Kaiser-Linde",
-   "nameSci": "Tilia x intermedia 'Pallida'",
-   "seed": 86112,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 16.755,
-   "z": 32.143
-  },
-  {
-   "heightM": 15.2,
-   "id": "bk01185",
-   "lat": 48.9904796,
-   "lon": 8.3872203,
-   "nameDe": "Winter-Linde",
-   "nameSci": "Tilia cordata",
-   "seed": 83355,
-   "sizeClass": "large",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Large",
-   "trunkCircumference": "2.1",
-   "x": -5.312,
-   "z": -64.475
-  },
-  {
-   "heightM": 10.6,
-   "id": "bk01202",
-   "lat": 48.9895727,
-   "lon": 8.3883697,
-   "nameDe": "Sand-Birke",
-   "nameSci": "Betula pendula",
-   "seed": 85141,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Aspen Medium",
-   "trunkCircumference": "1.1",
-   "x": 77.963,
-   "z": 37.018
-  },
-  {
-   "heightM": 10.6,
-   "id": "bk01203",
-   "lat": 48.9895707,
-   "lon": 8.3882401,
-   "nameDe": "Sand-Birke",
-   "nameSci": "Betula pendula",
-   "seed": 85266,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Aspen Medium",
-   "trunkCircumference": "1.1",
-   "x": 68.48,
-   "z": 37.159
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk01227",
-   "lat": 48.9895246,
-   "lon": 8.3872883,
-   "nameDe": "Kaiser-Linde",
-   "nameSci": "Tilia x intermedia 'Pallida'",
-   "seed": 86412,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -1.194,
-   "z": 41.722
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk01273",
-   "lat": 48.9897339,
-   "lon": 8.3871314,
-   "nameDe": "Kaiser-Linde",
-   "nameSci": "Tilia x intermedia 'Pallida'",
-   "seed": 85534,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -12.486,
-   "z": 18.365
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk01274",
-   "lat": 48.9896776,
-   "lon": 8.387299,
-   "nameDe": "Kaiser-Linde",
-   "nameSci": "Tilia x intermedia 'Pallida'",
-   "seed": 86286,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -0.27,
-   "z": 24.721
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk01345",
-   "lat": 48.9903279,
-   "lon": 8.388183,
-   "nameDe": "Feld-Ahorn",
-   "nameSci": "Acer campestre",
-   "seed": 84000,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 64.984,
-   "z": -47.049
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk01347",
-   "lat": 48.9904673,
-   "lon": 8.3873145,
-   "nameDe": "Feld-Ahorn",
-   "nameSci": "Acer campestre",
-   "seed": 83441,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 1.569,
-   "z": -63.057
-  },
-  {
-   "heightM": 10.6,
-   "id": "bk01403",
-   "lat": 48.9901057,
-   "lon": 8.3883455,
-   "nameDe": "Sand-Birke",
-   "nameSci": "Betula pendula",
-   "seed": 84832,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Aspen Medium",
-   "trunkCircumference": "1.1",
-   "x": 76.67,
-   "z": -22.251
-  },
-  {
-   "heightM": 11.9,
-   "id": "bk01671",
-   "lat": 48.9895764,
-   "lon": 8.3880157,
-   "nameDe": "Gemeine Esche",
-   "nameSci": "Fraxinus excelsior",
-   "seed": 84519,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Ash Medium",
-   "trunkCircumference": "1.4",
-   "x": 52.067,
-   "z": 36.393
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk01749",
-   "lat": 48.9899189,
-   "lon": 8.3882493,
-   "nameDe": "Weide Spec.",
-   "nameSci": "Salix spec.",
-   "seed": 84551,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Aspen Medium",
-   "trunkCircumference": "",
-   "x": 69.463,
-   "z": -1.542
-  },
-  {
-   "heightM": 5.4,
-   "id": "bk01809",
-   "lat": 48.9904332,
-   "lon": 8.3872311,
-   "nameDe": "Kirsche/pflaume Spec.",
-   "nameSci": "Prunus spec.",
-   "seed": 83070,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "1.1",
-   "x": -4.563,
-   "z": -59.31
-  },
-  {
-   "heightM": 15.2,
-   "id": "bk02208",
-   "lat": 48.989514,
-   "lon": 8.3876642,
-   "nameDe": "Hainbuche",
-   "nameSci": "Carpinus betulus",
-   "seed": 84762,
-   "sizeClass": "large",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Aspen Large",
-   "trunkCircumference": "2.1",
-   "x": 26.3,
-   "z": 43.123
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk02545",
-   "lat": 48.9899406,
-   "lon": 8.3880953,
-   "nameDe": "Feld-Ahorn",
-   "nameSci": "Acer campestre",
-   "seed": 85259,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 58.218,
-   "z": -4.041
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk02600",
-   "lat": 48.9898238,
-   "lon": 8.3875736,
-   "nameDe": "Obstbaum",
-   "nameSci": "Obstbaum",
-   "seed": 85898,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 19.945,
-   "z": 8.628
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk02602",
-   "lat": 48.9899118,
-   "lon": 8.3876554,
-   "nameDe": "Obstbaum",
-   "nameSci": "Obstbaum",
-   "seed": 85136,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 26.014,
-   "z": -1.104
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk02608",
-   "lat": 48.9899597,
-   "lon": 8.3873598,
-   "nameDe": "Obstbaum",
-   "nameSci": "Obstbaum",
-   "seed": 85528,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 4.426,
-   "z": -6.604
-  },
-  {
-   "heightM": 5.5,
-   "id": "bk02625",
-   "lat": 48.9904932,
-   "lon": 8.3870272,
-   "nameDe": "unbekannt",
-   "nameSci": "unbekannt",
-   "seed": 82638,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -19.425,
-   "z": -66.107
-  },
-  {
-   "heightM": 5.5,
-   "id": "bk02647",
-   "lat": 48.99035,
-   "lon": 8.3869096,
-   "nameDe": "unbekannt",
-   "nameSci": "unbekannt",
-   "seed": 82899,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -28.154,
-   "z": -50.259
-  },
-  {
-   "heightM": 5.5,
-   "id": "bk02679",
-   "lat": 48.9904108,
-   "lon": 8.387066,
-   "nameDe": "unbekannt",
-   "nameSci": "unbekannt",
-   "seed": 82736,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -16.66,
-   "z": -56.916
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk02683",
-   "lat": 48.9898306,
-   "lon": 8.3877761,
-   "nameDe": "Obstbaum",
-   "nameSci": "Obstbaum",
-   "seed": 85062,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 34.768,
-   "z": 7.993
-  },
-  {
-   "heightM": 5.5,
-   "id": "bk02690",
-   "lat": 48.990314,
-   "lon": 8.386869,
-   "nameDe": "unbekannt",
-   "nameSci": "unbekannt",
-   "seed": 82780,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -31.157,
-   "z": -46.273
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk02715",
-   "lat": 48.9898253,
-   "lon": 8.3872794,
-   "nameDe": "Obstbaum",
-   "nameSci": "Obstbaum",
-   "seed": 85582,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -1.574,
-   "z": 8.293
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk02739",
-   "lat": 48.9897362,
-   "lon": 8.3875545,
-   "nameDe": "Obstbaum",
-   "nameSci": "Obstbaum",
-   "seed": 85962,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 18.475,
-   "z": 18.354
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk02794",
-   "lat": 48.9898697,
-   "lon": 8.3873866,
-   "nameDe": "Obstbaum",
-   "nameSci": "Obstbaum",
-   "seed": 85911,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 6.311,
-   "z": 3.415
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk02800",
-   "lat": 48.9900095,
-   "lon": 8.3875171,
-   "nameDe": "Obstbaum",
-   "nameSci": "Obstbaum",
-   "seed": 85636,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 15.981,
-   "z": -12.049
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk02801",
-   "lat": 48.9898998,
-   "lon": 8.3875215,
-   "nameDe": "Obstbaum",
-   "nameSci": "Obstbaum",
-   "seed": 85770,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 16.206,
-   "z": 0.149
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk02816",
-   "lat": 48.98968,
-   "lon": 8.3877185,
-   "nameDe": "Obstbaum",
-   "nameSci": "Obstbaum",
-   "seed": 84854,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 30.422,
-   "z": 24.699
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk02817",
-   "lat": 48.9901056,
-   "lon": 8.3874903,
-   "nameDe": "Obstbaum",
-   "nameSci": "Obstbaum",
-   "seed": 85563,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 14.109,
-   "z": -22.746
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk02839",
-   "lat": 48.9898067,
-   "lon": 8.3874446,
-   "nameDe": "Obstbaum",
-   "nameSci": "Obstbaum",
-   "seed": 85786,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 10.495,
-   "z": 10.454
-  },
-  {
-   "heightM": 5.5,
-   "id": "bk02843",
-   "lat": 48.9903553,
-   "lon": 8.38702,
-   "nameDe": "unbekannt",
-   "nameSci": "unbekannt",
-   "seed": 82776,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -20.076,
-   "z": -50.779
-  },
-  {
-   "heightM": 5.5,
-   "id": "bk02859",
-   "lat": 48.9902586,
-   "lon": 8.386895,
-   "nameDe": "unbekannt",
-   "nameSci": "unbekannt",
-   "seed": 82812,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -29.31,
-   "z": -40.099
-  },
-  {
-   "heightM": 5.5,
-   "id": "bk02864",
-   "lat": 48.9902402,
-   "lon": 8.3870213,
-   "nameDe": "unbekannt",
-   "nameSci": "unbekannt",
-   "seed": 82925,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": -20.083,
-   "z": -37.984
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk02867",
-   "lat": 48.9897484,
-   "lon": 8.3877353,
-   "nameDe": "Obstbaum",
-   "nameSci": "Obstbaum",
-   "seed": 85155,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 31.711,
-   "z": 17.114
-  },
-  {
-   "heightM": 11.0,
-   "id": "bk02868",
-   "lat": 48.9900303,
-   "lon": 8.3876607,
-   "nameDe": "Obstbaum",
-   "nameSci": "Obstbaum",
-   "seed": 85250,
-   "sizeClass": "medium",
-   "source": "Baumkataster Karlsruhe (codeforkarlsruhe)",
-   "speciesBase": "Oak Medium",
-   "trunkCircumference": "",
-   "x": 26.507,
-   "z": -14.273
-  }
- ],
- "window": {
-  "eMax": 455320.0,
-  "eMin": 455040.0,
-  "nMax": 5426630.0,
-  "nMin": 5426410.0
- }
 }

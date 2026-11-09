@@ -69,6 +69,86 @@ export function createCameraRig(
   controls.dampingFactor = CONFIG.CAMERA.DAMPING;
   controls.maxPolarAngle = Math.PI / 2 - CONFIG.CAMERA.POLAR_MARGIN;
 
+  // Dolly: OrbitControls' proportional zoom crawls to a halt near the
+  // target and can never pass it (from the 1.5 m board view the wheel
+  // died just past the panel). Replace it with a fixed world-space step
+  // for wheel AND pinch; once closer than FOLLOW_DIST the target is
+  // carried forward too, so the walk continues through/past the board.
+  controls.enableZoom = false;
+
+  const dollyOffset = new THREE.Vector3();
+  function dollyFractional(f: number): void {
+    const t = controls.target;
+    dollyOffset.subVectors(camera.position, t);
+    const dist = dollyOffset.length();
+    if (dist < 1e-4) return;
+    const step =
+      THREE.MathUtils.clamp(dist * CONFIG.CAMERA.DOLLY.FACTOR, CONFIG.CAMERA.DOLLY.MIN_STEP, CONFIG.CAMERA.DOLLY.MAX_STEP) * f;
+    let newDist = dist - step;
+    if (step > 0 && newDist < CONFIG.CAMERA.DOLLY.FOLLOW_DIST) {
+      // fly-past: carry the target along the view direction (camera's
+      // forward = from camera toward target = -(cam-target)) so the walk
+      // continues through/past the board
+      t.addScaledVector(dollyOffset.normalize(), -(CONFIG.CAMERA.DOLLY.FOLLOW_DIST - newDist));
+      newDist = CONFIG.CAMERA.DOLLY.FOLLOW_DIST;
+      dollyOffset.subVectors(camera.position, t);
+    }
+    camera.position.copy(t).addScaledVector(dollyOffset.normalize(), newDist);
+  }
+
+  // pose log after a dolly burst settles (same [kamera] vocabulary)
+  let dollyLogTimer: number | undefined;
+  function queueDollyLog(): void {
+    if (!CONFIG.DEBUG.LOG_CAMERA) return;
+    window.clearTimeout(dollyLogTimer);
+    dollyLogTimer = window.setTimeout(() => logPose({ camera, controls }, ' dolly'), 300);
+  }
+
+  // wheel: scroll up = closer (OrbitControls convention), px/100 steps,
+  // clamped so one fast flick can't jump more than two steps
+  dom.addEventListener(
+    'wheel',
+    (e: WheelEvent) => {
+      e.preventDefault();
+      const px = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      const f = THREE.MathUtils.clamp(-px / 100, -2, 2);
+      if (f !== 0) dollyFractional(f);
+      queueDollyLog();
+    },
+    { passive: false },
+  );
+
+  // pinch: finger spread px -> dolly steps (OrbitControls keeps two-finger
+  // pan; its dolly part is off via enableZoom=false)
+  const pinchPointers = new Map<number, { x: number; y: number }>();
+  let pinchDist = 0;
+  const pinchSpan = (): number => {
+    const pts = [...pinchPointers.values()];
+    return Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+  };
+  dom.addEventListener('pointerdown', (e: PointerEvent) => {
+    pinchPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinchPointers.size === 2) pinchDist = pinchSpan();
+  });
+  dom.addEventListener('pointermove', (e: PointerEvent) => {
+    if (!pinchPointers.has(e.pointerId)) return;
+    pinchPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinchPointers.size === 2) {
+      const d = pinchSpan();
+      if (pinchDist > 0 && d !== pinchDist) {
+        dollyFractional((d - pinchDist) / CONFIG.CAMERA.PINCH_PX_PER_STEP);
+        queueDollyLog();
+      }
+      pinchDist = d;
+    }
+  });
+  const pinchDrop = (e: PointerEvent): void => {
+    pinchPointers.delete(e.pointerId);
+    pinchDist = 0;
+  };
+  dom.addEventListener('pointerup', pinchDrop);
+  dom.addEventListener('pointercancel', pinchDrop);
+
   function applyPreset(p: Preset, origin = ''): void {
     camera.position.set(p.position[0], p.position[1], p.position[2]);
     controls.target.set(p.lookAt[0], p.lookAt[1], p.lookAt[2]);

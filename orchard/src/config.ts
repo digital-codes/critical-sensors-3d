@@ -82,6 +82,21 @@ export const CONFIG = {
     DAMPING: 0.08,
     /** maxPolarAngle = PI/2 - this (keep the camera above ground) */
     POLAR_MARGIN: 0.02,
+    /** wheel/pinch dolly: per-event step = clamp(dist*FACTOR, MIN_STEP,
+     *  MAX_STEP) — proportional zoom crawls to a halt near the target, the
+     *  MIN_STEP floor keeps near-field motion constant. Once dollying in
+     *  would close to under FOLLOW_DIST, the target is carried forward too
+     *  (fly-past), so the walk continues through/past the info board. */
+    DOLLY: {
+      FACTOR: 0.06,
+      MIN_STEP: 0.5,
+      MAX_STEP: 6,
+      FOLLOW_DIST: 1.2,
+    },
+    /** pinch dolly sensitivity: finger-spread px per dolly step */
+    PINCH_PX_PER_STEP: 120,
+    /** camera never below terrain + this margin (post-update clamp, m) */
+    GROUND_MARGIN: 0.3,
     /** initial camera pose — local metres, y absolute DHHN. Pick a new one
      *  by flying the view and copying the "[kamera]" console line (see
      *  DEBUG.LOG_CAMERA): pos + blick go here. */
