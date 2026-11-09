@@ -43,9 +43,15 @@ npm run build    # tsc + vite build
     density, canopy tint; leaf-fall runs Oct 1 → bare Dec 1) and the
     derived snow curve
   - `GRASS` — blade count, height/mow curve, per-season tints
-  - `THICKET` — bush strip west of the orchard: `POLYGON` (local-metre
-    vertices — edit to reshape the strip), `COUNT`, blob radius/squash,
-    `TREE_CLEARANCE`, `SEED`, per-season tints
+  - `THICKET` — bush strip west of the orchard: `POLYGON` (OSM way
+    1022385974, local-metre vertices — edit to reshape the strip),
+    `COUNT`, blob radius/squash, `TREE_CLEARANCE`, `SEED`, per-season tints
+  - `BUILDINGS.FACADE` — procedural facade kit (storey height, plinth,
+    window/shutter/pane parameters, tint jitter, photo-pinned
+    `COLOUR_OVERRIDES`, `MIN_HEIGHT` below which buildings stay plain)
+  - `STUECKLE` — garden plot east of the orchard: `POLYGON` (OSM way
+    1022385982), hut footprints/rotations, fence, greenhouse, compost,
+    conifer, seed
   - `UI` — season labels, panel strings
 - `?seed=<n>` on the URL makes every random scene decision (grass blade
   placement, cloud placement/textures) reproducible via a mulberry32 PRNG
@@ -59,12 +65,12 @@ Four weather presets live in `src/config.ts` (`CONFIG.SKY.CONDITIONS`) —
 dome gradient, cloud count/tint/opacity, fog/background colour and
 sun/hemisphere/ambient light factors switch together:
 
-| key | look |
-|---|---|
-| `klar` | blue sky, at most wispy clouds, bright sun |
-| `heiter` | blue sky with a few light clouds |
-| `leichtBedeckt` | cloudy but light — the **default** (pre-preset look) |
-| `gewitter` | heavy dark clouds, thunderstorm mood, heavily dimmed sun |
+| key | look | light |
+|---|---|---|
+| `klar` | blue sky, at most wispy clouds | brightest; mostly direct sun (crisp shadows) |
+| `heiter` | blue sky with a few light clouds | nearly as bright, ambient-soft |
+| `leichtBedeckt` | cloudy but light — the **default** | little direct sun, flat diffuse |
+| `gewitter` | heavy dark clouds, thunderstorm mood | no direct light; hemi+ambient keep it visible |
 
 The dropdown next to the day slider (visible once the trees are generated)
 switches the condition; tooling and the dashboard can do the same via
