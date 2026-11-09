@@ -30,6 +30,9 @@
       per-id dedup (drop already-stored hours inside the window; no DELETE
       ever touches the database) — backfilled the first window after the
       2000-record page cap left ids 9/10 starting Oct 25
+- [x] 2.3b latest-value-first windows: every SensorCity fetch (incl. mast
+      wind/rain) starts at the latest stored hour - 2 h overlap, 30-day
+      fallback floor; hourly runs fetch ~20 records instead of ~4000
 - [x] 2.4 Append per-sensor frames (ids 8/9/10) with the same NULL
       placeholder convention; wire the three columns through the five places
       (fetch, merge, NULL fallback, ALTER tuple, dtype dict)

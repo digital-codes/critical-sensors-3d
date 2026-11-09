@@ -54,17 +54,21 @@ composition stays untouched by construction.
   after checking which depths the station actually reports. Adding more
   depths later = more columns + sensor_sources rows, no migration rethink.
 
-### 30-day fetch window with gap-tolerant dedup
+### Latest-value-first fetch windows with gap-tolerant dedup
 
-The FeatureServer caps every query at 2000 records (14 days of 10-min air
-data), so the neighbour fetches page with `resultOffset` over a bounded
-30-day `measured_at > timestamp '…'` window. The per-id dedup drops every
-hour already stored inside that window (date-set comparison — cheap at
-≤720 rows) instead of only guarding the newest boundary: a pure
-"> latest" guard never backfills outage gaps mid-window. Rows older than
-the window are never fetched, so the stored-dates query stays bounded.
-"Removing old entries" always refers to the fetched frame — the pipeline
-never issues a DELETE.
+Every SensorCity fetch (three neighbours + the two mast channels) is
+bounded by what the database already holds: the window starts at the
+sensor's (or id 0's, for the mast channels) latest stored hour minus a
+2 h overlap, with a 30-day fallback floor for unreachable databases or
+stale ids — a normal hourly run fetches a handful of records instead of
+weeks. The FeatureServer caps every query at 2000 records, so long
+windows page with `resultOffset`. The per-id dedup drops every hour
+already stored inside the window (date-set comparison) instead of only
+guarding the newest boundary: a pure "> latest" guard never backfills
+outage gaps mid-window. "Removing old entries" always refers to the
+fetched frame — the pipeline never issues a DELETE. The DB lookup runs
+before the fetch phase through a read-only engine; its failure degrades
+to the full 30-day window (offline `--csv` mode keeps working).
 
 ### Column wiring follows the measured-source rule
 

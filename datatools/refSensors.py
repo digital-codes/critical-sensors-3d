@@ -458,6 +458,107 @@ meteoLow = meteoLow.rename(columns={"TIMESTAMP":"date","AT":"icosTemp","RH":"ico
 meteoLow = meteoLow.drop(index=meteoLow.loc[meteoLow.date < "2020-10-01 00:00:00"].index)
 meteoLow = meteoLow.reset_index(drop=True)
 
+# fetch window for the SensorCity queries: latest-value-first - every fetch
+# is bounded by what the database already holds (plus a 2 h overlap), with
+# SC_WINDOW_DAYS as the fallback floor when the database is unreachable or
+# has no rows yet. The FeatureServer caps every query at 2000 records
+# (ArcGIS maxRecordCount), so long windows are paged with resultOffset.
+SC_WINDOW_DAYS = 30
+SC_OVERLAP_H = 2
+
+
+def resolve_db_url():
+    """$REFSENSORS_DB_URL or the first line of datatools/dburl.txt."""
+    url = os.environ.get("REFSENSORS_DB_URL")
+    if not url:
+        dburlFile = os.path.join(scriptDir, "dburl.txt")
+        if os.path.exists(dburlFile):
+            with open(dburlFile) as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        url = line
+                        break
+    return url
+
+
+# a read-only lookup connection for the fetch windows; the real write
+# engine is created in the database section below (same URL)
+dbUrl = resolve_db_url()
+scEngine = None
+if dbUrl:
+    try:
+        scEngine = create_engine(dbUrl)
+        inspect(scEngine).get_table_names()  # force a connection now
+    except Exception as exc:
+        print("SensorCity: database lookup unavailable (%s)" % exc)
+        scEngine = None
+
+
+def storedLatestUtc(sid):
+    """Latest stored date for a sensor id (stored in CET), converted back
+    to naive UTC - the timeline the SensorCity queries use."""
+    if scEngine is None:
+        return None
+    try:
+        with scEngine.connect() as conn:
+            latest = conn.execute(
+                text("select max(date) from sensors where id = %d" % sid)
+            ).scalar()
+    except Exception:
+        return None
+    if latest is None:
+        return None
+    return pd.Timestamp(latest) - pd.Timedelta(hours=1)  # stored CET -> UTC
+
+
+def scWindowStart(sid):
+    """Fetch-start timestamp for a sensor id: the later of (latest stored
+    hour - overlap) and the 30-day floor; the floor wins when nothing (or
+    nothing recent) is stored."""
+    nowUtc = pd.Timestamp(datetime.now(timezone.utc).replace(tzinfo=None))
+    floor = nowUtc - pd.Timedelta(days=SC_WINDOW_DAYS)
+    latest = storedLatestUtc(sid)
+    if latest is None:
+        return floor, "no stored rows - full %d-day window" % SC_WINDOW_DAYS
+    start = max(latest - pd.Timedelta(hours=SC_OVERLAP_H), floor)
+    return start, "latest stored %s, %d h overlap" % (latest, SC_OVERLAP_H)
+
+
+def scQueryPaged(layer, where, outFields, label):
+    """All records matching `where`, paged through the 2000-record cap."""
+    rows = []
+    offset = 0
+    for _page in range(10):  # safety cap: 10 pages = ~80 days of 10-min data
+        r = requests.get(
+            SC_BASE + "/%d/query" % layer,
+            params={
+                "where": where,
+                "outFields": outFields,
+                "returnGeometry": "false",
+                "f": "json",
+                "resultRecordCount": "2000",
+                "resultOffset": str(offset),
+                "orderByFields": "measured_at DESC",
+            },
+            timeout=30,
+        )
+        r.raise_for_status()
+        feats = r.json().get("features", [])
+        rows.extend(f["attributes"] for f in feats)
+        if len(feats) < 2000:
+            break
+        offset += 2000
+    print("SensorCity %s: %d records fetched" % (label, len(rows)))
+    return rows
+
+
+# the mast channels land in id-0 rows, so their fetch is bounded the same
+# way: from id 0's latest stored hour (2 h overlap), 30-day floor
+mastStart, mastWhy = scWindowStart(0)
+mastSince = mastStart.strftime("%Y-%m-%d %H:%M:%S")
+print("SensorCity mast window:", mastWhy)
+
 checkShutdown("SensorCity wind fetch")
 # SensorCity wind mast at station '008 - Weiherfeldstraße' (621 m E of the
 # orchard): Karlsruhe SensorCity FeatureServer, layer 5
@@ -471,7 +572,8 @@ try:
         "https://geoportal.karlsruhe.de/ags04/rest/services/Hosted/"
         "Sensordaten_NodeRED/FeatureServer/5/query",
         params={
-            "where": "device_id='9899e75f-2353-4dda-a1cc-4d4ffde4f003'",
+            "where": "device_id='9899e75f-2353-4dda-a1cc-4d4ffde4f003' "
+                     "AND measured_at > timestamp '%s'" % mastSince,
             "outFields": "measured_at,wind_average_kmh",
             "returnGeometry": "false",
             "f": "json",
@@ -509,7 +611,8 @@ try:
         "https://geoportal.karlsruhe.de/ags04/rest/services/Hosted/"
         "Sensordaten_NodeRED/FeatureServer/3/query",
         params={
-            "where": "device_id='4ac74c30-4378-4182-86cb-f1e552d8f8fb'",
+            "where": "device_id='4ac74c30-4378-4182-86cb-f1e552d8f8fb' "
+                     "AND measured_at > timestamp '%s'" % mastSince,
             "outFields": "measured_at,clicks",
             "returnGeometry": "false",
             "f": "json",
@@ -556,57 +659,16 @@ checkShutdown("SensorCity neighbour stations fetch")
 SC_BASE = ("https://geoportal.karlsruhe.de/ags04/rest/services/Hosted/"
            "Sensordaten_NodeRED/FeatureServer")
 
-# fetch window for the neighbour stations: the FeatureServer caps every
-# query at 2000 records (ArcGIS maxRecordCount - 14 days of 10-min air
-# data), so the window is bounded server-side and paged with resultOffset
-SC_WINDOW_DAYS = 30
-
-
-def scSinceStr():
-    """Naive-UTC string SC_WINDOW_DAYS back (timezone-aware now() without
-    the py3.12 utcnow deprecation)."""
-    return (datetime.now(timezone.utc).replace(tzinfo=None)
-            - timedelta(days=SC_WINDOW_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
-
-
-def scQueryPaged(layer, where, outFields, label):
-    """All records matching `where`, paged through the 2000-record cap."""
-    rows = []
-    offset = 0
-    for _page in range(10):  # safety cap: 10 pages = ~80 days of 10-min data
-        r = requests.get(
-            SC_BASE + "/%d/query" % layer,
-            params={
-                "where": where,
-                "outFields": outFields,
-                "returnGeometry": "false",
-                "f": "json",
-                "resultRecordCount": "2000",
-                "resultOffset": str(offset),
-                "orderByFields": "measured_at DESC",
-            },
-            timeout=30,
-        )
-        r.raise_for_status()
-        feats = r.json().get("features", [])
-        rows.extend(f["attributes"] for f in feats)
-        if len(feats) < 2000:
-            break
-        offset += 2000
-    print("SensorCity %s: %d records fetched (window: last %d days)"
-          % (label, len(rows), SC_WINDOW_DAYS))
-    return rows
-
-
 def scAirFrame(sid, dev, label):
     """Hourly air means (temp/hum/pres/solar) for one SensorCity station."""
     try:
+        start, why = scWindowStart(sid)
         feats = scQueryPaged(
             2,
             "device_id='%s' AND measured_at > timestamp '%s'"
-            % (dev, scSinceStr()),
+            % (dev, start.strftime("%Y-%m-%d %H:%M:%S")),
             "measured_at,temp,luftfeuchte,press,sonnenstrahlung",
-            "air %s" % label,
+            "air %s (%s)" % (label, why),
         )
         if not feats:
             print("SensorCity air %s: no records returned" % label)
@@ -633,13 +695,14 @@ def scAirFrame(sid, dev, label):
 def scSoilFrame(sid, dev, label, depth="51"):
     """Hourly soil means (soilMoist/soilTemp) at the deepest installed depth."""
     try:
+        start, why = scWindowStart(sid)
         feats = scQueryPaged(
             4,
             "device_id='%s' AND measured_at > timestamp '%s'"
-            % (dev, scSinceStr()),
+            % (dev, start.strftime("%Y-%m-%d %H:%M:%S")),
             "measured_at,soil_moisture_at_depth_%s,"
             "soil_temperature_at_depth_%s" % (depth, depth),
-            "soil %s" % label,
+            "soil %s (%s)" % (label, why),
         )
         if not feats:
             print("SensorCity soil %s: no records returned" % label)
@@ -739,16 +802,8 @@ if args.csv:
 # ######################################
 # update sql
 """Store data object into sql """
-dbUrl = os.environ.get("REFSENSORS_DB_URL")
-if not dbUrl:
-    dburlFile = os.path.join(scriptDir,"dburl.txt")
-    if os.path.exists(dburlFile):
-        with open(dburlFile) as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    dbUrl = line
-                    break
+# dbUrl was resolved (and the lookup engine created) before the SensorCity
+# fetches above
 if not dbUrl:
     print("No database configured: set REFSENSORS_DB_URL or create datatools/dburl.txt")
     sys.exit(1)
@@ -904,11 +959,12 @@ if scNeighbours is not None and len(scNeighbours):
         # gap-tolerant dedup: drop every hour ALREADY STORED for this id
         # within the fetch window - not just the newest boundary. A pure
         # "> latest" guard never backfills outage gaps in the middle of the
-        # window; the 30-day fetch makes the full-date-set comparison cheap.
+        # window; the date-set comparison is cheap (the window is bounded).
         # Rows older than the window are never fetched, so the query stays
         # bounded; "removing old entries" filters the FETCHED FRAME only -
         # nothing is ever deleted from the database.
-        winStart = scSinceStr()
+        winStart = (rows.date.min() - pd.Timedelta(hours=1)) \
+            .strftime("%Y-%m-%d %H:%M:%S")
         stored = pd.read_sql(
             "select date from sensors where id = %d and date >= '%s'"
             % (sid, winStart), db)
