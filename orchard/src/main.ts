@@ -29,6 +29,24 @@ function monthDay(day: number): string {
   return `${MONTHS[m]} ${d + 1}`;
 }
 
+/** month index (0 = Jan) for a season day — mirrors monthDay's split */
+function monthIndex(day: number): number {
+  const { MONTH_LENGTHS } = CONFIG.UI;
+  let m = 0;
+  let d = day;
+  while (m < 11 && d >= MONTH_LENGTHS[m]) {
+    d -= MONTH_LENGTHS[m];
+    m++;
+  }
+  return m;
+}
+
+/** sky condition preset for a season day (CONFIG.SKY.MONTH_CONDITIONS) */
+function skyForDay(day: number): string {
+  const cond = CONFIG.SKY.MONTH_CONDITIONS[monthIndex(Math.max(0, Math.min(364, day)))];
+  return CONFIG.SKY.CONDITIONS[cond as keyof typeof CONFIG.SKY.CONDITIONS] ? cond : CONFIG.SKY.DEFAULT_CONDITION;
+}
+
 /** Handle returned to an embedder (the www dashboard). `scene3` is a live
  *  getter — the underlying window.__scene3 object is replaced (spread) as
  *  scene parts finish loading, so always read it fresh. */
@@ -240,9 +258,11 @@ export async function mountOrchard(
       },
     },
   };
-  // sky condition dropdown next to the day slider
+  // sky condition dropdown next to the day slider (hoisted so the season
+  // handler can keep its selection in sync with the month condition)
+  let skySelect: HTMLSelectElement | null = null;
   if (seasonPanel) {
-    const skySelect = document.createElement('select');
+    skySelect = document.createElement('select');
     skySelect.id = 'skycondition';
     skySelect.title = 'Himmelszustand';
     for (const [key, cond] of Object.entries(CONFIG.SKY.CONDITIONS)) {
@@ -252,9 +272,13 @@ export async function mountOrchard(
       if (key === CONFIG.SKY.DEFAULT_CONDITION) opt.selected = true;
       skySelect.appendChild(opt);
     }
-    skySelect.addEventListener('change', () => applySkyCondition(skySelect.value));
-    seasonPanel.appendChild(skySelect);
+    const sel = skySelect;
+    sel.addEventListener('change', () => applySkyCondition(sel.value));
+    seasonPanel.appendChild(sel);
   }
+  // initial sky = month condition of the initial day (day 190 Jul -> klar
+  // standalone; the www embed sets the current date via setDay -> 'input')
+  applySkyCondition(skyForDay(Number(seasonInput?.value ?? 190)));
 
   const thicket = await createThicket(await getHeightSampler());
   scene.add(thicket.group);
@@ -420,18 +444,24 @@ export async function mountOrchard(
     catLabel.textContent = 'Katze';
     catToggle.addEventListener('change', () => {
       cat.setVisible(catToggle.checked);
-      if (!catToggle.checked) setFollow(false);
+      // checking the box starts the chase cam immediately (snap, no lerp)
+      // so the jump off the post is visible from the first frame
+      setFollow(catToggle.checked);
     });
     seasonPanel.appendChild(catToggle);
     seasonPanel.appendChild(catLabel);
   }
 
   // "Katze folgen" chase cam: tracks the walking cat, cancels on user
-  // interaction (same UX as the Vogelflug)
+  // interaction (same UX as the Vogelflug). Activating snaps to the pose
+  // on the first frame (no lerp from wherever the camera was).
   let followActive = false;
+  let followSnap = false;
   let followBtn: HTMLButtonElement | null = null;
   function setFollow(v: boolean): void {
-    followActive = v && cat.group.visible;
+    const on = v && cat.group.visible;
+    if (on && !followActive) followSnap = true;
+    followActive = on;
     if (followBtn) followBtn.classList.toggle('active', followActive);
   }
   if (presetsEl) {
@@ -495,6 +525,12 @@ export async function mountOrchard(
     structures.setSnow(snowAmount(day));
     thicket.setSeason(day);
     updateSun(day);
+    // sky follows the month (CONFIG.SKY.MONTH_CONDITIONS); a manual
+    // dropdown choice overrides until the next day change
+    if (skyConditionKey !== skyForDay(day)) {
+      applySkyCondition(skyForDay(day));
+    }
+    if (skySelect) skySelect.value = skyConditionKey;
     if (seasonValue) {
       seasonValue.textContent = seasonLabel(day);
     }
@@ -555,9 +591,16 @@ export async function mountOrchard(
       followCam.y += CONFIG.CAT.FOLLOW.UP;
       followTarget.copy(fp.position);
       followTarget.y += 0.3;
-      const k = 1 - Math.exp(-5 * dt);
-      rig.camera.position.lerp(followCam, k);
-      rig.controls.target.lerp(followTarget, Math.min(1, k * 2));
+      if (followSnap) {
+        // first frame after activation: jump straight to the pose
+        rig.camera.position.copy(followCam);
+        rig.controls.target.copy(followTarget);
+        followSnap = false;
+      } else {
+        const k = 1 - Math.exp(-5 * dt);
+        rig.camera.position.lerp(followCam, k);
+        rig.controls.target.lerp(followTarget, Math.min(1, k * 2));
+      }
     }
     rig.controls.update();
     // never see the orchard from below: keep the camera above the terrain

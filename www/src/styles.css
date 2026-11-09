@@ -381,6 +381,13 @@ body {
     gap: 8px;
   }
 
+  /* info button directly after the headline (not after the slider);
+   * shrink the headline so both fit on one row on phones */
+  .hdr h1 { order: 0; font-size: 1.02em; white-space: normal; }
+  .hdr .info-btn { order: 1; margin-left: 8px; }
+  .hdr .spacer { order: 2; }
+  .hdr .time-ctl { order: 3; }
+
   .time-ctl input[type='range'] {
     width: min(280px, 52vw);
     min-height: 36px;

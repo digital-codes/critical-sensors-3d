@@ -174,8 +174,19 @@ export const CONFIG = {
     CLOUD_ALT_JITTER: 40,
     /** number of shared cloud textures */
     TEXTURES: 3,
-    /** condition active on load (key of CONDITIONS) */
+    /** condition active on load (key of CONDITIONS) — note: the season day
+     *  now overrides this via MONTH_CONDITIONS; this stays as the fallback
+     *  look before the first day is applied */
     DEFAULT_CONDITION: 'leichtBedeckt',
+    /** sky condition per month (index 0 = Jan) — applied whenever the
+     *  season day changes; the dropdown still overrides until the next
+     *  day change (user mapping: klar Jan/Mai-Jun/Jul/Sep, heiter
+     *  Feb/Mär/Okt, bedeckt Nov/Dez (leichtBedeckt preset), gewitter
+     *  Apr/Aug) */
+    MONTH_CONDITIONS: [
+      'klar', 'heiter', 'heiter', 'gewitter', 'klar', 'klar',
+      'klar', 'gewitter', 'klar', 'heiter', 'leichtBedeckt', 'leichtBedeckt',
+    ] as string[],
     /**
      * Sky condition presets — the single home for every sky/weather look
      * value. Dome colours + cloud count/tint/opacity + fog/background +
@@ -508,12 +519,14 @@ export const CONFIG = {
       JUMP_APEX: 0.35,
       /** landing point relative to the post top (towards the orchard) */
       LAND_OFFSET: [-2.4, -0.9],
-      /** the meadow middle the cat walks through first */
-      MID: [20, 3],
-      /** Hochsitz to walk to and face */
-      HOCHSITZ: [19.8, -1.6],
+      /** the meadow middle the cat walks through first — north-central
+       *  clearing: outside all three Hochsitz footprints and the straight
+       *  legs from the fence post and to the east Hochsitz clear them too */
+      MID: [17, 7.5],
+      /** Hochsitz to walk to and face — the east one (osmway124028005) */
+      HOCHSITZ: [24.7, 5.4],
       /** stop this far from the Hochsitz */
-      STAND_OFF: 1.8,
+      STAND_OFF: 2.6,
     },
   },
 

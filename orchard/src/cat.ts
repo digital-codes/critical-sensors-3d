@@ -1,5 +1,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+// typeface JSON bundled as a module (NOT fetched via import.meta.url — that
+// crosses the www dev server's fs.allow root and 403s the embed mount)
+import helvetikerBold from 'three/examples/fonts/helvetiker_bold.typeface.json';
 import { getHeightSampler } from './terrain';
 import { CONFIG } from './config';
 
@@ -74,46 +79,102 @@ async function buildStillLife(): Promise<THREE.Group> {
   handle.rotation.z = -Math.PI * 0.42;
   handle.castShadow = true;
   g.add(handle);
-  // embossed "MOST" label (lighter text on mid gray as raised bump)
-  const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 96;
-  const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = '#808080';
-  ctx.fillRect(0, 0, 256, 96);
-  ctx.font = 'bold 52px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#c8c8c8';
-  ctx.fillText('MOST', 128, 52);
-  const bump = new THREE.CanvasTexture(canvas);
+  // label base (plain ceramic) + REAL extruded "MOST" letters standing off
+  // the surface (user: bump-only text was unreadable; wants visible relief)
   const label = new THREE.Mesh(
     new THREE.PlaneGeometry(0.085, 0.032),
-    new THREE.MeshStandardMaterial({ color: 0x9a8878, roughness: 0.6, bumpMap: bump, bumpScale: 0.8 }),
+    new THREE.MeshStandardMaterial({ color: 0x9a8878, roughness: 0.55 }),
   );
   label.position.set(0, 0.09, 0.0755);
   g.add(label);
+  // helvetiker_bold parsed from the bundled JSON module (no network fetch)
+  const font = new FontLoader().parse(helvetikerBold as never);
+  const textGeo = new TextGeometry('MOST', {
+    font,
+    size: 0.017,
+    depth: 0.006, // stands 6 mm off the jug
+    curveSegments: 5,
+    bevelEnabled: true,
+    bevelThickness: 0.001,
+    bevelSize: 0.0008,
+    bevelSegments: 2,
+  });
+  textGeo.computeBoundingBox();
+  const bb = textGeo.boundingBox!;
+  textGeo.translate(
+    -(bb.min.x + bb.max.x) / 2,
+    -(bb.min.y + bb.max.y) / 2,
+    0,
+  );
+  const letters = new THREE.Mesh(
+    textGeo,
+    new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5 }),
+  );
+  letters.position.set(0, 0.09, 0.0762);
+  g.add(letters);
 
   // --- five apples beside the jug ---------------------------------------
-  const appleAt = (x: number, z: number, rot: number): void => {
+  // procedural apple per the user's reference (newimages/apple-3d.png,
+  // CC BY "Low Poly Apple Game Ready" by -Arthur-, sketchfab.com — the
+  // mesh itself is not available, so this is an homage, not a copy):
+  // lathe body with a deep top basin, red fading to yellow-green at the
+  // bottom (vertex colors), bent dark stem.
+  const APPLE_R = 0.034;
+  const appleProfile: THREE.Vector2[] = [
+    new THREE.Vector2(0.0, 0.0),
+    new THREE.Vector2(0.014, 0.002), // flattened bottom
+    new THREE.Vector2(0.026, 0.008),
+    new THREE.Vector2(0.033, 0.02),
+    new THREE.Vector2(APPLE_R, 0.032), // equator
+    new THREE.Vector2(0.031, 0.044),
+    new THREE.Vector2(0.022, 0.052), // crown rises toward the stem
+    new THREE.Vector2(0.012, 0.056), // lip of the basin
+    new THREE.Vector2(0.01, 0.051), // down into the dimple
+    new THREE.Vector2(0.004, 0.049),
+  ];
+  const red = new THREE.Color(0xc0392b);
+  const orange = new THREE.Color(0xd14b32);
+  const blush = new THREE.Color(0xc9b45a);
+  const stemMat = new THREE.MeshStandardMaterial({ color: 0x3e2e20, roughness: 0.8 });
+  const appleAt = (x: number, z: number, rnd: number): void => {
+    const geo = new THREE.LatheGeometry(appleProfile, 18);
+    // vertex gradient: blush at the base -> red over the upper body
+    const top = rnd > 0.5 ? red : orange;
+    const pos = geo.getAttribute('position');
+    const colors = new Float32Array(pos.count * 3);
+    const c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      const t = THREE.MathUtils.clamp(pos.getY(i) / 0.045, 0, 1);
+      c.copy(blush).lerp(top, THREE.MathUtils.smoothstep(t, 0.1, 0.75));
+      colors[i * 3] = c.r;
+      colors[i * 3 + 1] = c.g;
+      colors[i * 3 + 2] = c.b;
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     const a = new THREE.Group();
     const body = new THREE.Mesh(
-      new THREE.SphereGeometry(0.032, 14, 12),
-      new THREE.MeshStandardMaterial({ color: rot > 0.5 ? 0xb02e1e : 0xc46a22, roughness: 0.45 }),
+      geo,
+      new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.4 }),
     );
-    body.scale.y = 0.88;
-    body.position.y = 0.028;
     body.castShadow = true;
     a.add(body);
-    const stem = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.0025, 0.0035, 0.022, 6),
-      new THREE.MeshStandardMaterial({ color: 0x4a3319 }),
+    // bent stem (S-curve out of the basin)
+    const stemCurve = new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(0, 0.047, 0),
+      new THREE.Vector3(0.004, 0.058, 0.001),
+      new THREE.Vector3(0.011, 0.067, 0.004),
     );
-    stem.position.y = 0.062;
-    stem.rotation.z = 0.25;
+    const stem = new THREE.Mesh(new THREE.TubeGeometry(stemCurve, 8, 0.0022, 6), stemMat);
     a.add(stem);
     a.position.set(x, 0, z);
-    a.rotation.y = rot * Math.PI * 2;
+    a.rotation.y = rnd * Math.PI * 2;
+    // user: 50% larger apples
+    a.scale.setScalar(1.5);
+    if (rnd > 0.8) {
+      // one apple lying on its side in the grass
+      a.rotation.x = Math.PI / 2 - 0.25;
+      a.position.y = 0.03;
+    }
     g.add(a);
   };
   let seed = 20261109;
