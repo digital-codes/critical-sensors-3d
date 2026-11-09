@@ -48,15 +48,22 @@ const MODEL_YAW = 0;
 async function buildStillLife(): Promise<THREE.Group> {
   const g = new THREE.Group();
   const loader = new GLTFLoader();
+  const jugModel = CONFIG.CAT.JUG_MODEL;
 
   // --- jug --------------------------------------------------------------
-  try {
-    const gltf = await loader.loadAsync('/models/jug.glb');
-    const jug = gltf.scene;
-    jug.traverse((o) => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; });
-    g.add(jug);
-    return g; // real model — no procedural fallback, no label needed
-  } catch { /* no jug.glb — procedural jug below */ }
+  // a real glb is only attempted when CONFIG.CAT.JUG_MODEL names one —
+  // otherwise the procedural lathe jug below is used (no 404 noise)
+  if (jugModel) {
+    try {
+      const gltf = await loader.loadAsync(jugModel);
+      const jug = gltf.scene;
+      jug.traverse((o) => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; });
+      g.add(jug);
+      return g; // real model — no procedural fallback, no label needed
+    } catch (e) {
+      console.warn(`jug model ${jugModel} failed, using procedural jug`, e);
+    }
+  }
 
   const ceramic = new THREE.MeshStandardMaterial({ color: 0x9a8878, roughness: 0.65 });
   // lathe profile: foot, belly, shoulder, neck, flared lip (in metres)

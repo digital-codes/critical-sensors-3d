@@ -175,6 +175,15 @@ export async function mountOrchard(
         'border:1px solid rgba(255,255,255,.25);border-radius:6px;background:rgba(20,24,28,.65);}',
         '.w3d-progress{font-size:11px;color:rgba(255,255,255,.75);',
         'background:rgba(0,0,0,.45);padding:3px 8px;border-radius:6px;}',
+        // small canvases (mobile tab view): HUD spans the pane width and
+        // wraps instead of overflowing over everything
+        '@media (max-width:560px){.w3d-panel{top:6px;right:6px;left:6px;',
+        'max-width:none;align-items:stretch;}.w3d-presets{justify-content:center;}',
+        '.w3d-presets button{padding:5px 8px;font-size:12px;}',
+        '.w3d-season{flex-wrap:wrap;justify-content:center;}',
+        ".w3d-season input[type='range']{width:min(160px,40vw);}",
+        '.w3d-season .value{width:auto;max-width:46vw;font-size:12px;}',
+        '.w3d-controls{flex-wrap:wrap;justify-content:center;}}',
       ].join('');
       document.head.appendChild(st);
     }

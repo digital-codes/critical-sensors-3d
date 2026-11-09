@@ -528,6 +528,10 @@ export const CONFIG = {
       /** stop this far from the Hochsitz */
       STAND_OFF: 2.6,
     },
+    /** path to a real jug model (glb) — e.g. '/models/jug.glb' after
+     *  downloading one (Sketchfab is login-walled); empty = the
+     *  procedural lathe jug (no request is made) */
+    JUG_MODEL: '',
   },
 
   /** German site-language label tables (main.ts, compare.ts) */

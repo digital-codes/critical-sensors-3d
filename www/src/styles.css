@@ -457,3 +457,93 @@ body {
     max-height: 52px;
   }
 }
+
+/* ---------- mobile tabs (small phones) ---------- */
+
+/* wrappers are layout-transparent on desktop/tablet (display:contents) so
+ * the existing grids keep working; the tab bar is hidden there. Kept AFTER
+ * the responsive block above so the narrow-screen rules win. */
+.mtabs {
+  display: none;
+}
+
+.tpane {
+  display: contents;
+}
+
+@media (max-width: 560px) {
+  .mtabs {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 6px;
+    padding: 2px 0 8px;
+  }
+
+  .mtabs button {
+    flex: 1;
+    padding: 9px 0;
+    font: 700 0.95em var(--font-main);
+    letter-spacing: 0.03em;
+    border: 1px solid var(--line, #888);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .mtabs button.active {
+    background: var(--olive-mid);
+    color: #fff;
+    border-color: var(--olive-dark);
+  }
+
+  /* full-height panes, one visible — hidden panes stay MOUNTED
+   * (display:none, v-show semantics): the 3D loop and photo cycle keep
+   * running in the background (simulation stays alive) */
+  .main {
+    display: block;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .tpane {
+    display: none;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .tpane.active {
+    display: block;
+  }
+
+  .pane3d {
+    order: 0;
+    height: 100%;
+  }
+
+  /* data tab: 2-col cards with room + scroll (charts readable again) */
+  .data-pane {
+    order: 0;
+    height: 100%;
+    overflow-y: auto;
+    grid-template-rows: repeat(4, minmax(150px, auto));
+    align-content: start;
+  }
+
+  /* photos tab: full-height photo, markers below */
+  .streak-panel {
+    height: 100%;
+    margin-top: 0;
+  }
+
+  .streak-stage {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+  }
+
+  .streak-stage canvas {
+    height: 100% !important;
+  }
+}
