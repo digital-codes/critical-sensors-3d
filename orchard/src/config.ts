@@ -141,37 +141,43 @@ export const CONFIG = {
      * pixel-verified against that baseline.
      */
     CONDITIONS: {
+      /** Klar: the brightest variant — mostly direct sunlight (strong
+       *  shadows), ambient kept low */
       klar: {
         LABEL: 'Klar',
         DOME_TOP: 0x3d7fd6, DOME_HORIZON: 0xcfe8ff,
         CLOUD_COUNT: 2, CLOUD_TINT: 0xffffff,
         CLOUD_OPACITY_MIN: 0.25, CLOUD_OPACITY_JITTER: 0.2,
         FOG: 0xcfe8ff,
-        SUN_FACTOR: 1.2, HEMI_FACTOR: 0.9, AMBIENT_FACTOR: 1.0,
+        SUN_FACTOR: 2.2, HEMI_FACTOR: 0.55, AMBIENT_FACTOR: 0.7,
       },
+      /** Heiter: nearly as bright as Klar but softer — more ambient share */
       heiter: {
         LABEL: 'Heiter',
         DOME_TOP: 0x6f9fd8, DOME_HORIZON: 0xdce9f5,
         CLOUD_COUNT: 6, CLOUD_TINT: 0xffffff,
         CLOUD_OPACITY_MIN: 0.45, CLOUD_OPACITY_JITTER: 0.25,
         FOG: 0xdce9f5,
-        SUN_FACTOR: 1.1, HEMI_FACTOR: 0.95, AMBIENT_FACTOR: 1.0,
+        SUN_FACTOR: 1.15, HEMI_FACTOR: 1.05, AMBIENT_FACTOR: 1.1,
       },
+      /** Bedeckt: little direct sun, flat diffuse light from above */
       leichtBedeckt: {
         LABEL: 'Leicht bedeckt',
         DOME_TOP: 0xbfcdd8, DOME_HORIZON: 0xe8ecef,
         CLOUD_COUNT: 12, CLOUD_TINT: 0xffffff,
         CLOUD_OPACITY_MIN: 0.55, CLOUD_OPACITY_JITTER: 0.3,
         FOG: 0xb9c6d0,
-        SUN_FACTOR: 1.0, HEMI_FACTOR: 1.0, AMBIENT_FACTOR: 1.0,
+        SUN_FACTOR: 0.4, HEMI_FACTOR: 1.15, AMBIENT_FACTOR: 1.1,
       },
+      /** Gewitter: no direct light at all — dome/fog darken, hemi+ambient
+       *  keep the scene visible */
       gewitter: {
         LABEL: 'Gewitter',
         DOME_TOP: 0x414b55, DOME_HORIZON: 0x828c96,
         CLOUD_COUNT: 18, CLOUD_TINT: 0x5f6873,
         CLOUD_OPACITY_MIN: 0.75, CLOUD_OPACITY_JITTER: 0.2,
         FOG: 0x828c96,
-        SUN_FACTOR: 0.35, HEMI_FACTOR: 0.55, AMBIENT_FACTOR: 0.9,
+        SUN_FACTOR: 0.0, HEMI_FACTOR: 0.7, AMBIENT_FACTOR: 1.0,
       },
     } as const satisfies Record<string, SkyCondition>,
   },
