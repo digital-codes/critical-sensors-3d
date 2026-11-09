@@ -183,7 +183,15 @@ export async function mountOrchard(
         '.w3d-season{flex-wrap:wrap;justify-content:center;}',
         ".w3d-season input[type='range']{width:min(160px,40vw);}",
         '.w3d-season .value{width:auto;max-width:46vw;font-size:12px;}',
-        '.w3d-controls{flex-wrap:wrap;justify-content:center;}}',
+        '.w3d-controls{flex-wrap:wrap;justify-content:center;}',
+        // close the small-canvas media query, then: tablet/phone
+        // (<=1023px, incl. iPad Mini portrait) — the www header already
+        // carries the day slider, so drop the duplicated in-scene
+        // controls (season slider, tree status, sky select, cat toggle);
+        // the cat is triggered solely by the "Katze folgen" preset
+        '}',
+        '@media (max-width:1023px){.w3d-season,.w3d-progress,.w3d-controls,',
+        '#skycondition,#showcat,label[for=\'showcat\']{display:none !important;}}',
       ].join('');
       document.head.appendChild(st);
     }
@@ -477,7 +485,14 @@ export async function mountOrchard(
     followBtn = document.createElement('button');
     followBtn.textContent = 'Katze folgen';
     followBtn.dataset.preset = 'katze';
-    followBtn.addEventListener('click', () => setFollow(!followActive));
+    // single cat control: shows the cat AND starts the walk AND follows it;
+    // pressing again stops following and hides it (the separate "Katze"
+    // checkbox stays desktop-only and is hidden on tablet/phone via CSS)
+    followBtn.addEventListener('click', () => {
+      const on = !followActive;
+      cat.setVisible(on);
+      setFollow(on);
+    });
     presetsEl.appendChild(followBtn);
   }
   renderer.domElement.addEventListener('pointerdown', () => setFollow(false));

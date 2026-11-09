@@ -110,9 +110,16 @@ body {
   min-height: 0; /* let the panes shrink to the window height */
   display: grid;
   grid-template-columns: 60fr 40fr;
+  /* 3D left (60%), data right (40%), photo streak full-width below —
+   * explicit order so the tab-wrapper DOM order can't flip the columns */
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: 12px;
   align-items: stretch;
 }
+
+.main .pane3d { order: 1; }
+.main .data-pane { order: 2; }
+.main .streak-panel { order: 3; grid-column: 1 / -1; }
 
 .pane3d {
   position: relative;
