@@ -212,7 +212,9 @@ Inputs: `geoimages/` (LGL-BW DGM/DOP GeoTIFFs + world files),
 - Dense thicket west of the orchard (between the residential row and the
   meadow): too tight for individual trees, so it is rendered as ~700
   instanced low-poly canopy blobs (`src/thicket.ts`) scattered inside
-  `CONFIG.THICKET.POLYGON` — local-metre vertices traced from the red
+  `CONFIG.THICKET.POLYGON` — local-metre vertices from OSM way
+  1022385974 (natural=wood; the polygon's notch wraps around the
+  neighbour's house plot; formerly traced from the red
   "Bushes" outline in `newimages/wiese-gebuesch.png` (edit the polygon to
   reshape the strip, `CONFIG.THICKET.COUNT` for density). Each blob is
   textured with a random canopy patch of the aerial orthophoto (instanced

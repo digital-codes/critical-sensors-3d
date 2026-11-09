@@ -29,6 +29,18 @@ export interface Orchard {
   update(elapsedTime: number): void;
 }
 
+/** point-in-polygon against CONFIG.THICKET.POLYGON (same test thicket.ts
+ *  uses for the blob scatter) */
+function inThicketWood(x: number, z: number): boolean {
+  const poly = CONFIG.THICKET.POLYGON;
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], zi = poly[i][1], xj = poly[j][0], zj = poly[j][1];
+    if (zi > z !== zj > z && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
 export async function createOrchard(
   onProgress: (done: number, total: number) => void,
 ): Promise<Orchard> {
@@ -77,7 +89,11 @@ export async function createOrchard(
     seasonTrees.set(s.key, []);
   }
 
-  const entries = site.trees as SiteTree[];
+  const entries = (site.trees as SiteTree[]).filter(
+    // trees inside the thicket wood (OSM way 1022385974 boundary) would be
+    // buried in the blob mass - skip them to save geometry
+    (e) => !inThicketWood(e.x, e.z),
+  );
 
     const buildTree = (entry: SiteTree): void => {
     const presetJson = structuredClone(TreePreset[entry.speciesBase]) as TreeOptions;

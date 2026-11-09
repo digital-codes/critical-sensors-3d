@@ -203,13 +203,15 @@ export const CONFIG = {
    *  inside this band — static shapes, season tint only */
   THICKET: {
     /** surrounding polygon of the bush strip in local metres (x east,
-     *  z south) — traced from the red "Bushes" outline in
-     *  newimages/wiese-gebuesch.png (DOP tile 4555426). Edit these
-     *  vertices to grow/shrink/move the strip; blobs are scattered
-     *  inside with a seeded rng. */
+     *  z south) — OSM way 1022385974 (natural=wood, "Katzenwedel"), node
+     *  order kept; the concave notch at (-26, 6)…(-11, -48) wraps around
+     *  the neighbour's house plot at ~(-30, -15). Edit these vertices to
+     *  grow/shrink/move the strip; blobs are rejection-sampled inside. */
     POLYGON: [
-      [7, -64], [-8, -62], [-30, 4], [-27, 11],
-      [-9, 17], [1, 16], [10, -14], [15, -54],
+      [-31.3, -73.9], [-27.1, -85.7], [8.6, -66.0], [9.3, -59.8],
+      [12.9, -51.9], [5.3, -33.7], [7.7, -19.7], [0.4, 8.8],
+      [-8.6, 14.0], [-26.2, 5.6], [-10.8, -47.9], [-21.9, -57.7],
+      [-31.1, -67.2],
     ],
     COUNT: 700,
     RADIUS_MIN: 1.6,
@@ -345,10 +347,11 @@ export const CONFIG = {
    * metres (x east, z south), traced from the DOP; edit to nudge.
    */
   STUECKLE: {
-    /** plot outline (local metres, clockwise-ish); trail runs along the NW side */
+    /** plot outline - traced from OSM way 1022385982 (landuse=allotments),
+     *  converted to local metres (garden centre ~48.98979/8.38792) */
     POLYGON: [
-      [96, -14], [122, -16], [138, -8], [140, 2], [132, 13],
-      [112, 15], [98, 12], [94, 0],
+      [31.2, 31.4], [41.8, -12.4], [52.3, -8.0], [54.9, 18.5],
+      [44.3, 32.7], [37.2, 34.8],
     ],
     FENCE: {
       HEIGHT: 1.35,
@@ -357,11 +360,12 @@ export const CONFIG = {
       MESH: 0x8a857c,
       MESH_OPACITY: 0.35,
     },
-    /** tool huts: pos, footprint [w, d] (w = ridge direction), wall height,
-     *  roof/wall colours, ridge axis */
+    /** tool huts - positions/rotations from OSM ways 124028004 (north)
+     *  and 124028003 (south), footprints at 80% of the OSM real estate
+     *  (OSM: 7.1x5.5 / 5.6x4.8 m); ROT = yaw in radians */
     HUTS: [
-      { pos: [98, 9], size: [4.5, 3.0], WALL_H: 2.2, ROOF: 0x4a4f55, WALL: 0xd8d2c4, RIDGE: 'x' },
-      { pos: [120, -5], size: [3.5, 3.0], WALL_H: 2.0, ROOF: 0xb9bdbd, WALL: 0xc9c4b8, RIDGE: 'z' },
+      { pos: [41.2, 4.7], size: [5.7, 4.4], WALL_H: 2.3, ROOF: 0xb9bdbd, WALL: 0xd8d2c4, RIDGE: 'x', ROT: -0.34 },
+      { pos: [37.4, 28.9], size: [4.5, 3.8], WALL_H: 2.1, ROOF: 0x4a4f55, WALL: 0xc9c4b8, RIDGE: 'z', ROT: 0.27 },
     ] as Array<{
       pos: [number, number];
       size: [number, number];
@@ -369,13 +373,14 @@ export const CONFIG = {
       ROOF: number;
       WALL: number;
       RIDGE: 'x' | 'z';
+      ROT?: number;
     }>,
-    /** low translucent greenhouse: pos, footprint [w, d], height, rotation */
-    GREENHOUSE: { pos: [132, 1], size: [4.0, 1.6], H: 1.4, ROT: -0.4 },
-    /** compost heaps [x, z] along the east fence */
-    COMPOST: [[136, -6], [135, 4]] as Array<[number, number]>,
+    /** low translucent greenhouse (bright rectangle in the DOP at ~36,17) */
+    GREENHOUSE: { pos: [36, 17], size: [3.0, 1.4], H: 1.2, ROT: 0.2 },
+    /** compost heap near the south hut */
+    COMPOST: [[47, 27]] as Array<[number, number]>,
     /** one conifer inside the plot [x, z] */
-    CONIFER: [116, 3] as [number, number],
+    CONIFER: [46, 20] as [number, number],
     /** noise seed for hut weathering etc. */
     SEED: 20261028,
   },

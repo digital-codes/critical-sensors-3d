@@ -82,7 +82,10 @@ function buildHut(hut: HutSpec, rng: () => number): THREE.Group {
   body.castShadow = true;
   body.receiveShadow = true;
   g.add(body);
-  // gable prism roof: ridge along the footprint's w axis
+  // gable prism roof: the ridge runs along the footprint's RIDGE axis; the
+  // gable width must match the body's CROSS extent (d for ridge 'z', w for
+  // ridge 'x') and the extrusion the ridge extent, or the roof lands
+  // offset next to the body
   const roofTex = canvasTexture(128, 64, (ctx) => {
     ctx.fillStyle = hex(hut.ROOF);
     ctx.fillRect(0, 0, 128, 64);
@@ -94,21 +97,24 @@ function buildHut(hut: HutSpec, rng: () => number): THREE.Group {
   roofTex.wrapS = THREE.RepeatWrapping;
   roofTex.repeat.set(2, 1);
   const roofH = 0.9 + rng() * 0.4;
+  const gableW = (hut.RIDGE === 'x' ? w : d) + 0.3;
+  const ridgeL = (hut.RIDGE === 'x' ? d : w) + 0.3;
   const shape = new THREE.Shape([
-    new THREE.Vector2(-w / 2 - 0.25, 0),
-    new THREE.Vector2(w / 2 + 0.25, 0),
+    new THREE.Vector2(-gableW / 2, 0),
+    new THREE.Vector2(gableW / 2, 0),
     new THREE.Vector2(0, roofH),
   ]);
   const roof = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(shape, { depth: d + 0.3, bevelEnabled: false }),
+    new THREE.ExtrudeGeometry(shape, { depth: ridgeL, bevelEnabled: false }),
     new THREE.MeshLambertMaterial({ map: roofTex, side: THREE.DoubleSide }),
   );
   roof.rotation.y = hut.RIDGE === 'x' ? 0 : Math.PI / 2;
   if (hut.RIDGE === 'x') {
-    roof.position.set(0, wh, -(d + 0.3) / 2);
+    // extrusion runs local z 0..ridgeL -> world -z: pull back to centre
+    roof.position.set(0, wh, -ridgeL / 2);
   } else {
-    // ridge along z: extrude along x instead
-    roof.position.set((d + 0.3) / 2, wh, 0);
+    // ridge along z: the extrusion maps to world +x, so pull back -x
+    roof.position.set(-ridgeL / 2, wh, 0);
   }
   roof.castShadow = true;
   roof.receiveShadow = true;
@@ -192,6 +198,7 @@ export async function createStueckle(): Promise<Stueckle> {
   for (const hut of cfg.HUTS) {
     const h = buildHut(hut, rng);
     h.position.set(hut.pos[0], getHeight(hut.pos[0], hut.pos[1]), hut.pos[1]);
+    if (hut.ROT) h.rotation.y = hut.ROT;
     group.add(h);
   }
 
