@@ -1,7 +1,19 @@
 import { reactive } from 'vue';
 
-/** Global day-of-year control (0–364 → 1. Jan – 31. Dez), mockup default day 190. */
-const state = reactive({ day: 190 });
+/** day-of-year index (0–364) of the CURRENT date — the dashboard starts at
+ *  today: the scene takes month + day for its season state, the data cards
+ *  read the exact date (with the measured history up to it). */
+function todayIndex(): number {
+  const now = new Date();
+  const start = Date.UTC(now.getFullYear(), 0, 1);
+  const doy = Math.floor(
+    (Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - start) / 86400000,
+  );
+  return Math.max(0, Math.min(364, doy - 1));
+}
+
+/** Global day-of-year control (0–364), initialised to the current date. */
+const state = reactive({ day: todayIndex() });
 
 type DaySource = 'slider' | 'streak' | 'scene';
 const listeners = new Set<(day: number, src: DaySource) => void>();
