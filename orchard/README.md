@@ -187,6 +187,16 @@ Inputs: `geoimages/` (LGL-BW DGM/DOP GeoTIFFs + world files),
 
 ## Features
 
+- The real information board at the meadow (`src/panel.ts`): single dark
+  post + landscape board whose face is the photographed ZKM panel graphic
+  (`public/textures/panel.png`, from the project archive). Position
+  (`CONFIG.PANEL.LAT/LON`, WGS84 → EPSG:25832 → local metres in-app, same
+  projection as the site pipeline) and every dimension live in
+  `CONFIG.PANEL`; the face azimuth is a tunable estimate (position photo).
+- Camera-pose console logging (`CONFIG.DEBUG.LOG_CAMERA`): every orbit
+  gesture end, preset and Kamera-panel apply prints the full pose as a
+  `[kamera]` console line, so a new `CONFIG.CAMERA.START` start pose can be
+  transcribed from the browser console.
 - Stückle garden plot east of the orchard (`src/stueckle.ts`): procedural
   wire-mesh fence around `CONFIG.STUECKLE.POLYGON`, two gable-roofed tool
   huts (2–2.5 m), translucent greenhouse, compost heaps, one conifer —

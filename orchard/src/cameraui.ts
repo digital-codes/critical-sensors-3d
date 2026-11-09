@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { CameraRig } from './camera';
+import { logPose } from './camera';
 
 /**
  * "Kamera" panel: numeric control over the camera pose for exact viewpoint
@@ -114,6 +115,7 @@ export function createCameraUI(rig: CameraRig): void {
     rig.camera.position.copy(p);
     rig.controls.target.copy(t);
     rig.controls.update();
+    logPose(rig, ' kamera');
   }
 
   function applyAngles(): void {
@@ -124,6 +126,7 @@ export function createCameraUI(rig: CameraRig): void {
     const p = rig.camera.position;
     rig.controls.target.copy(p).addScaledVector(dirFromAngles(az, elev), dist);
     rig.controls.update();
+    logPose(rig, ' kamera');
   }
 
   el('apply' as FieldKey) ? null : null;

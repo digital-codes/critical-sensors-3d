@@ -33,6 +33,9 @@ export const CONFIG = {
   DEBUG: {
     /** stamped on window.__buildId by main.ts; bump when the module graph changes */
     BUILD_ID: 'v3magenta-20261106',
+    /** console-log camera poses (orbit end, presets, Kamera panel) so a
+     *  hand-flown viewpoint can be transcribed into CONFIG.CAMERA */
+    LOG_CAMERA: true,
   },
 
   /** midday sun + shadow (main.ts) */
@@ -79,6 +82,13 @@ export const CONFIG = {
     DAMPING: 0.08,
     /** maxPolarAngle = PI/2 - this (keep the camera above ground) */
     POLAR_MARGIN: 0.02,
+    /** initial camera pose — local metres, y absolute DHHN. Pick a new one
+     *  by flying the view and copying the "[kamera]" console line (see
+     *  DEBUG.LOG_CAMERA): pos + blick go here. */
+    START: {
+      POS: [-0.1, 116.4, 22.5],
+      TARGET: [62.3, 97.7, -94.3],
+    },
     /** UI labels for the site.json cameraPresets (German site language) */
     PRESET_LABELS: {
       southEnd: 'Südende',
@@ -389,6 +399,36 @@ export const CONFIG = {
     CONIFER: [46, 20] as [number, number],
     /** noise seed for hut weathering etc. */
     SEED: 20261028,
+  },
+
+  /** information panel at the meadow (panel.ts): real ZKM info board,
+   *  face texture newimages/panel_small.png → public/textures/panel.png.
+   *  Position from the user's placement (5–8 m west of the Stückle fence,
+   *  at the path junction coming from St.-Florian-Straße — matches the
+   *  small bright object in the 2024 DOP at local ~24/28); the EXIF of
+   *  panel-position.jpg is too coarse and was only a hint. */
+  PANEL: {
+    /** board position, WGS84 → EPSG:25832 → local ≈ (24.0, 28.0) */
+    LAT: 48.98965,
+    LON: 8.387631,
+    /** compass direction the board FACE points toward, degrees (0=N, 90=E).
+     *  Face toward the path junction SW of it (position photo) — tune in
+     *  the app via the [kamera] console lines if needed. */
+    AZIMUTH_DEG: 255,
+    /** board face size, m — the graphic is 1280×1024 (5:4 landscape) */
+    BOARD_W: 0.76,
+    BOARD_H: 0.61,
+    /** board centre above ground, m (reading height on the position photo) */
+    BOARD_CENTRE_H: 1.4,
+    /** board thickness + post cross-section, m */
+    BOARD_T: 0.03,
+    POST_W: 0.09,
+    /** post top height above ground, m (board hangs near the post top) */
+    POST_TOP_H: 1.7,
+    /** colours: dark timber post, light aluminium board edges */
+    POST_COLOR: 0x3a2e24,
+    EDGE_COLOR: 0xc9c9c9,
+    TEXTURE_URL: '/textures/panel.png',
   },
 
   /** walking cat (cat.ts): seeded patrol loop between the tree rows */
