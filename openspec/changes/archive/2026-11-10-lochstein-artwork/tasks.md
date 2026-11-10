@@ -26,5 +26,5 @@
 
 ## 3. Trace
 
-- [ ] 3.1 Commit; archive the change after final verification
+- [x] 3.1 Commit; archive the change after final verification
       (`openspec archive lochstein-artwork -y`) and commit the archive
