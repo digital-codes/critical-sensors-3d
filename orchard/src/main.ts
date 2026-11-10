@@ -498,7 +498,7 @@ export async function mountOrchard(
   }
   if (presetsEl) {
     followBtn = document.createElement('button');
-    followBtn.textContent = 'Katze folgen';
+    followBtn.textContent = 'Katze';
     followBtn.dataset.preset = 'katze';
     // single cat control: shows the cat AND starts the walk AND follows it;
     // pressing again stops following and hides it (the separate "Katze"
@@ -517,7 +517,7 @@ export async function mountOrchard(
   const flight = await createBirdFlight(rig, await getHeightSampler());
   if (presetsEl) {
     const btn = document.createElement('button');
-    btn.textContent = 'Vogelflug';
+    btn.textContent = 'Flug';
     btn.dataset.preset = 'vogelflug';
     btn.addEventListener('click', () => (flight.active ? flight.stop() : flight.start()));
     presetsEl.appendChild(btn);
@@ -598,19 +598,21 @@ export async function mountOrchard(
     });
   }
 
-  // Compass HUD: an "N" arrow that always points toward world north (+z),
+  // Compass HUD: the needle always points toward geographic north (−z),
   // so the view orientation is verifiable in any orbit position.
   const compass = document.createElement('div');
   compass.id = 'compass';
   compass.innerHTML =
     '<svg viewBox="0 0 40 40" width="40" height="40">' +
     '<circle cx="20" cy="20" r="18" fill="rgba(0,0,0,0.45)"/>' +
-    '<path id="compass-needle" d="M20 5 L25 26 L20 22 L15 26 Z" fill="#e05555"/></svg>';
+    '<g id="compass-needle">' +
+    '<path d="M20 5 L25 26 L20 22 L15 26 Z" fill="#e05555"/>' +
+    '<text x="20" y="15" text-anchor="middle" font-size="7" font-family="sans-serif" fill="#fff">N</text></g></svg>';
   compass.style.cssText = embed
     ? 'position:absolute;left:12px;top:12px;width:40px;height:40px;z-index:20;pointer-events:none;'
     : 'position:fixed;left:12px;top:12px;width:40px;height:40px;z-index:20;pointer-events:none;';
   root.appendChild(compass);
-  const needle = compass.querySelector('#compass-needle') as SVGPathElement | null;
+  const needle = compass.querySelector('#compass-needle') as SVGGraphicsElement | null;
   const camDir = new THREE.Vector3();
 
   const clock = new THREE.Clock();
@@ -652,9 +654,13 @@ export async function mountOrchard(
     if (cp.y < minY) cp.y = minY;
     if (needle) {
       rig.camera.getWorldDirection(camDir);
-      // heading: 0 = looking north (+z), pi = south; rotate needle by -heading
-      const heading = Math.atan2(camDir.x, camDir.z);
-      needle.setAttribute('transform', `rotate(${(-heading * 180) / Math.PI} 20 20)`);
+      // needle points toward geographic north (−z): rotate the tip by minus
+      // the camera's Azimut — the SAME convention as the Kamera panel
+      // (cameraui: 0° = north, 90° = east). Looking north → tip up,
+      // east → tip left, south → tip down. The pivot (20, 20) is the dial
+      // centre — a bare rotate() would orbit the needle around (0, 0).
+      const az = Math.atan2(camDir.x, -camDir.z);
+      needle.setAttribute('transform', `rotate(${(-az * 180) / Math.PI}, 20, 20)`);
     }
     orchard?.update(t);
     grass.update(t);
