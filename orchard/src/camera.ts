@@ -34,10 +34,12 @@ export function logPose(rig: PoseSource, origin = ''): void {
   const az = ((Math.atan2(d.x, -d.z) * 180) / Math.PI + 360) % 360; // 0 = north, 90 = east
   const el = dist > 0.001 ? (Math.asin(THREE.MathUtils.clamp(d.y / dist, -1, 1)) * 180) / Math.PI : 0;
   const f = (v: number): string => v.toFixed(1);
+  /*
   console.log(
     `[kamera${origin}] pos=(${f(p.x)}, ${f(p.y)}, ${f(p.z)}) blick=(${f(t.x)}, ${f(t.y)}, ${f(t.z)}) ` +
       `azimut=${az.toFixed(1)} erhebung=${el.toFixed(1)} abstand=${dist.toFixed(1)}`,
   );
+  */
 }
 
 interface Preset {
