@@ -413,7 +413,8 @@ seed; strike geometry for a given seed SHALL be reproducible.
 
 The scene SHALL render the Lochstein sculpture at `CONFIG.LOCHSTEIN`
 lat/lon, ground-set on the terrain: a slab of 3.0 × 1.5 × 0.4 m
-(length × height × max thickness) with a 0.3 m circular through-hole in
+(length × height × max thickness) with a circular through-hole sized by
+`CONFIG.LOCHSTEIN.HOLE_DIAMETER` in
 the polished face, balanced on a rough support boulder via a small pivot
 stone (total height ≈ 2.3 m). The slab's polished hole-face SHALL point
 toward compass azimuth 45° (NE), length axis NW–SE.
