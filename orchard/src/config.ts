@@ -575,11 +575,10 @@ export const CONFIG = {
    * 2026-11-10).
    */
   LOCHSTEIN: {
-    // sunlit support-stone patch nearest the trail, measured on the 2024 DOP
-    // with a labelled metre grid (2026-11-10, was 48.990414/8.388110 4 m NW;
-    // user nudge "4 m S / 1.5 m W of the DOP blob centre" confirmed it);
+    // user-placed 2026-11-10: sunlit support-stone patch near the trail,
+    // 1 m S / 1 m W of the grid-measured bright patch (was 48.990381/8.388073);
     // OSM node 7697255398 = 48.9904012, 8.3880713 (artwork POI)
-    LAT: 48.990381, LON: 8.388073,
+    LAT: 48.990372, LON: 8.388060,
     // face normal azimuth: OSM reference photo face-on from NE; DOP
     // footprint long axis 135° perpendicular; user photo 122817 at 48°
     FACE_AZIMUTH_DEG: 45,
