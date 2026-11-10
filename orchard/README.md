@@ -192,6 +192,15 @@ Inputs: `geoimages/` (LGL-BW DGM/DOP GeoTIFFs + world files),
 
 ## Features
 
+- Day-gated lightning strikes (`src/sparks.ts`): on the
+  `CONFIG.SPARKS.STRIKE_DAYS` (two storm days per `gewitter` month, default
+  in April and August per `MONTH_CONDITIONS`) the scene plays ~200 ms
+  single-channel Perlin bolts behind the west tree line — fixed channel per
+  strike, leader + return-stroke brightness envelope, point-light +
+  hemisphere flash with exact restore. Tuning is the user-approved
+  `live_step_*` sequence from the runtime experiments in `ideas/sparks/`;
+  all values in `CONFIG.SPARKS`. Deterministic test hook:
+  `__scene3.sparks.trigger(seed, [x, z])`.
 - The real information board at the meadow (`src/panel.ts`): single dark
   post + landscape board whose face is the photographed ZKM panel graphic
   (`public/textures/panel.png`, from the project archive). Position

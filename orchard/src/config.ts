@@ -238,6 +238,35 @@ export const CONFIG = {
     } as const satisfies Record<string, SkyCondition>,
   },
 
+  /**
+   * Lightning strikes (sparks.ts): day-gated single-channel bolt behind the
+   * west tree line. All values are the validated tunables from the runtime
+   * experiments in ideas/sparks/ (see openspec/changes/orchard-sparks/design.md
+   * for the cited evidence); behaviour must not change when they move.
+   */
+  SPARKS: {
+    ENABLED: true,
+    // user 2026-11-10: ~2 storm days per gewitter month (Apr = 91-120, Aug = 213-243)
+    STRIKE_DAYS: [100, 112, 220, 232] as number[],
+    // validated strike area behind the west tree line (ideas/sparks, strike at -60,-95)
+    BOX: { X_MIN: -85, X_MAX: -35, Z_MIN: -125, Z_MAX: -65 },
+    TOP_Y: 300, // above the cloud deck (CLOUD_ALT_BASE 80 + jitter 40)
+    SEGMENTS: 90,
+    AMP: 55, FREQ: 2.2, OCTAVES: 4, TIME_SPEED: 0.7, RESTROKE_SNAP: 0.05,
+    NOISE_SEED: 1337,
+    LEADER_MS: 40, LEADER_BRIGHTNESS: 0.6,
+    PULSES: [[40, 1.0, 28], [95, 0.75, 26], [148, 0.45, 24]] as Array<[number, number, number]>, // [startMs, amp, tauMs]
+    DURATION_MS: 200,
+    LAYERS: [
+      { COLOR: 0xffffff, OPACITY: 1.0 },
+      { COLOR: 0xbfd8ff, OPACITY: 0.45 },
+      { COLOR: 0x88aaff, OPACITY: 0.18 },
+    ] as Array<{ COLOR: number; OPACITY: number }>,
+    GLOW_SCALE: 18,
+    FLASH: { COLOR: 0xcfe0ff, INTENSITY: 35, DECAY: 1, Y_ABOVE_GROUND: 20, HEMI_BOOST: 0.4 },
+    FIRST_DELAY_S: 1.2, INTERVAL_MIN_S: 5, INTERVAL_MAX_S: 9,
+  },
+
   /** instanced grass blades (grass.ts) */
   GRASS: {
     COUNT: 90000,

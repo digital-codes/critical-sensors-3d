@@ -15,6 +15,7 @@ import { createComparePanel } from './compare';
 import { createBirdFlight } from './flight';
 import { createCameraUI } from './cameraui';
 import { createCat, type Cat } from './cat';
+import { createSparks, type Sparks } from './sparks';
 import { CONFIG, type SkyCondition } from './config';
 import { sceneRng } from './rng';
 
@@ -249,6 +250,14 @@ export async function mountOrchard(
   scene.add(terrain.mesh);
   terrain.mesh.receiveShadow = true;
 
+  // lightning strikes (sparks.ts): day-gated scheduler + 200 ms bolt —
+  // created after the terrain so ground heights are samplable; the day gate
+  // is driven from the slider handler below and once after the initial sky
+  // condition is applied
+  const sparks: Sparks = createSparks(scene, await getHeightSampler());
+  (window as unknown as Record<string, unknown>).__scene3 =
+    { ...((window as unknown as Record<string, unknown>).__scene3 as object), sparks };
+
   const sky: Sky = createSky(sceneRng());
   scene.add(sky.group);
 
@@ -257,6 +266,10 @@ export async function mountOrchard(
   const applySkyCondition = (key: string): void => {
     if (!(key in CONFIG.SKY.CONDITIONS)) return;
     skyConditionKey = key;
+    // sparks kill-switch: leaving 'gewitter' cancels a pending/live strike
+    // (before the light levels are re-applied, so the strike restore runs
+    // against the old base and is immediately overwritten here)
+    sparks.setCondition(key);
     sky.setCondition(key);
     const cond = (CONFIG.SKY.CONDITIONS as Record<string, SkyCondition>)[key];
     skyColor.set(cond.FOG);
@@ -296,6 +309,8 @@ export async function mountOrchard(
   // initial sky = month condition of the initial day (day 190 Jul -> klar
   // standalone; the www embed sets the current date via setDay -> 'input')
   applySkyCondition(skyForDay(Number(seasonInput?.value ?? 190)));
+  // sparks day gate init (design: setDay once after creation)
+  sparks.setDay(Number(seasonInput?.value ?? 190));
 
   const thicket = await createThicket(await getHeightSampler());
   scene.add(thicket.group);
@@ -555,6 +570,9 @@ export async function mountOrchard(
       applySkyCondition(skyForDay(day));
     }
     if (skySelect) skySelect.value = skyConditionKey;
+    // sparks day gate follows the slider (after the condition sync so a
+    // condition kill lands before the gate re-arms)
+    sparks.setDay(day);
     if (seasonValue) {
       seasonValue.textContent = seasonLabel(day);
     }
@@ -641,6 +659,7 @@ export async function mountOrchard(
     orchard?.update(t);
     grass.update(t);
     sky.update(dt);
+    sparks.update(dt);
     renderer.render(scene, rig.camera);
   });
 

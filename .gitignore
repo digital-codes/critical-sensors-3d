@@ -50,3 +50,4 @@ datatools/splom_*.png
 
 # --- throwaway UI mockups (sketch skill output) ---
 sketches/
+/tmp/
