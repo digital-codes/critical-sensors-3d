@@ -200,7 +200,9 @@ Inputs: `geoimages/` (LGL-BW DGM/DOP GeoTIFFs + world files),
   hemisphere flash with exact restore. Tuning is the user-approved
   `live_step_*` sequence from the runtime experiments in `ideas/sparks/`;
   all values in `CONFIG.SPARKS`. Deterministic test hook:
-  `__scene3.sparks.trigger(seed, [x, z])`.
+  `__scene3.sparks.trigger(seed, [x, z])`; verification scripts
+  `ideas/sparks/verify_*.py` (day gate, restore, seeded reproducibility,
+  frozen-phase screenshots).
 - The real information board at the meadow (`src/panel.ts`): single dark
   post + landscape board whose face is the photographed ZKM panel graphic
   (`public/textures/panel.png`, from the project archive). Position

@@ -25,7 +25,26 @@ orchard scene (`mountOrchard`, wired to `MONTH_CONDITIONS` gewitter days).
 - **Flash** (flash_off vs flash_on): scene-wide hemisphere boost works but 0.9×I
   white-outs; tuned to 0.4×I + point light 35·I (strike_live2).
 
-## Design decisions carried into the future `sparks.ts` module
+## Shipped module + repository verification (2026-11-10)
+
+The module lives at `orchard/src/sparks.ts` (OpenSpec change
+`2026-11-10-orchard-sparks`); all tunables in `CONFIG.SPARKS`. The
+verification scripts below run against the dev servers (5199 orchard,
+5212 www) and write their PNGs to the gitignored `wiese/tmp/sparks/`:
+
+| script | what it asserts | output |
+|---|---|---|
+| `verify_daygate.py` | strike fires on a STRIKE_DAY (first ~1.2 s), silence on neighbouring April day / June day / manual klar; envelope pulses; hemisphere restores exactly (0.7 → 0.906 → 0.7); `trigger(7, [-60,-95])` twice → identical 91-vertex arrays | `verify_peak.png`, `verify_results.json` |
+| `verify_shots.py` | frozen-peak screenshots on 5199 + 5212 | `verify_peak.png`, `www_embed_strike.png` |
+| `verify_embed.py` | www day-store path (`#zeit` → store → scene gate) + embed strike shot | `www_embed_strike.png` |
+
+Capture gotcha (cost us one round): the LIVE render loop races the ~5 s
+CDP capture and finishes the 200 ms strike before the frame lands — the
+screenshot then shows plain storm sky. Fix: step the real `update(dt)` to
+the wanted phase, then stub it (`sp.update = () => {}`; main.ts re-reads
+the property every frame) so the loop keeps drawing a frozen strike.
+
+### Design decisions implemented in `orchard/src/sparks.ts`
 
 - One channel per strike: sample noise at a per-strike `t0`, geometry built once;
   animation = multi-pulse brightness envelope (2–3 return strokes over ~200 ms).
