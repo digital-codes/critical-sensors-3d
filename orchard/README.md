@@ -213,6 +213,13 @@ Inputs: `geoimages/` (LGL-BW DGM/DOP GeoTIFFs + world files),
   `__scene3.sparks.trigger(seed, [x, z])`; verification scripts
   `ideas/sparks/verify_*.py` (day gate, restore, seeded reproducibility,
   frozen-phase screenshots).
+- Lochstein artwork (`src/lochstein.ts`): the stone sculpture with the
+  polished through-hole at the north-east path junction (48.990414 N /
+  8.388110 E = DOP-measured stone centre; OSM node 7697255398 is the
+  artwork POI 2.3 m SW). Procedural — slab 3 × 1.5 × 0.4 m (user-measured),
+  0.36 m bore tilted 40° off the face normal (CSG), balanced on a rough
+  support boulder, clean "when new" look. All placement/orientation/
+  material values in `CONFIG.LOCHSTEIN`.
 - The real information board at the meadow (`src/panel.ts`): single dark
   post + landscape board whose face is the photographed ZKM panel graphic
   (`public/textures/panel.png`, from the project archive). Position

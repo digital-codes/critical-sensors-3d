@@ -9,6 +9,7 @@ import { createBuildings } from './buildings';
 import { createThicket } from './thicket';
 import { createStueckle } from './stueckle';
 import { createPanel, utm32 } from './panel';
+import { createLochstein } from './lochstein';
 import { createSky, type Sky } from './sky';
 import site from './site';
 import { createComparePanel } from './compare';
@@ -322,6 +323,13 @@ export async function mountOrchard(
   scene.add(panel.group);
   (window as unknown as Record<string, unknown>).__scene3 =
     { ...((window as unknown as Record<string, unknown>).__scene3 as object), panel };
+
+  // the Lochstein artwork at the NE path junction (position/azimuth from
+  // CONFIG.LOCHSTEIN), ground-set on the terrain
+  const lochstein = createLochstein(await getHeightSampler());
+  scene.add(lochstein.group);
+  (window as unknown as Record<string, unknown>).__scene3 =
+    { ...((window as unknown as Record<string, unknown>).__scene3 as object), lochstein };
 
   // preset pose overrides (CONFIG-driven, replacing the generated site.json
   // vantages): drop Südende/Nordwest; "Fotostandpunkt" = the initial pose;

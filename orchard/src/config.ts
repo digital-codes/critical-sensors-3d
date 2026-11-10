@@ -568,6 +568,29 @@ export const CONFIG = {
     JUG_MODEL: '',
   },
 
+  /**
+   * The Lochstein artwork (lochstein.ts): three-piece sculpture at the
+   * north-east path junction (paved plaza, Ø ~7–8 m). Procedural — no
+   * external asset, clean "when new" look (no graffiti, user decision
+   * 2026-11-10).
+   */
+  LOCHSTEIN: {
+    // DOP-measured stone centre (2024 aerial, blob at local (59.7,-56.7));
+    // OSM node 7697255398 = 48.9904012, 8.3880713 (2.3 m SW, artwork POI)
+    LAT: 48.990414, LON: 8.388110,
+    // face normal azimuth: OSM reference photo face-on from NE; DOP
+    // footprint long axis 135° perpendicular; user photo 122817 at 48°
+    FACE_AZIMUTH_DEG: 45,
+    LENGTH: 3.0, HEIGHT: 1.5, THICKNESS: 0.4,   // user-measured on site
+    HOLE_DIAMETER: 0.36,   // user +20 % over the photo estimate (2026-11-10)
+    HOLE_U: 0.62, HOLE_V: 0.62,
+    HOLE_TILT_DEG: 40,     // bore NOT ⊥ face: swung 40° toward east (user 2026-11-10)
+    // lighter + reflective (user 2026-11-10, vs the first dark pass)
+    COLOR_BASE: '#5b685f', ROUGHNESS: 0.12,  // even lighter after the NE-view check (2026-11-10)
+    SUPPORT_WIDTH: 1.1, SUPPORT_HEIGHT: 0.8, PIVOT: 0.22,
+    TILT_DEG: 0,
+  },
+
   /** German site-language label tables (main.ts, compare.ts) */
   UI: {
     MONTHS: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'],
