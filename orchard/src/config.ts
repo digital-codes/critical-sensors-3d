@@ -264,6 +264,8 @@ export const CONFIG = {
     ] as Array<{ COLOR: number; OPACITY: number }>,
     GLOW_SCALE: 18,
     FLASH: { COLOR: 0xcfe0ff, INTENSITY: 35, DECAY: 1, Y_ABOVE_GROUND: 20, HEMI_BOOST: 0.4 },
+    // first strike after ENTERING a strike day; repeat interval (uniform
+    // range); DURATION_MS = one strike's lifetime (200 ms envelope)
     FIRST_DELAY_S: 1.2, INTERVAL_MIN_S: 5, INTERVAL_MAX_S: 9,
   },
 
