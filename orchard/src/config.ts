@@ -108,8 +108,8 @@ export const CONFIG = {
      *  Nordwest were dropped per user request — the site.json vantages are
      *  replaced at runtime by CONFIG.CAMERA.PRESETS (see main.ts). */
     PRESET_LABELS: {
-      vergleich: 'Fotostandpunkt',
-      erhoeht: 'Erhöht',
+      vergleich: 'Süd',
+      erhoeht: 'Nord',
       tafel: 'Tafel',
     },
 
@@ -248,9 +248,12 @@ export const CONFIG = {
     ENABLED: true,
     // user 2026-11-10: ~2 storm days per gewitter month (Apr = 91-120, Aug = 213-243)
     STRIKE_DAYS: [100, 112, 220, 232] as number[],
-    // validated strike area behind the west tree line (ideas/sparks, strike at -60,-95)
-    BOX: { X_MIN: -85, X_MAX: -35, Z_MIN: -125, Z_MAX: -65 },
-    TOP_Y: 300, // above the cloud deck (CLOUD_ALT_BASE 80 + jitter 40)
+    // strike area in local metres (x = east of the site origin, z = south of it;
+    // negative z = NORTH). Validated box (commented out): behind the west tree
+    // line, ~48.9905-48.9910 N, 8.3861-8.3868 E (ideas/sparks, strike at -60,-95).
+    // BOX: { X_MIN: -85, X_MAX: -35, Z_MIN: -125, Z_MAX: -65 },
+    BOX: { X_MIN: -65, X_MAX: +15, Z_MIN: -65, Z_MAX: -45 },
+    TOP_Y: 300, // absolute metres (y is DHHN): above the cloud band 195-235 m
     SEGMENTS: 90,
     AMP: 55, FREQ: 2.2, OCTAVES: 4, TIME_SPEED: 0.7, RESTROKE_SNAP: 0.05,
     NOISE_SEED: 1337,
@@ -266,7 +269,7 @@ export const CONFIG = {
     FLASH: { COLOR: 0xcfe0ff, INTENSITY: 35, DECAY: 1, Y_ABOVE_GROUND: 20, HEMI_BOOST: 0.4 },
     // first strike after ENTERING a strike day; repeat interval (uniform
     // range); DURATION_MS = one strike's lifetime (200 ms envelope)
-    FIRST_DELAY_S: 1.2, INTERVAL_MIN_S: 5, INTERVAL_MAX_S: 9,
+    FIRST_DELAY_S: .5, INTERVAL_MIN_S: 3, INTERVAL_MAX_S: 6,
   },
 
   /** instanced grass blades (grass.ts) */

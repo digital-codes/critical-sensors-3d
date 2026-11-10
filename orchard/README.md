@@ -114,6 +114,16 @@ vertices keep their raw z, so buildings and terrain share one reference (an
 earlier hmin-relative building export + the getHeight offset double-counted
 hmin and floated the buildings ~113 m).
 
+Conversion both ways (constants = `site.json` `origin`): `x = E − 455176.632`,
+`z = 5426513.864 − N`; inverse `E = x + 455176.632`, `N = 5426513.864 − z`,
+then EPSG:25832 ↔ WGS84 (pyproj in the pipeline, the in-app forward
+transform in `panel.ts`). Heights: `y = 111.582 (hmin) + heightmap mm`.
+Example — the VALIDATED strike box (kept commented in `CONFIG.SPARKS`,
+x −85…−35, z −125…−65) spans ≈ 48.9905–48.9910 N, 8.3861–8.3868 E,
+west-north-west of the meadow centre; the active tuned box lives in
+`CONFIG.SPARKS.BOX`. Coordinates outside the window (|x| past the E/N
+edges, z < −116.1) clamp to heightmap edge heights in the sampler.
+
 - **Terrain** — DGM 0.25 m raster (`geoimages/dgm025_…`, LGL-BW) → 16-bit PNG
   heightmap, millimetres above `hmin`, 280x220 m window.
 - **Aerial** — DOP20 RGBI (2024-08, LGL-BW, 0.2 m/px) cropped to the window

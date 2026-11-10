@@ -12,7 +12,8 @@ Writes (deterministic except generatedAt):
   orchard/src/site.json               geometry/positions/licences for the app
 
 Coordinate systems: source data EPSG:25832 (ETRS89 / UTM32N); app-local
-metres: origin (ORIGIN_LAT/LON), +X = easting, +Z = northing, Y = height.
+metres: origin (ORIGIN_LAT/LON), +X = easting, +Z = southing (south —
+right-handed with +Y up, see to_local), Y = height (absolute DHHN metres).
 """
 import json
 import os
