@@ -103,6 +103,24 @@ body {
   text-align: right;
 }
 
+.step-btn {
+  flex: 0 0 auto;
+  width: 38px;
+  min-height: 44px; /* match the slider row height / touch target */
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff;
+  font-size: 1.2em;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+}
+
+.step-btn:active {
+  background: rgba(0, 0, 0, 0.45);
+}
+
 /* ---------- main grid ---------- */
 
 .main {
@@ -398,6 +416,30 @@ body {
   .time-ctl input[type='range'] {
     width: min(280px, 52vw);
     min-height: 36px;
+  }
+
+  /* date readout gets its own full-width line: label + buttons + slider +
+   * date cannot fit a ~360 px phone row without clipping the date */
+  .time-ctl {
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+
+  .date-readout {
+    flex: 1 1 100%;
+    order: 4;
+    min-width: 0;
+    text-align: left;
+    margin-top: 2px;
+  }
+
+  .step-btn {
+    width: 40px;
+    min-height: 36px;
+  }
+
+  .time-ctl input[type='range'] {
+    width: min(220px, 46vw);
   }
 
   .card {
