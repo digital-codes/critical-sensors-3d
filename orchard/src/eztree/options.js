@@ -5,6 +5,12 @@ export default class TreeOptions {
     this.seed = 0;
     this.type = TreeType.Deciduous;
 
+    // Whether leaf materials carry the wind sway vertex shader. When false
+    // the sway/simplex code is never injected (leaves render static) — a
+    // zeroed strength uniform would still execute the noise, so the flag
+    // must gate the injection itself.
+    this.wind = true;
+
     // Bark parameters
     this.bark = {
       // Informational identifier carried through presets. The library does not

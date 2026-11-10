@@ -272,6 +272,18 @@ export const CONFIG = {
     FIRST_DELAY_S: .5, INTERVAL_MIN_S: 3, INTERVAL_MAX_S: 6,
   },
 
+  /** performance toggles (main.ts → grass.ts/trees.ts): both ON keeps the
+   *  pre-toggle look exactly; switching either off trades the effect away
+   *  for GPU headroom on weaker devices */
+  PERFORMANCE: {
+    /** instanced grass blades (grass.ts) — off renders the aerial-drapped
+     *  terrain as the ground; the lawn-mask snow gate is unaffected */
+    GRASS: true,
+    /** tree leaf wind sway shader (trees.ts/eztree) — off compiles the leaf
+     *  materials without the sway injection, trees stay fully visible */
+    TREE_WIND: true,
+  },
+
   /** instanced grass blades (grass.ts) */
   GRASS: {
     COUNT: 90000,

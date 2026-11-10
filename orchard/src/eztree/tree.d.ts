@@ -3,6 +3,9 @@ import * as THREE from 'three';
 export interface TreeOptions {
   seed: number;
   type: string;
+  /** wind sway on/off: false compiles leaf materials without the sway
+   *  shader injection (leaves static); local addition, not upstream eztree */
+  wind: boolean;
   bark: {
     type: string;
     maps: {

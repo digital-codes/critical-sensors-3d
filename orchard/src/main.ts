@@ -55,6 +55,12 @@ function skyForDay(day: number): string {
 export type OrchardController = {
   setDay(day: number): void;
   onDay(fn: (day: number) => void): () => void;
+  /** performance toggles (CONFIG.PERFORMANCE defaults) — runtime switches
+   *  without reload; initial state readable for dashboard UI wiring */
+  setGrass(enabled: boolean): void;
+  setTreeWind(enabled: boolean): Promise<void>;
+  get grass(): boolean;
+  get treeWind(): boolean;
   rig: import('./camera').CameraRig;
   scene3: Record<string, unknown>;
 };
@@ -397,9 +403,41 @@ export async function mountOrchard(
     }
   });
 
-  const grass: Grass = await createGrass(sceneRng());
+  const grass: Grass = await createGrass(sceneRng(), { enabled: CONFIG.PERFORMANCE.GRASS });
   (window as unknown as Record<string, unknown>).__buildId = CONFIG.DEBUG.BUILD_ID;
-  scene.add(grass.mesh);
+  // mesh is null while PERFORMANCE.GRASS is off (blades are created on the
+  // first runtime enable instead) — the lawn mask below is always present
+  if (grass.mesh) scene.add(grass.mesh);
+
+  // runtime performance toggles (defaults from CONFIG.PERFORMANCE). Grass:
+  // blades are created/shown lazily inside grass.ts; the mask-based snow
+  // gate is untouched either way. Wind: the flag is read by every tree
+  // build, so a switch after generation rebuilds the season groups.
+  let orchard: Orchard | null = null;
+  let windEnabled: boolean = CONFIG.PERFORMANCE.TREE_WIND;
+  const setGrassEnabled = (v: boolean): void => {
+    grass.setBladesEnabled(v);
+    if (grass.mesh && !grass.mesh.parent) scene.add(grass.mesh);
+  };
+  const setTreeWind = async (v: boolean): Promise<void> => {
+    if (v === windEnabled) return;
+    windEnabled = v;
+    if (orchard) await orchard.setWind(v);
+  };
+  // dashboard/tooling hook following the sky-condition pattern
+  (window as unknown as Record<string, unknown>).__scene3 = {
+    ...((window as unknown as Record<string, unknown>).__scene3 as object),
+    performance: {
+      setGrass: setGrassEnabled,
+      setTreeWind: setTreeWind,
+      get grass() {
+        return grass.bladesEnabled;
+      },
+      get treeWind() {
+        return windEnabled;
+      },
+    },
+  };
 
   const buildings = await createBuildings();
   scene.add(buildings.group);
@@ -533,14 +571,18 @@ export async function mountOrchard(
   (window as unknown as Record<string, unknown>).__scene3 =
     { ...(window as unknown as Record<string, unknown>).__scene3 as object, flight };
 
-  let orchard: Orchard | null = null;
-  createOrchard((done, total) => {
-    if (progressEl) progressEl.textContent = `Bäume: ${done}/${total} …`;
-  }).then((o) => {
+  createOrchard(
+    (done, total) => {
+      if (progressEl) progressEl.textContent = `Bäume: ${done}/${total} …`;
+    },
+    { wind: windEnabled },
+  ).then((o) => {
     orchard = o;
     scene.add(o.group);
     (window as unknown as Record<string, unknown>).__scene3 =
       { ...((window as unknown as Record<string, unknown>).__scene3 as object), orchard: o };
+    // a wind toggle racing the staggered generation: re-apply the flag
+    if (o.windEnabled !== windEnabled) void o.setWind(windEnabled);
     o.group.traverse((obj) => {
       if ((obj as THREE.Mesh).isMesh) obj.castShadow = true;
     });
@@ -688,6 +730,14 @@ export async function mountOrchard(
     onDay(fn: (day: number) => void): () => void {
       dayListeners.add(fn);
       return () => dayListeners.delete(fn);
+    },
+    setGrass: setGrassEnabled,
+    setTreeWind: setTreeWind,
+    get grass() {
+      return grass.bladesEnabled;
+    },
+    get treeWind() {
+      return windEnabled;
     },
     rig,
     // live getter: __scene3 is replaced (spread) while scene parts load

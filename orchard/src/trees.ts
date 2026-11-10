@@ -32,6 +32,10 @@ export interface Orchard {
   activeSeason: SeasonKey;
   setSeason(day: number): SeasonKey;
   update(elapsedTime: number): void;
+  /** runtime wind toggle: rebuilds all season groups with/without the leaf
+   *  sway shader (staggered like the initial build); resolves when done */
+  setWind(enabled: boolean): Promise<void>;
+  get windEnabled(): boolean;
 }
 
 /** point-in-polygon against CONFIG.THICKET.POLYGON (same test thicket.ts
@@ -48,9 +52,14 @@ function inThicketWood(x: number, z: number): boolean {
 
 export async function createOrchard(
   onProgress: (done: number, total: number) => void,
+  opts: { wind?: boolean } = {},
 ): Promise<Orchard> {
   const getHeight = await getHeightSampler();
   const loader = new THREE.TextureLoader();
+
+  // Wind sway flag (CONFIG.PERFORMANCE.TREE_WIND): read per build so the
+  // runtime rebuild path can flip it between generations.
+  let windEnabled = opts.wind !== false;
 
   // Bark and leaf textures are shared between all trees and season variants.
   const barkCache = new Map<string, BarkMaps>();
@@ -120,6 +129,8 @@ export async function createOrchard(
       const t = new Tree();
       t.options.copy(presetJson);
       t.options.seed = entry.seed;
+      // wind sway flag (not part of the presets; copy() leaves it as set)
+      t.options.wind = windEnabled;
       t.options.bark.maps = getBarkMaps(t.options.bark.type);
       t.options.leaves.map = getLeafTexture(t.options.leaves.type);
       t.options.leaves.count = Math.round(presetLeafCount * season.leafFactor);
@@ -144,24 +155,48 @@ export async function createOrchard(
   };
 
   // Staggered generation: a few trees per animation frame so the page
-  // stays responsive while the orchard builds up.
-  await new Promise<void>((resolve) => {
-    let i = 0;
-    function step(): void {
-      const start = performance.now();
-      while (i < entries.length && performance.now() - start < 12) {
-        buildTree(entries[i]);
-        i++;
-        onProgress(i, entries.length);
+  // stays responsive while the orchard builds up. Reused by the runtime
+  // wind rebuild (setWind below).
+  const buildAll = (): Promise<void> =>
+    new Promise<void>((resolve) => {
+      let i = 0;
+      function step(): void {
+        const start = performance.now();
+        while (i < entries.length && performance.now() - start < 12) {
+          buildTree(entries[i]);
+          i++;
+          onProgress(i, entries.length);
+        }
+        if (i < entries.length) {
+          requestAnimationFrame(step);
+        } else {
+          resolve();
+        }
       }
-      if (i < entries.length) {
-        requestAnimationFrame(step);
-      } else {
-        resolve();
+      requestAnimationFrame(step);
+    });
+
+  await buildAll();
+
+  // rebuild teardown: dispose every generated tree (geometry + material;
+  // bark/leaf TEXTURES are shared via the caches and stay)
+  function disposeTrees(): void {
+    for (const [, list] of seasonTrees) {
+      for (const t of list) {
+        t.traverse((obj) => {
+          const mesh = obj as THREE.Mesh;
+          if (mesh.isMesh) {
+            mesh.geometry.dispose();
+            const mat = mesh.material as THREE.Material | THREE.Material[];
+            if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+            else mat.dispose();
+          }
+        });
       }
+      list.length = 0;
     }
-    requestAnimationFrame(step);
-  });
+    for (const [, g] of seasonGroups) g.clear();
+  }
 
   let activeSeason: SeasonKey = 'summer';
 
@@ -180,6 +215,17 @@ export async function createOrchard(
     },
     update(elapsedTime: number): void {
       for (const t of seasonTrees.get(activeSeason)!) t.update(elapsedTime);
+    },
+    get windEnabled(): boolean {
+      return windEnabled;
+    },
+    async setWind(enabled: boolean): Promise<void> {
+      if (enabled === windEnabled) return;
+      windEnabled = enabled;
+      disposeTrees();
+      await buildAll();
+      // restore the visibility pattern of the active season
+      for (const [key, g] of seasonGroups) g.visible = key === activeSeason;
     },
   };
 }

@@ -39,8 +39,10 @@ export class Tree extends THREE.Group {
   }
 
   update(elapsedTime) {
+    // With wind off the compiled shader still exists (it carries the
+    // custom-normals uniform) but has no uTime — guard, don't crash.
     const leafShader = this.leavesMesh.material.userData.shader;
-    if (leafShader) {
+    if (leafShader && leafShader.uniforms.uTime) {
       leafShader.uniforms.uTime.value = elapsedTime;
     }
   }
@@ -935,24 +937,31 @@ export class Tree extends THREE.Group {
       dithering: true
     });
 
-    // Add custom shader code for branch swaying
+    // Add custom shader code. The wind sway (simplex noise + per-vertex
+    // offset) is only injected when options.wind is on: compiling it and
+    // multiplying by zero would still cost the full noise evaluation per
+    // leaf vertex, so a real "wind off" skips the injection entirely. The
+    // custom-normals handling below is shading, not wind, and stays.
+    const windOn = this.options.wind !== false;
     mat.onBeforeCompile = (shader) => {
-      shader.uniforms.uTime = { value: 0 };
-      shader.uniforms.uWindStrength = { value: new THREE.Vector3(0.5, 0, 0.5) };
-      shader.uniforms.uWindFrequency = { value: 0.5 };
-      shader.uniforms.uWindScale = { value: 70 };
       shader.uniforms.uCustomNormals = { value: this.options.leaves.roundedNormals };
 
-      shader.vertexShader = `
-        uniform float uTime;
-        uniform vec3 uWindStrength;
-        uniform float uWindFrequency;
-        uniform float uWindScale;
-        ` + shader.vertexShader;
+      if (windOn) {
+        shader.uniforms.uTime = { value: 0 };
+        shader.uniforms.uWindStrength = { value: new THREE.Vector3(0.5, 0, 0.5) };
+        shader.uniforms.uWindFrequency = { value: 0.5 };
+        shader.uniforms.uWindScale = { value: 70 };
 
-      // Add code for simplex noise
-      shader.vertexShader = shader.vertexShader.replace(
-        `void main() {`,
+        shader.vertexShader = `
+          uniform float uTime;
+          uniform vec3 uWindStrength;
+          uniform float uWindFrequency;
+          uniform float uWindScale;
+          ` + shader.vertexShader;
+
+        // Add code for simplex noise
+        shader.vertexShader = shader.vertexShader.replace(
+          `void main() {`,
         `
         // GLSL Simplex Noise 3D
         // Source: https://github.com/ashima/webgl-noise
@@ -1067,6 +1076,7 @@ export class Tree extends THREE.Group {
         gl_Position = projectionMatrix * mvPosition;
         `
       );
+      } // end if (windOn)
 
       // Skip the backface normal flip in normal_fragment_begin when using custom normals
       shader.fragmentShader = `uniform bool uCustomNormals;\n` + shader.fragmentShader.replace(
