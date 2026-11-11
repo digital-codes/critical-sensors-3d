@@ -1,7 +1,7 @@
 # dashboard-web Specification
 
 ## Purpose
-TBD - created by openspec archive. Update Purpose after archive.
+All-in-one website, fully responsive, to show 3D simulation, data charts and impressions from real photo series. Info overlay with refs, credits and imprint.
 
 ## Requirements
 
