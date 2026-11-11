@@ -121,6 +121,14 @@ async function buildStillLife(): Promise<THREE.Group> {
   );
   letters.position.set(0, 0.09, 0.0783);
   g.add(letters);
+  // duplicate on the far side of the jug, turned to face outward
+  const lettersBack = new THREE.Mesh(
+    textGeo,
+    new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5 }),
+  );
+  lettersBack.position.set(0, 0.09, -0.0783);
+  lettersBack.rotation.y = Math.PI;
+  g.add(lettersBack);
 
   // --- five apples beside the jug ---------------------------------------
   // procedural apple per the user's reference (newimages/apple-3d.png,
@@ -227,15 +235,21 @@ export async function createCat(fencePosts: THREE.Vector3[] = []): Promise<Cat> 
   const hoch = new THREE.Vector3(R.HOCHSITZ[0], getHeight(R.HOCHSITZ[0], R.HOCHSITZ[1]), R.HOCHSITZ[1]);
   const toHoch = hoch.clone().sub(mid).setY(0).normalize();
   const stop = hoch.clone().addScaledVector(toHoch, -R.STAND_OFF);
+  // the straight mid→stop leg otherwise grazes the Hochsitz post; nudge
+  // the stop (and with it the final leg) ~0.5 m further south (+Z) so the
+  // track clears the post
+  stop.z -= 2.5;
   stop.y = getHeight(stop.x, stop.z);
   const faceYaw = Math.atan2(toHoch.x, toHoch.z);
 
   // two straight legs — land→orchard middle→stop. A cat turns quickly at
   // the corner; straight legs keep the route predictable (a single
   // Catmull-Rom over these points bulges far around the Hochsitz).
+  const catTurn = mid.clone()
+  catTurn.z += .5;
   const walkPath = new THREE.CurvePath<THREE.Vector3>();
-  walkPath.add(new THREE.LineCurve3(land.clone(), mid.clone()));
-  walkPath.add(new THREE.LineCurve3(mid.clone(), stop.clone()));
+  walkPath.add(new THREE.LineCurve3(land.clone(), catTurn.clone()));
+  walkPath.add(new THREE.LineCurve3(catTurn.clone(), stop.clone()));
   const pathLength = walkPath.getLength();
 
   // --- still life (jug + apples) at the stop point, right of the cat ----
@@ -268,8 +282,98 @@ export async function createCat(fencePosts: THREE.Vector3[] = []): Promise<Cat> 
   stillLife.visible = group.visible;
 
   const mixer = new THREE.AnimationMixer(model);
-  const walkClip = gltf.animations.find((c) => /walk/i.test(c.name)) ?? gltf.animations[0];
-  const idleClip = gltf.animations.find((c) => /idle/i.test(c.name));
+
+// The procedural GLB ships as a static node tree (cat → body, head, tail,
+// leg_fl/fr/hl/hr). If it has no baked clips we synthesize walk/idle from
+// the named nodes: a trot gait (diagonal leg pairs), a body bob, tail sway
+// and a subtle head nod. walk targets a stride tempo matching CONFIG.CAT
+// speed; idle is a slow breath + tail drift.
+const gaitOct = ((): THREE.AnimationClip[] => {
+  if (gltf.animations.length > 0) return gltf.animations;
+  const has = (n: string): boolean =>
+    model.getObjectByName(n) !== undefined;
+  if (!has('leg_fl') || !has('leg_fr') || !has('leg_hl') || !has('leg_hr')) return [];
+
+  const times: number[] = [];
+  const N = 16;
+  const dur = 0.8; // 0.8 s per stride = 4 leg lifts; matches ~1 m/s at stride length
+  for (let i = 0; i <= N; i++) times.push((dur * i) / N);
+
+  // pitch swing around the hip: q = (sin(a/2), 0, 0, cos(a/2))
+  const swing = (phase: number): number[] => {
+    const a = 0.42 * Math.cos(2 * Math.PI * phase); // ±0.42 rad
+    return [Math.sin(a / 2), 0, 0, Math.cos(a / 2)];
+  };
+  const legTrack = (name: string, phase: number): THREE.QuaternionKeyframeTrack => {
+    const vals: number[] = [];
+    for (let i = 0; i <= N; i++) vals.push(...swing(phase + (times[i] / dur)));
+    return new THREE.QuaternionKeyframeTrack(`${name}.quaternion`, times, vals);
+  };
+  // body bob: two vertical dips per stride, slight fwd-back sway
+  const bodyTracks: THREE.KeyframeTrack[] = [];
+  const bodyNode = model.getObjectByName('body');
+  if (bodyNode) {
+    const vals: number[] = [];
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      const y = -0.018 * Math.abs(Math.sin(2 * Math.PI * t)) + 0.014;
+      const z = 0.008 * Math.sin(2 * Math.PI * t * 2);
+      vals.push(0, y, z);
+    }
+    bodyTracks.push(new THREE.VectorKeyframeTrack('body.position', times, vals));
+  }
+  // tail sway (side-to-side yaw on the tail base)
+  const tailTracks: THREE.KeyframeTrack[] = [];
+  if (model.getObjectByName('tail')) {
+    const vals: number[] = [];
+    for (let i = 0; i <= N; i++) {
+      const a = 0.16 * Math.sin(2 * Math.PI * (i / N));
+      vals.push(0, Math.sin(a / 2), 0, Math.cos(a / 2)); // yaw = side sway
+    }
+    tailTracks.push(new THREE.QuaternionKeyframeTrack('tail.quaternion', times, vals));
+  }
+  // head nod baked in step
+  const headTracks: THREE.KeyframeTrack[] = [];
+  if (model.getObjectByName('head')) {
+    const vals: number[] = [];
+    for (let i = 0; i <= N; i++) {
+      const a = 0.05 * Math.sin(2 * Math.PI * (i / N) * 2 + 0.6);
+      vals.push(Math.sin(a / 2), 0, 0, Math.cos(a / 2));
+    }
+    headTracks.push(new THREE.QuaternionKeyframeTrack('head.quaternion', times, vals));
+  }
+
+  const walkClip = new THREE.AnimationClip('walk', dur, [
+    legTrack('leg_fl', 0),
+    legTrack('leg_hr', 0), // FL + HR diagonal first
+    legTrack('leg_fr', 0.5),
+    legTrack('leg_hl', 0.5),
+    ...bodyTracks, ...tailTracks, ...headTracks,
+  ]);
+
+  // idle: breathing (body bob), slow tail sway, eyes on target (no legs)
+  const idleDur = 3.2;
+  const idleTimes: number[] = [];
+  for (let i = 0; i <= N; i++) idleTimes.push((idleDur * i) / N);
+  const idleTracks: THREE.KeyframeTrack[] = [];
+  const idleBodyY: number[] = [];
+  for (let i = 0; i <= N; i++) {
+    idleBodyY.push(0.004 * Math.sin((2 * Math.PI * i) / N * 2));
+  }
+  idleTracks.push(new THREE.VectorKeyframeTrack('body.position', idleTimes, idleBodyY.flatMap((y) => [0, y, 0])));
+  if (model.getObjectByName('tail')) {
+    const vals: number[] = [];
+    for (let i = 0; i <= N; i++) {
+      const a = 0.1 * Math.sin((2 * Math.PI * i) / N + 0.4);
+      vals.push(0, Math.sin(a / 2), 0, Math.cos(a / 2));
+    }
+    idleTracks.push(new THREE.QuaternionKeyframeTrack('tail.quaternion', idleTimes, vals));
+  }
+  const idleClip = new THREE.AnimationClip('idle', idleDur, idleTracks);
+  return [walkClip, idleClip];
+})();
+const walkClip = gaitOct.find((c) => /walk/i.test(c.name)) ?? gaitOct[0];
+const idleClip = gaitOct.find((c) => /idle/i.test(c.name));
   const walk = walkClip ? mixer.clipAction(walkClip) : null;
   const idle = idleClip ? mixer.clipAction(idleClip) : null;
   walk?.play();
@@ -295,7 +399,7 @@ export async function createCat(fencePosts: THREE.Vector3[] = []): Promise<Cat> 
     pathLength,
     stillLife,
     mixer,
-    clips: gltf.animations,
+    clips: gaitOct,
     get phase(): CatPhase { return phase; },
     update(dt: number): void {
       if (!group.visible || phase === 'idle') return;

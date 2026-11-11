@@ -550,8 +550,9 @@ export const CONFIG = {
     ENABLED: false,
     /** calm walk speed, m/s */
     SPEED: 0.8,
-    /** real-size cat: normalized body length in metres (× SCALE) */
-    BODY_LENGTH: 0.5,
+    /** real-size cat: normalized body length in metres (× SCALE).
+     *  user: 50% larger than the original 0.5 m setup */
+    BODY_LENGTH: 0.75,
     SCALE: 1,
     /** chase cam: distance behind (along -heading) and above, m */
     FOLLOW: { BACK: 4, UP: 2.2 },
@@ -565,10 +566,11 @@ export const CONFIG = {
       JUMP_APEX: 0.35,
       /** landing point relative to the post top (towards the orchard) */
       LAND_OFFSET: [-2.4, -0.9],
-      /** the meadow middle the cat walks through first — north-central
-       *  clearing: outside all three Hochsitz footprints and the straight
-       *  legs from the fence post and to the east Hochsitz clear them too */
-      MID: [17, 7.5],
+      /** waypoints of the land→stop walk. user rule: the cat walks WEST
+       *  past the jug/stop spot by at most ~1 m, then turns back to the
+       *  stop. MID is therefore 1 m short-line-past the stop point
+       *  (stop = HOCHSITZ - toHoch*2.6 with toHoch ≈ (0.965,-0.263)) */
+      MID: [21.2, 6.35],
       /** Hochsitz to walk to and face — the east one (osmway124028005) */
       HOCHSITZ: [24.7, 5.4],
       /** stop this far from the Hochsitz */
