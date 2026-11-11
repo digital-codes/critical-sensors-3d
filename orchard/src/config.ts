@@ -390,6 +390,28 @@ export const CONFIG = {
     SIZE_SCALE: { small: 4.5, medium: 6.0, large: 7.5 },
     /** when even the size class is missing */
     DEFAULT_HEIGHT: 6.0,
+    /** static fallen-leaf litter around each rendered tree (trees.ts):
+     *  flat leaf quads scattered on the ground in a small ring, using each
+     *  tree species' canopy leaf texture. Litter first appears with the
+     *  midAutumn thinning and keeps its fall tint through the bare
+     *  winter/dormant variants; spring–earlyAutumn builds carry none. */
+    GROUND_LEAVES: {
+      COUNT_MIN: 80,
+      COUNT_MAX: 160,
+      RADIUS_MIN: 0.7,
+      RADIUS_MAX: 3.4,
+      /** day of year from which litter exists (midAutumn anchor) */
+      START_DAY: 290,
+      /** litter tint per season key — frozen at fall colour once
+       *  bare (dormant/winter keep the lateAutumn cast) */
+      TINT: {
+        midAutumn: 0xb08a3e,
+        autumn: 0xc77f3a,
+        lateAutumn: 0xc77f3a,
+        dormant: 0xc77f3a,
+        winter: 0xc77f3a,
+      },
+    },
   },
 
   /** building roofs take the DOP pixels as-is (buildings.ts) */

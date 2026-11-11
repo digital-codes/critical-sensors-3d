@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { Tree, TreePreset, type TreeOptions } from './eztree/index.js';
 import site from './site';
 import { getHeightSampler } from './terrain';
-import { SEASONS, nearestSeason, type SeasonKey } from './seasons';
+import { SEASONS, nearestSeason, type SeasonDef, type SeasonKey } from './seasons';
+import { mulberry32 } from './rng';
 
 interface SiteTree {
   id: string;
@@ -38,8 +39,8 @@ export interface Orchard {
   get windEnabled(): boolean;
 }
 
-/** point-in-polygon against CONFIG.THICKET.POLYGON (same test thicket.ts
- *  uses for the blob scatter) */
+// point-in-polygon against CONFIG.THICKET.POLYGON (same test thicket.ts
+//  uses for the blob scatter)
 function inThicketWood(x: number, z: number): boolean {
   const poly = CONFIG.THICKET.POLYGON;
   let inside = false;
@@ -90,6 +91,72 @@ export async function createOrchard(
 
   const group = new THREE.Group();
   group.name = 'orchard';
+
+  const GROUND_LEAVES = CONFIG.TREES.GROUND_LEAVES;
+
+  /** litter tint for a season variant, or null when that variant carries
+   *  no fallen leaves (spring–earlyAutumn; winter keeps the lateAutumn
+   *  litter as a past-window wrap) */
+  function litterTint(season: SeasonDef): number | null {
+    const tint = (GROUND_LEAVES.TINT as Partial<Record<SeasonKey, number>>)[season.key];
+    if (tint === undefined) return null;
+    if (season.day < GROUND_LEAVES.START_DAY && season.day >= 100) return null;
+    return tint;
+  }
+
+  // Static ground litter: one InstancedMesh of flat leaf quads per tree
+  // per litter-bearing season. Shared flat-quad geometry + per-(species,
+  // tint) material; the texture stays in the shared leaf texture cache.
+  let litterGeometry = new THREE.PlaneGeometry(0.16, 0.16);
+  const litterMats = new Map<string, THREE.MeshBasicMaterial>();
+  function getLitterMaterial(type: string, tint: number): THREE.MeshBasicMaterial {
+    const key = `${type}_${tint}`;
+    let mat = litterMats.get(key);
+    if (!mat) {
+      mat = new THREE.MeshBasicMaterial({
+        map: getLeafTexture(type),
+        color: tint,
+        alphaTest: 0.5,
+        side: THREE.DoubleSide,
+      });
+      litterMats.set(key, mat);
+    }
+    return mat;
+  }
+
+  /** seeded like the trees (entry.seed) so wind/season rebuilds reproduce
+   *  the same scatter; count and radius are uniform random in config
+   *  ranges, positions lie flat on the terrain with small size/rotation
+   *  jitter */
+  function buildGroundLeaves(entry: SiteTree, season: SeasonDef, leafType: string): THREE.InstancedMesh | null {
+    const tint = litterTint(season);
+    if (tint === null) return null;
+    const rng = mulberry32((entry.seed ^ (season.day * 2654435761)) >>> 0);
+    const count = GROUND_LEAVES.COUNT_MIN +
+      Math.floor(rng() * (GROUND_LEAVES.COUNT_MAX - GROUND_LEAVES.COUNT_MIN + 1));
+    const mesh = new THREE.InstancedMesh(litterGeometry, getLitterMaterial(leafType, tint), count);
+    mesh.name = `ground-leaves-${entry.id}-${season.key}`;
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const up = new THREE.Vector3(0, 1, 0);
+    const scale = new THREE.Vector3();
+    for (let i = 0; i < count; i++) {
+      const r = GROUND_LEAVES.RADIUS_MIN + rng() * (GROUND_LEAVES.RADIUS_MAX - GROUND_LEAVES.RADIUS_MIN);
+      const a = rng() * Math.PI * 2;
+      const x = entry.x + Math.cos(a) * r;
+      const z = entry.z + Math.sin(a) * r;
+      const y = getHeight(x, z) + 0.03;
+      // flat on the ground, spun randomly and tilted at most a few degrees
+      q.setFromAxisAngle(up, rng() * Math.PI * 2);
+      q.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), (rng() - 0.5) * 0.12));
+      scale.setScalar(0.7 + rng() * 0.8);
+      m.compose(new THREE.Vector3(x, y, z), q, scale);
+      mesh.setMatrixAt(i, m);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.frustumCulled = false;
+    return mesh;
+  }
 
   // One group of all trees per season keyframe; visibility toggles between them.
   const seasonGroups = new Map<SeasonKey, THREE.Group>();
@@ -149,6 +216,11 @@ export async function createOrchard(
 
       t.position.set(entry.x, y, entry.z);
 
+      // static fallen-leaf litter at the tree's base (same season group;
+      // skipped for spring–earlyAutumn variants)
+      const litter = buildGroundLeaves(entry, season, t.options.leaves.type);
+      if (litter) seasonGroups.get(season.key)!.add(litter);
+
       seasonGroups.get(season.key)!.add(t);
       seasonTrees.get(season.key)!.push(t);
     }
@@ -196,6 +268,12 @@ export async function createOrchard(
       list.length = 0;
     }
     for (const [, g] of seasonGroups) g.clear();
+    // litter teardown: shared quad geometry + per-(species, tint) materials
+    // go with the rebuild; the leaf TEXTURES keep living in the leaf cache
+    litterGeometry.dispose();
+    litterGeometry = new THREE.PlaneGeometry(0.16, 0.16);
+    for (const [, mat] of litterMats) mat.dispose();
+    litterMats.clear();
   }
 
   let activeSeason: SeasonKey = 'summer';
