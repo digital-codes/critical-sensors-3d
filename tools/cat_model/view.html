@@ -1,0 +1,30 @@
+<!doctype html><html><head>
+<style>body{margin:0;background:#3a4048}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+</head><body><script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const qs = new URLSearchParams(location.search);
+const mode = qs.get('mode');
+new GLTFLoader().load('/' + qs.get('file'), (g) => {
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(0x8a8f99);
+  const cam = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.001, 1000);
+  const r = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true}); r.setSize(innerWidth, innerHeight); document.body.appendChild(r.domElement);
+  scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+  const dl = new THREE.DirectionalLight(0xffffff, 2.5); dl.position.set(2,4,3); scene.add(dl);
+  const m = g.scene;
+  m.traverse(o=>{ if(o.isMesh && mode==='wire'){ o.material = new THREE.MeshBasicMaterial({color:0x111111, wireframe:true}); } });
+  const inner = new THREE.Group(); inner.add(m); scene.add(inner);
+  const box = new THREE.Box3().setFromObject(inner);
+  const size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
+  inner.position.set(-center.x, -box.min.y, -center.z);
+  const ms = Math.max(size.x, size.y, size.z);
+  const d = ms*1.7;
+  const yaw = parseFloat(qs.get('yaw') || '-0.10');
+  cam.position.set(Math.sin(yaw)*d*-1*-1, box.max.y*0.7, Math.cos(yaw)*d);
+  cam.lookAt(0, box.max.y*0.35, 0);
+  window.__ready = true;
+  function loop(){ requestAnimationFrame(loop); r.render(scene,cam); }
+  loop();
+}, undefined, e=>{ console.error('ERR', String(e)); });
+</script></body></html>

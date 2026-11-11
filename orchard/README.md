@@ -15,6 +15,15 @@ upstream recorded one leaf per tip unconditionally, so the bare winter
 variant (count 0) still carried ~280 green tufts. Re-apply that gate when
 updating the vendored copy.
 
+# Cat model
+
+The walking cat (`public/models/cat.glb`) is **built procedurally** with
+trimesh — generator, method notes and regeneration instructions live in
+[`../tools/cat_model/README.md`](../tools/cat_model/README.md). The walk /
+idle animations are synthesized at runtime in `src/cat.ts` from the GLB's
+named limb nodes (body, head, tail, leg_fl/fr/hl/hr) — the file itself
+carries no animation clips.
+
 ## Demo site 
 
 [Critical Sensors 3D](https://3d.critical-sensors.de)
