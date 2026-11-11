@@ -121,6 +121,29 @@ body {
   background: rgba(0, 0, 0, 0.45);
 }
 
+/* "7 Tage" data-zoom toggle — same chip as the step buttons; the active
+ * state takes the olive highlight of the in-scene preset buttons */
+.zoom-btn {
+  flex: 0 0 auto;
+  min-height: 44px; /* match the slider row height / touch target */
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff;
+  font-family: inherit;
+  font-size: 1em;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.zoom-btn.active {
+  background: rgba(154, 201, 94, 0.75);
+  border-color: rgba(154, 201, 94, 0.9);
+  color: #fff;
+  font-weight: 700;
+}
+
 /* ---------- main grid ---------- */
 
 .main {
@@ -193,6 +216,71 @@ body {
   text-overflow: ellipsis;
 }
 
+/* mobile source shortcut: shown instead of the full source name on the
+ * tab layout (≤560px); the full text moves to the .data-descs paragraphs.
+ * The card title is redundant next to the code and would push the value
+ * readout out of the header — hidden on mobile. */
+.card .src.short {
+  display: none;
+  flex: 0 0 auto;
+  color: #444;
+  font-weight: 700;
+}
+
+/* mobile-only description paragraphs: one per card BELOW the data pane
+ * (multi-root sibling of the aside), each capped at three lines with
+ * overflow scroll — the pane's card grid keeps its sizes */
+.data-descs {
+  display: none;
+}
+
+@media (max-width: 560px) {
+  .card .src.short {
+    display: inline;
+  }
+
+  .card .src.long {
+    display: none;
+  }
+
+  /* code identifies the card — the title would push the value out */
+  .card .card-hd h2 {
+    display: none;
+  }
+
+  /* the tab scrolls as a whole; the data pane keeps its content height
+   * (cards unshrunk) and the description paragraphs follow below it */
+  .tpane {
+    overflow-y: auto;
+  }
+
+  .tpane .data-pane {
+    height: auto;
+    overflow: visible;
+  }
+
+  .data-descs {
+    display: block;
+    padding: 6px 2px 4px;
+    font-size: 0.8em;
+    color: #333;
+  }
+
+  .data-descs p {
+    margin: 0 0 6px;
+    padding: 0 2px;
+    line-height: 1.25;
+    /* 3 lines high, overflow scrolls */
+    max-height: calc(3 * 1.25em);
+    overflow-y: auto;
+  }
+
+  .data-descs b {
+    color: var(--ink);
+    margin-right: 6px;
+  }
+}
+
 .card .value {
   margin-left: auto;
   color: var(--accent-red);
@@ -237,6 +325,41 @@ body {
   position: absolute;
   transform: translateX(-50%);
   white-space: nowrap;
+}
+
+/* edge ticks stay inside the card instead of poking half a label past
+ * the chart ends (clipped/overlapping neighbours) */
+.ticks span:first-child {
+  transform: translateX(0);
+  text-align: left;
+}
+
+.ticks span:last-child {
+  transform: translateX(-100%);
+  text-align: right;
+}
+
+/* tick labels subset by CARD width (container query — the card width
+ * differs between the desktop 2-col grid and the mobile tab layout):
+ * year axis 6 months → Jan/Mai/Sep, zoom axis 7 days → 4 labels */
+.card {
+  container-type: inline-size;
+}
+
+@container (max-width: 330px) {
+  .ticks:not(.z7) span:nth-child(even) {
+    display: none;
+  }
+
+  .ticks.z7 span:nth-child(even) {
+    display: none;
+  }
+}
+
+@container (max-width: 215px) {
+  .ticks {
+    font-size: 0.75em;
+  }
 }
 
 .colorbar {
@@ -436,6 +559,11 @@ body {
   .step-btn {
     width: 40px;
     min-height: 36px;
+  }
+
+  .zoom-btn {
+    min-height: 36px;
+    padding: 0 10px;
   }
 
   .time-ctl input[type='range'] {

@@ -123,7 +123,7 @@ export const CONFIG = {
         LAT: 48.990387,
         LON: 8.387737,
         /** eye above the local ground, m (standing person) */
-        EYE_ABOVE_GROUND: 1.6,
+        EYE_ABOVE_GROUND: 3.6,
       },
     },
   },
@@ -278,7 +278,7 @@ export const CONFIG = {
   PERFORMANCE: {
     /** instanced grass blades (grass.ts) — off renders the aerial-drapped
      *  terrain as the ground; the lawn-mask snow gate is unaffected */
-    GRASS: true,
+    GRASS: false,
     /** tree leaf wind sway shader (trees.ts/eztree) — off compiles the leaf
      *  materials without the sway injection, trees stay fully visible */
     TREE_WIND: true,
@@ -594,8 +594,8 @@ export const CONFIG = {
     // face normal azimuth: OSM reference photo face-on from NE; DOP
     // footprint long axis 135° perpendicular; user photo 122817 at 48°
     FACE_AZIMUTH_DEG: 45,
-    LENGTH: 3.0, HEIGHT: 1.5, THICKNESS: 0.4,   // user-measured on site
-    HOLE_DIAMETER: 0.36,   // user +20 % over the photo estimate (2026-11-10)
+    LENGTH: 3.2, HEIGHT: 1.6, THICKNESS: 0.4,   // user-measured on site
+    HOLE_DIAMETER: 0.46,   // user +20 % over the photo estimate (2026-11-10)
     HOLE_U: 0.62, HOLE_V: 0.62,
     HOLE_TILT_DEG: -60,    // bore NOT ⊥ face: swung 40° toward west (user flip, 2026-11-10)
     // lighter + reflective (user 2026-11-10, vs the first dark pass)

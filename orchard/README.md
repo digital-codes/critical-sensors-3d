@@ -317,6 +317,35 @@ Inputs: `geoimages/` (LGL-BW DGM/DOP GeoTIFFs + world files),
   while orbiting, so a hand-flown pose can be read out and re-applied with
   nudges — the same values as `camera.position` / `controls.target`.
 
+## Performance toggles (CONFIG.PERFORMANCE)
+
+Two independent GPU-load toggles live in `CONFIG.PERFORMANCE`
+(`orchard/src/config.ts`), both defaulting to ON (look unchanged — frozen-clock
+seeded pixel comparison against a pre-change build is identical, including the
+run-to-run control). They are switchable at runtime from the dashboard
+("Gras"/"Wind" checkboxes in the OrchardPane) and via the scene debug handle
+(`window.__scene3.performance.setGrass(bool)` / `setTreeWind(bool)` + `grass` /
+`treeWind` getters, following the sky-condition hook pattern).
+
+- **Grass** is the big lever. ~90k instanced blades ≈ 180k triangles,
+  transparent + DoubleSide + `frustumCulled = false` — every blade is drawn
+  every frame, so the cost is vertex throughput plus substantial fill-rate
+  overdraw. OFF skips the mesh entirely at load (or hides it on runtime
+  enable → zero draw cost). The lawn mask stays loaded either way, so the
+  winter snow gate is unaffected; the aerial-draped terrain is the ground.
+- **Tree wind** saves vertex-shader ALU, not CPU: the per-frame CPU side is
+  ~39 uniform updates (near zero); the real cost is the `simplex3` noise plus
+  three sine octaves per leaf vertex. OFF compiles the leaf materials without
+  the sway shader injection — zeroing a strength uniform would save nothing.
+  (Wind-off builds compile 0 leaf shaders carrying the hook vs ~51–66 with
+  wind on.)
+
+No FPS benchmark comparing the states has been run; the statements above are
+architectural analysis plus the toggle/shader-count verification in
+`openspec/changes/archive/2026-11-10-add-grass-wind-toggles/`. A wall-clock
+caveat: the 90k placement loop also has a small one-time load cost that OFF
+removes.
+
 ## Licences / attribution
 
 - Terrain heights and aerial imagery: LGL-BW, Datenlizenz Deutschland —

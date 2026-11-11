@@ -145,9 +145,9 @@ export function createLochstein(getHeight: (x: number, z: number) => number): Lo
   // WGS84 → EPSG:25832 → app-local metres (panel.ts path):
   // x = easting − origin.utmE (east), z = origin.utmN − northing (south)
   const [e, n] = utm32(cfg.LAT, cfg.LON);
-  const x = e - site.origin.utmE;
-  const z = site.origin.utmN - n;
-  const groundY = getHeight(x, z); // plaza pavement ≈ DGM
+  const x = e - site.origin.utmE - 1.2; // more negative => south
+  const z = site.origin.utmN - n - .3;  // more negative => west
+  const groundY = getHeight(x, z) - .1; // plaza pavement ≈ DGM
 
   const group = new THREE.Group();
   group.position.set(x, groundY, z);

@@ -57,8 +57,29 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 
         <p class="info-foot">
           Die Baumsimulation dient der Veranschaulichung; Messwerte und Fotos sind echt.<br>
+          Vorgängerprojekt: <a href="https://critical-sensors.de/"
+            target="_blank" rel="noopener">critical-sensors.de</a><br>
           Quellcode: <a href="https://github.com/digital-codes/critical-sensors-3d"
             target="_blank" rel="noopener">github.com/digital-codes/critical-sensors-3d</a>
+        </p>
+
+        <h3>Impressum &amp; Datenschutz</h3>
+        <p class="info-legal">
+          <strong>Angaben gemäß § 5 DDG</strong><br>
+          Dr. Andreas Kugel<br>
+          Karolinenstr. 4<br>
+          76135 Karlsruhe<br>
+          E-Mail: info@digital-codes.de<br>
+        </p>
+        <p class="info-legal">
+          Angebot zu Forschungs- und Demonstrationszwecken; keine Gewähr für
+          Richtigkeit und Vollständigkeit der dargestellten Daten.
+          Diese Seite lädt Messwerte und Fotos ausschließlich von diesem Server
+          und setzt keine Tracking-Cookies. Beim Aufruf werden technisch
+          notwendige Daten (IP-Adresse, Zeitpunkt, angeforderte Ressource) in
+          Server-Logfiles verarbeitet und nach kurzer Zeit automatisch gelöscht.
+          Externe Links (z.&nbsp;B. GitHub) öffnen in einem neuen Tab; für deren
+          Inhalte gelten die Datenschutzangaben der jeweiligen Anbieter.
         </p>
       </div>
     </div>

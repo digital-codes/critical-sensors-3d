@@ -179,8 +179,6 @@ export async function mountOrchard(
         ".w3d-season input[type='range']{width:160px;accent-color:#9ac95e;}",
         '.w3d-season .value{width:232px;white-space:nowrap;overflow:hidden;',
         'font-variant-numeric:tabular-nums;text-align:right;}',
-        '.w3d-controls{display:flex;align-items:center;gap:8px;padding:6px 12px;',
-        'border:1px solid rgba(255,255,255,.25);border-radius:6px;background:rgba(20,24,28,.65);}',
         '.w3d-progress{font-size:11px;color:rgba(255,255,255,.75);',
         'background:rgba(0,0,0,.45);padding:3px 8px;border-radius:6px;}',
         // small canvases (mobile tab view): HUD spans the pane width and
@@ -191,15 +189,13 @@ export async function mountOrchard(
         '.w3d-season{flex-wrap:wrap;justify-content:center;}',
         ".w3d-season input[type='range']{width:min(160px,40vw);}",
         '.w3d-season .value{width:auto;max-width:46vw;font-size:12px;}',
-        '.w3d-controls{flex-wrap:wrap;justify-content:center;}',
         // close the small-canvas media query, then: tablet/phone
         // (<=1023px, incl. iPad Mini portrait) — the www header already
         // carries the day slider, so drop the duplicated in-scene
-        // controls (season slider, tree status, sky select, cat toggle);
-        // the cat is triggered solely by the "Katze folgen" preset
+        // season slider and tree status there too; the cat is triggered
+        // solely by the "Katze folgen" preset
         '}',
-        '@media (max-width:1023px){.w3d-season,.w3d-progress,.w3d-controls,',
-        '#skycondition,#showcat,label[for=\'showcat\']{display:none !important;}}',
+        '@media (max-width:1023px){.w3d-season,.w3d-progress{display:none !important;}}',
       ].join('');
       document.head.appendChild(st);
     }
@@ -231,12 +227,11 @@ export async function mountOrchard(
     progressEl.className = 'w3d-progress';
     progressEl.id = 'treeprogress';
     panel.appendChild(progressEl);
-    // sky dropdown + cat toggle land here (see below), like #season standalone
-    const controlsRow = document.createElement('div');
-    controlsRow.className = 'w3d-controls';
-    panel.appendChild(controlsRow);
     root.appendChild(panel);
-    seasonPanel = controlsRow;
+    // no in-scene controls row in the embed: the www dashboard already
+    // drives the weather from the global date and triggers the cat via the
+    // "Katze" preset — a sky select / cat checkbox would duplicate both.
+    // seasonPanel stays null so the standalone-only blocks below are skipped
     presetsEl = presetsRow;
   } else {
     seasonInput = document.getElementById('dayofyear') as HTMLInputElement | null;

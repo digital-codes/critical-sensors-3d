@@ -14,6 +14,7 @@ declare(strict_types=1);
  *   api.php                                       all channels, full range
  *   api.php?channels=co2,temperature              subset
  *   api.php?from=2026-04-01&to=2026-04-30         date window (<= 800 days)
+ *   api.php?res=hourly&from=…&to=…                hourly rows (span <= 14 days)
  *
  * The $CHANNELS map below is the ONLY switch point for which sensor feeds
  * which displayed channel: when the orchard's own sensors (Wiese-Verbund,
@@ -50,6 +51,8 @@ const ALLOWED_COLUMNS = ['temp', 'hum', 'pres', 'light', 'rain', 'wind',
     'mastWind', 'mastRain', 'solar', 'soilMoist', 'soilTemp', 'co2'];
 
 const MAX_SPAN_DAYS = 800;
+// hourly rows are only served for small windows (168 rows per channel-day)
+const MAX_HOURLY_SPAN_DAYS = 14;
 
 /** Emit a JSON payload and terminate. */
 function sendJson(array $payload, int $status = 200): void
@@ -129,6 +132,21 @@ if ($from !== null && $to !== null &&
     fail(400, 'Zeitraum zu groß (maximal ' . MAX_SPAN_DAYS . ' Tage).');
 }
 
+// resolution: daily (default) or hourly — hourly is limited to small spans
+$resolution = $_GET['res'] ?? 'daily';
+if (!is_string($resolution) || !in_array($resolution, ['daily', 'hourly'], true)) {
+    fail(400, 'Ungültige Anfrage.');
+}
+if ($resolution === 'hourly') {
+    $hFrom = $from ?? date('Y-m-d', strtotime($today) - (MAX_HOURLY_SPAN_DAYS * 86400));
+    $hTo = $to ?? $today;
+    if ((strtotime($hTo) - strtotime($hFrom)) / 86400 > MAX_HOURLY_SPAN_DAYS) {
+        fail(400, 'Stundenwerte nur für Zeiträume bis ' . MAX_HOURLY_SPAN_DAYS . ' Tage.');
+    }
+    if ($from === null) { $from = $hFrom; }
+    if ($to === null) { $to = $hTo; }
+}
+
 // ---------------------------------------------------------------- database
 
 $configPath = __DIR__ . '/config.ini';
@@ -168,7 +186,7 @@ try {
  *
  * @return array<int, array{0: string, 1: float, 2: float, 3: float}>
  */
-function fetchDays(PDO $pdo, int $sensorId, string $col, ?string $from, ?string $to): array
+function fetchDays(PDO $pdo, int $sensorId, string $col, ?string $from, ?string $to, bool $hourly = false): array
 {
     if (!in_array($col, ALLOWED_COLUMNS, true)) {
         throw new RuntimeException('column not whitelisted');
@@ -189,7 +207,12 @@ function fetchDays(PDO $pdo, int $sensorId, string $col, ?string $from, ?string 
         return [];
     }
 
-    $sql = 'SELECT DATE(`date`) AS d, '
+    // group by day (daily) or by hour (hourly); the safe column interpolation
+    // pattern is identical, only the GROUP BY expression differs
+    $bucket = $hourly
+        ? "DATE_FORMAT(`date`, '%Y-%m-%d %H:00:00')"
+        : 'DATE(`date`)';
+    $sql = 'SELECT ' . $bucket . ' AS d, '
         . 'AVG(`' . str_replace('`', '', $col) . '`) AS a, '
         . 'MIN(`' . str_replace('`', '', $col) . '`) AS mi, '
         . 'MAX(`' . str_replace('`', '', $col) . '`) AS ma '
@@ -215,11 +238,11 @@ function fetchDays(PDO $pdo, int $sensorId, string $col, ?string $from, ?string 
     return $days;
 }
 
-$out = ['ok' => true, 'generated' => date('c'), 'channels' => []];
+$out = ['ok' => true, 'generated' => date('c'), 'res' => $resolution, 'channels' => []];
 foreach ($requested as $key) {
     [$sensorId, $col, $unit, $source, $licence] = CHANNELS[$key];
     try {
-        $days = fetchDays($pdo, $sensorId, $col, $from, $to);
+        $days = fetchDays($pdo, $sensorId, $col, $from, $to, $resolution === 'hourly');
     } catch (Throwable $e) {
         fail(500, 'Interner Fehler.', 'query ' . $key . ': ' . $e->getMessage());
     }
