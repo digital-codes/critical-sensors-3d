@@ -73,6 +73,13 @@ body {
   margin-left: 10px;
 }
 
+.hdr .logo {
+  height: 40px;
+  width: auto;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+
 .hdr .spacer {
   flex: 1;
 }

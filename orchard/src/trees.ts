@@ -158,6 +158,61 @@ export async function createOrchard(
     return mesh;
   }
 
+  // Static crown apples: instanced squashed spheres hanging at the outer
+  // twigs of listed trees. Anchor points are sampled from the tree's own
+  // leaf-clump vertices (local space — leaf clumps grow at the branch
+  // tips), with a hanging offset below the anchor. Same teardown pattern
+  // as the litter (shared geometry recreated, material disposed) and a
+  // seeded scatter keyed off entry.seed so rebuilds are identical.
+  let appleGeometry = new THREE.SphereGeometry(0.035, 8, 6);
+  let appleMaterial = new THREE.MeshStandardMaterial({
+    color: 0xb2332a,
+    roughness: 0.55,
+    metalness: 0,
+  });
+  function inAppleWindow(season: SeasonDef): boolean {
+    const a = CONFIG.TREES.CROWN_APPLES;
+    return season.day >= a.DAY_START && season.day <= a.DAY_END;
+  }
+  function buildCrownApples(tree: Tree, entry: SiteTree, season: SeasonDef): THREE.InstancedMesh | null {
+    if (!(CONFIG.TREES.CROWN_APPLES.TREES as readonly string[]).includes(entry.id)) return null;
+    if (!inAppleWindow(season)) return null;
+    const rng = mulberry32((entry.seed ^ 0xa999099) >>> 0);
+    const verts = tree.leaves.verts;
+    const anchors: THREE.Vector3[] = [];
+    for (let i = 0; i + 2 < verts.length; i += 3) {
+      anchors.push(new THREE.Vector3(verts[i], verts[i + 1], verts[i + 2]));
+    }
+    if (anchors.length === 0) return null;
+    const count = CONFIG.TREES.CROWN_APPLES.COUNT_MIN +
+      Math.floor(rng() * (CONFIG.TREES.CROWN_APPLES.COUNT_MAX - CONFIG.TREES.CROWN_APPLES.COUNT_MIN + 1));
+    const mesh = new THREE.InstancedMesh(appleGeometry, appleMaterial, count);
+    mesh.name = `crown-apples-${entry.id}-${season.key}`;
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    for (let i = 0; i < count; i++) {
+      // random cluster vertex; hang the apple just below it with slight
+      // radial jitter so it sits at the twig, not inside the leaf clump.
+      // Anchors are in tree-local units (eztree is ~50 u tall, then
+      // rescaled to real height) — apply the tree's world transform.
+      const v = anchors[Math.floor(rng() * anchors.length)];
+      const scale = tree.scale.x;
+      const world = new THREE.Vector3(
+        v.x + (rng() - 0.5) * 1.0,
+        v.y - (0.6 + rng() * 0.8),
+        v.z + (rng() - 0.5) * 1.0,
+      ).multiplyScalar(scale).add(tree.position);
+      m.compose(world, q, new THREE.Vector3(1, 0.8, 1));
+      mesh.setMatrixAt(i, m);
+      // red with a green-ish variation so the patch reads naturally
+      mesh.setColorAt(i, new THREE.Color(0xb2332a).lerp(new THREE.Color(0x8fa63a), rng() * 0.4));
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.frustumCulled = false;
+    return mesh;
+  }
+
   // One group of all trees per season keyframe; visibility toggles between them.
   const seasonGroups = new Map<SeasonKey, THREE.Group>();
   const seasonTrees = new Map<SeasonKey, Tree[]>();
@@ -221,6 +276,11 @@ export async function createOrchard(
       const litter = buildGroundLeaves(entry, season, t.options.leaves.type);
       if (litter) seasonGroups.get(season.key)!.add(litter);
 
+      // static crown apples at the twigs of the listed trees (only in the
+      // ripening window; anchored to this tree's own leaf/twig geometry)
+      const apples = buildCrownApples(t, entry, season);
+      if (apples) seasonGroups.get(season.key)!.add(apples);
+
       seasonGroups.get(season.key)!.add(t);
       seasonTrees.get(season.key)!.push(t);
     }
@@ -272,6 +332,15 @@ export async function createOrchard(
     // go with the rebuild; the leaf TEXTURES keep living in the leaf cache
     litterGeometry.dispose();
     litterGeometry = new THREE.PlaneGeometry(0.16, 0.16);
+    // apples teardown: shared sphere geometry + material go with the rebuild
+    appleGeometry.dispose();
+    appleMaterial.dispose();
+    appleGeometry = new THREE.SphereGeometry(0.035, 8, 6);
+    appleMaterial = new THREE.MeshStandardMaterial({
+      color: 0xb2332a,
+      roughness: 0.55,
+      metalness: 0,
+    });
     for (const [, mat] of litterMats) mat.dispose();
     litterMats.clear();
   }

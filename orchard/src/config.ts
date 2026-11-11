@@ -390,6 +390,20 @@ export const CONFIG = {
     SIZE_SCALE: { small: 4.5, medium: 6.0, large: 7.5 },
     /** when even the size class is missing */
     DEFAULT_HEIGHT: 6.0,
+    /** apples hanging in the crown (trees.ts): instanced squashed spheres
+     *  anchored at the generated branches/twigs of the listed trees —
+     *  only during the ripening window, late September to mid October. */
+    CROWN_APPLES: {
+      /** tree IDs in site.json carrying crown apples (the three beside the
+       *  Hocksitz towers) */
+      TREES: ['bk02600', 'bk02602', 'bk02801'],
+      /** day-of-year window (late September..mid October) */
+      DAY_START: 268,
+      DAY_END: 285,
+      /** apples per tree */
+      COUNT_MIN: 100,
+      COUNT_MAX: 250,
+    },
     /** static fallen-leaf litter around each rendered tree (trees.ts):
      *  flat leaf quads scattered on the ground in a small ring, using each
      *  tree species' canopy leaf texture. Litter first appears with the

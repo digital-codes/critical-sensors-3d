@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Katzenwedelwiesen 3D</title>
+    <link rel="icon" href="/favicon.ico" />
     <style>
       html,
       body {
@@ -16,6 +17,16 @@
       }
       canvas {
         display: block;
+      }
+      #logo {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        height: 40px;
+        width: auto;
+        border-radius: 4px;
+        z-index: 10;
+        pointer-events: none;
       }
       #presets {
         position: fixed;
@@ -177,6 +188,7 @@
     </style>
   </head>
   <body>
+    <img id="logo" src="/site/logo.png" alt="Katzenwedelwiesen Logo" />
     <div id="presets"></div>
     <div id="season" title="Jahreszeit (Tag des Jahres)">
       <label for="dayofyear">Tag</label>

@@ -40,6 +40,7 @@ function onTouchEnd(e: TouchEvent): void {
 
 <template>
   <header class="hdr">
+    <img class="logo" src="/site/logo.png" alt="Katzenwedelwiesen Logo" />
     <h1>KATZENWEDELWIESEN<span class="dash"> —</span><span class="sub">Umweltbeobachtung</span></h1>
     <div class="spacer"></div>
     <TimeSlider />
