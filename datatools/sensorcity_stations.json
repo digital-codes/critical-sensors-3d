@@ -129,9 +129,9 @@
   "stadtteil": "Weiherfeld-Dammerstock",
   "sector": "WIND",
   "position_source": "live-registration",
-  "n_records_recent": 1064,
-  "n_records_total": 8560,
-  "latest_measured_at": 1794038747999
+  "n_records_recent": 1161,
+  "n_records_total": 9328,
+  "latest_measured_at": 1794427582168
  },
  {
   "device_id": "c6e75872-c0b0-4e0d-90d6-020681daadc5",
@@ -146,8 +146,8 @@
   "stadtteil": "Rintheim",
   "sector": "RAIN",
   "position_source": "live-registration",
-  "n_records_recent": 979,
-  "n_records_total": 40205,
-  "latest_measured_at": 1794038409507
+  "n_records_recent": 984,
+  "n_records_total": 40842,
+  "latest_measured_at": 1794427218374
  }
 ]

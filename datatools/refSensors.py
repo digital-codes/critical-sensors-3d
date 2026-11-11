@@ -139,6 +139,59 @@ atexit.register(_releaseLock)
 signal.signal(signal.SIGTERM,_onTerm)
 signal.signal(signal.SIGINT,_onTerm)   # Ctrl-C exits gracefully too
 
+# ######################################
+# database connection + schema upgrade
+#
+# Every ALTER TABLE on 'sensors' runs HERE: after an older instance has
+# been killed (its table locks are gone) and before this process opens any
+# read or write on 'sensors'. An open transaction over the table holds
+# MySQL metadata locks, so an alteration after the first access blocks
+# until the lock wait timeout - the failure the previous late-upgrade
+# position (just before the append) ran into.
+def resolve_db_url():
+    """$REFSENSORS_DB_URL or the first line of datatools/dburl.txt."""
+    url = os.environ.get("REFSENSORS_DB_URL")
+    if not url:
+        dburlFile = os.path.join(scriptDir, "dburl.txt")
+        if os.path.exists(dburlFile):
+            with open(dburlFile) as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        url = line
+                        break
+    return url
+
+
+dbUrl = resolve_db_url()
+scEngine = None
+if not args.csv:
+    if not dbUrl:
+        print("No database configured: set REFSENSORS_DB_URL or create datatools/dburl.txt")
+        sys.exit(1)
+    try:
+        upgradeEngine = create_engine(dbUrl)
+        existingCols = {c["name"] for c in inspect(upgradeEngine).get_columns("sensors")}
+    except Exception as exc:
+        print("Sql failed:", exc)
+        sys.exit(1)
+    with upgradeEngine.begin() as conn:
+        for col in ("icosTemp","icosHum","icosWind","wind","mastWind","rain","mastRain",
+                    "solar","soilMoist","soilTemp",
+                    "temp_006","hum_006","temp_116","hum_116"):
+            if col not in existingCols:
+                print("ALTER TABLE sensors ADD COLUMN",col)
+                conn.exec_driver_sql("ALTER TABLE sensors ADD COLUMN %s FLOAT" % col)
+    upgradeEngine.dispose()
+    # a read-only lookup connection for the fetch windows; the real write
+    # engine is created in the database section below (same URL)
+    try:
+        scEngine = create_engine(dbUrl)
+        inspect(scEngine).get_table_names()  # force a connection now
+    except Exception as exc:
+        print("SensorCity: database lookup unavailable (%s)" % exc)
+        scEngine = None
+
 def updateIcosCitation(dobjUri,fileName,outFile=None):
     objHash = dobjUri.rstrip("/").split("/")[-1]
     url = "https://meta.icos-cp.eu/objects/%s/%s.json" % (objHash,fileName)
@@ -467,34 +520,6 @@ SC_WINDOW_DAYS = 30
 SC_OVERLAP_H = 2
 
 
-def resolve_db_url():
-    """$REFSENSORS_DB_URL or the first line of datatools/dburl.txt."""
-    url = os.environ.get("REFSENSORS_DB_URL")
-    if not url:
-        dburlFile = os.path.join(scriptDir, "dburl.txt")
-        if os.path.exists(dburlFile):
-            with open(dburlFile) as f:
-                for line in f:
-                    line = line.strip()
-                    if line:
-                        url = line
-                        break
-    return url
-
-
-# a read-only lookup connection for the fetch windows; the real write
-# engine is created in the database section below (same URL)
-dbUrl = resolve_db_url()
-scEngine = None
-if dbUrl:
-    try:
-        scEngine = create_engine(dbUrl)
-        inspect(scEngine).get_table_names()  # force a connection now
-    except Exception as exc:
-        print("SensorCity: database lookup unavailable (%s)" % exc)
-        scEngine = None
-
-
 def storedLatestUtc(sid):
     """Latest stored date for a sensor id (stored in CET), converted back
     to naive UTC - the timeline the SensorCity queries use."""
@@ -663,6 +688,18 @@ def scAirFrame(sid, dev, label):
     """Hourly air means (temp/hum/pres/solar) for one SensorCity station."""
     try:
         start, why = scWindowStart(sid)
+        # these frames also feed the station-qualified reference columns
+        # (temp_006/hum_006/temp_116/hum_116 on the id-0 rows), so the
+        # window must reach back over the REFERENCE append range too:
+        # widen it to the earlier of the station's own window and id 0's
+        # (the anchor the mast fetches use). Anchored to the station alone,
+        # the ~day that DWD lags real time would leave every newly
+        # appended reference hour outside the frame - the qualified
+        # columns would stay NULL forever.
+        refStart, _ = scWindowStart(0)
+        if refStart < start:
+            start = refStart
+            why += " + reference window"
         feats = scQueryPaged(
             2,
             "device_id='%s' AND measured_at > timestamp '%s'"
@@ -773,6 +810,23 @@ if sensorCityRain is not None:
 if "mastRain" not in ref.columns:
     ref["mastRain"] = float("nan")
 
+# the air stations' temp/hum also join the reference rows (id 0) as
+# station-qualified columns - id 9 = 116 Breite Straße, id 10 = 006
+# Lützenhardtstraße, same units as the reference channels (°C / %RH).
+# Merged here BEFORE the CET shift below, while both sides are still
+# naive UTC (the neighbour rows shift their dates at fetch-merge end).
+# The unqualified temp/hum of the reference rows keep their DWD/ICOS
+# sources; a failed station fetch leaves its columns NULL.
+for scSid, scNum in ((9,"116"),(10,"006")):
+    scF = next((f for f in scFrames if len(f) and int(f.id.iloc[0]) == scSid), None)
+    if scF is not None:
+        ref = ref.merge(scF[["date","temp","hum"]].rename(
+            columns={"temp":"temp_" + scNum, "hum":"hum_" + scNum}),
+            on="date", how="left")
+    for qcol in ("temp_" + scNum, "hum_" + scNum):
+        if qcol not in ref.columns:
+            ref[qcol] = float("nan")
+
 # adjust timezone and DST
 ref["date"] += pd.Timedelta(hours=1)
 ref.loc[ref.date < "2020-10-25 02:00:00","date"] += pd.Timedelta(hours=1)
@@ -802,8 +856,7 @@ if args.csv:
 # ######################################
 # update sql
 """Store data object into sql """
-# dbUrl was resolved (and the lookup engine created) before the SensorCity
-# fetches above
+# dbUrl was resolved (and the schema upgraded) before the fetches above
 if not dbUrl:
     print("No database configured: set REFSENSORS_DB_URL or create datatools/dburl.txt")
     sys.exit(1)
@@ -897,16 +950,8 @@ def composeVirtualSensors(engine):
 
 # the database write is the one step we never want interrupted halfway:
 # if termination was requested while fetching/merging, bail out here
+# (schema upgrades already ran before the fetches - see the lock section)
 checkShutdown("database write")
-# the new ICOS meteo columns may not exist in an older table - add them
-# idempotently before appending
-existingCols = {c["name"] for c in inspect(engine).get_columns("sensors")}
-with engine.begin() as conn:
-    for col in ("icosTemp","icosHum","icosWind","wind","mastWind","rain","mastRain",
-                "solar","soilMoist","soilTemp"):
-        if col not in existingCols:
-            print("ALTER TABLE sensors ADD COLUMN",col)
-            conn.exec_driver_sql("ALTER TABLE sensors ADD COLUMN %s FLOAT" % col)
 
 # create new table from the dataframe (empty when the reference dedup
 # filtered everything - skip instead of appending an empty frame)
@@ -941,7 +986,11 @@ if len(ref):
             "mastRain":Float,
             "solar":Float,
             "soilMoist":Float,
-            "soilTemp":Float
+            "soilTemp":Float,
+            "temp_006":Float,
+            "hum_006":Float,
+            "temp_116":Float,
+            "hum_116":Float
         }
     )
 # the SensorCity neighbour rows land under their own ids (8/9/10) - same
