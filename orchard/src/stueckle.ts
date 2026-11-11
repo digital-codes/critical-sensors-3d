@@ -173,7 +173,11 @@ export async function createStueckle(): Promise<Stueckle> {
     const ex = x1 - x0;
     const ez = z1 - z0;
     const len = Math.hypot(ex, ez);
-    const ang = Math.atan2(ex, ez);
+    // PlaneGeometry's local +X must map to the edge direction: rotation.y
+    // maps +X to (cos, 0, -sin), so yaw = atan2(-ez, ex). (atan2(ex, ez)
+    // pointed the strip ~90° off anything but a 45° edge — the mesh panels
+    // swept across the lawn as faint beams while the posts stayed true.)
+    const ang = Math.atan2(-ez, ex);
     // posts
     const nPosts = Math.max(1, Math.round(len / cfg.FENCE.POST_SPACING));
     for (let pI = 0; pI <= nPosts; pI++) {
