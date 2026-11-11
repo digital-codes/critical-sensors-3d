@@ -49,6 +49,32 @@ function skyForDay(day: number): string {
   return CONFIG.SKY.CONDITIONS[cond as keyof typeof CONFIG.SKY.CONDITIONS] ? cond : CONFIG.SKY.DEFAULT_CONDITION;
 }
 
+/** day-of-year of the real calendar date (Jan 1 = 1) */
+function todayDay(): number {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  return Math.floor((now.getTime() - start.getTime()) / 86400000);
+}
+
+/** season day of the configured lightning strike day closest to the real
+ *  calendar date — its month must be `gewitter` (Blitz preset). Distance
+ *  wraps over the year seam; null if no strike day qualifies. */
+function nearestStrikeDay(): number | null {
+  const yearDays = CONFIG.SUN.YEAR_DAYS;
+  const today = todayDay();
+  let best: number | null = null;
+  let bestDist = Infinity;
+  for (const d of CONFIG.SPARKS.STRIKE_DAYS as number[]) {
+    if (CONFIG.SKY.MONTH_CONDITIONS[monthIndex(d)] !== 'gewitter') continue;
+    const dist = Math.min(Math.abs(d - today), yearDays - Math.abs(d - today));
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = d;
+    }
+  }
+  return best;
+}
+
 /** Handle returned to an embedder (the www dashboard). `scene3` is a live
  *  getter — the underlying window.__scene3 object is replaced (spread) as
  *  scene parts finish loading, so always read it fresh. */
@@ -516,10 +542,15 @@ export async function mountOrchard(
     catLabel.htmlFor = 'showcat';
     catLabel.textContent = 'Katze';
     catToggle.addEventListener('change', () => {
-      cat.setVisible(catToggle.checked);
-      // checking the box starts the chase cam immediately (snap, no lerp)
-      // so the jump off the post is visible from the first frame
-      setFollow(catToggle.checked);
+      if (catToggle.checked) {
+        // follow cam and Vogelflug are mutually exclusive; a fresh session
+        // always starts with the jump from the post
+        if (flight.active) flight.stop();
+        startCatJump();
+      } else {
+        cat.setVisible(false);
+        setFollow(false);
+      }
     });
     seasonPanel.appendChild(catToggle);
     seasonPanel.appendChild(catLabel);
@@ -537,6 +568,20 @@ export async function mountOrchard(
     followActive = on;
     if (followBtn) followBtn.classList.toggle('active', followActive);
   }
+  // Katze follow and Vogelflug both drive the camera — keep them mutually
+  // exclusive: enabling one fully stops the other (both the runtime paths
+  // and the idle loop stages)
+  function stopFollow(showNothing: boolean): void {
+    if (followActive) setFollow(false);
+    if (showNothing) cat.setVisible(false);
+  }
+  /** start a fresh cat session: always with the jump from the initial
+   *  position (post top), whatever the previous patrol state was */
+  function startCatJump(): void {
+    cat.restart();
+    cat.setVisible(true);
+    setFollow(true);
+  }
   if (presetsEl) {
     followBtn = document.createElement('button');
     followBtn.textContent = 'Katze';
@@ -546,8 +591,13 @@ export async function mountOrchard(
     // checkbox stays desktop-only and is hidden on tablet/phone via CSS)
     followBtn.addEventListener('click', () => {
       const on = !followActive;
-      cat.setVisible(on);
-      setFollow(on);
+      if (flight.active) flight.stop();
+      if (on) {
+        startCatJump();
+      } else {
+        cat.setVisible(false);
+        setFollow(false);
+      }
     });
     presetsEl.appendChild(followBtn);
   }
@@ -560,7 +610,14 @@ export async function mountOrchard(
     const btn = document.createElement('button');
     btn.textContent = 'Flug';
     btn.dataset.preset = 'vogelflug';
-    btn.addEventListener('click', () => (flight.active ? flight.stop() : flight.start()));
+    btn.addEventListener('click', () => {
+      if (flight.active) {
+        flight.stop();
+      } else {
+        stopFollow(true);
+        flight.start();
+      }
+    });
     presetsEl.appendChild(btn);
   }
   (window as unknown as Record<string, unknown>).__scene3 =
@@ -623,6 +680,186 @@ export async function mountOrchard(
     }
     for (const fn of dayListeners) fn(day);
   });
+
+  // "Blitz" preset: jump the season day to the strike day nearest the real
+  // calendar date (currently day 232, Aug 20, in the gewitter month Aug) —
+  // the slider handler applies the storm sky and arms the spark gate
+  function applyBlitz(): void {
+    const day = nearestStrikeDay();
+    if (day === null) return;
+    setDayDirect(day);
+  }
+
+  /** set the season day via the slider without user input; the dispatch is
+   *  deliberately untrusted so the idle timer does not count it as activity */
+  function setDayDirect(day: number): void {
+    if (!seasonInput) return;
+    if (Number(seasonInput.value) !== day) seasonInput.value = String(day);
+    seasonInput.dispatchEvent(new Event('input'));
+  }
+
+  /** navigate the season day back to the real calendar date (idle loop) */
+  function applyCurrentDate(): void {
+    setDayDirect(todayDay());
+  }
+  if (presetsEl) {
+    const btn = document.createElement('button');
+    btn.textContent = 'Blitz';
+    btn.dataset.preset = 'blitz';
+    btn.addEventListener('click', applyBlitz);
+    presetsEl.appendChild(btn);
+    // Tafel first in the row: it is the initial preset (the view starts
+    // on the board); the rig registers it after the site.json vantages
+    const tafelBtn = presetsEl.querySelector('button[data-preset="tafel"]');
+    if (tafelBtn) presetsEl.prepend(tafelBtn);
+  }
+
+  // idle demo loop (CONFIG.IDLE): after 60 s without user input the view
+  // cycles the presets (incl. Katze and Flug); dwell ~20 s per preset after
+  // a running animation finished; any input stops the loop, resets the
+  // idle timer and flies back to the Tafel preset.
+  const IDLE = CONFIG.IDLE;
+  const idleStages = ['tafel', 'vergleich', 'erhoeht', 'blitz', 'katze', 'vogelflug'] as const;
+  let lastInput = performance.now();
+  let loopActive = false;
+  let loopStage = -1; // last stage visited (reset to -1 → next loop starts at Tafel)
+  let loopTimer: number | undefined;
+
+  function runStage(name: string): void {
+    switch (name) {
+      case 'tafel':
+        rig.applyPreset('tafel');
+        break;
+      case 'vergleich':
+        rig.applyPreset('vergleich');
+        break;
+      case 'erhoeht':
+        rig.applyPreset('erhoeht');
+        break;
+      case 'blitz':
+        applyBlitz();
+        break;
+      case 'katze':
+        if (flight.active) flight.stop();
+        startCatJump();
+        break;
+      case 'vogelflug':
+        if (!flight.active) {
+          stopFollow(true);
+          flight.start();
+        }
+        break;
+    }
+  }
+
+  function loopTick(): void {
+    // conclude the previous Blitz phase first: navigate back to the current
+    // date so the storm day does not stick around for the rest of the loop
+    if (idleStages[loopStage] === 'blitz') {
+      applyCurrentDate();
+    }
+    loopStage = (loopStage + 1) % idleStages.length;
+    runStage(idleStages[loopStage]);
+    const stage = idleStages[loopStage];
+    // animated stages: the dwell only counts once the stage's animation
+    // finished — Vogelflug until the flight ends, Katze until the cat's
+    // patrol reaches its stop point (phase 'idle')
+    const animRunning = (): boolean =>
+      (stage === 'vogelflug' && flight.active) ||
+      (stage === 'katze' && cat.phase !== 'idle');
+    // dwell anchor: for an animated stage it re-anchors the moment the
+    // animation finishes — the ~20 s are spent AFTER the animation done
+    let stageStart = performance.now();
+    let animWasRunning = animRunning();
+    const advance = (): void => {
+      const running = animRunning();
+      if (running) {
+        animWasRunning = true;
+      } else if (animWasRunning) {
+        // animation just finished: the dwell starts now
+        animWasRunning = false;
+        stageStart = performance.now();
+      }
+      if (running || performance.now() - stageStart < IDLE.DWELL_S * 1000) {
+        loopTimer = window.setTimeout(advance, 500);
+        return;
+      }
+      loopTick();
+    };
+    loopTimer = window.setTimeout(advance, 500);
+  }
+
+  function startLoop(): void {
+    loopActive = true;
+    loopTick();
+  }
+
+  function stopLoop(): void {
+    loopActive = false;
+    window.clearTimeout(loopTimer);
+    // return the loop's scene side effects: leave the follow cam, hide the
+    // cat again (its pre-loop default) and end a running Vogelflug, then
+    // fly back to the info board
+    if (followActive) {
+      setFollow(false);
+      cat.setVisible(false);
+    }
+    if (flight.active) flight.stop();
+    rig.applyPreset('tafel');
+    loopStage = -1;
+  }
+
+  function onUserInput(): void {
+    if (loopActive) stopLoop();
+    lastInput = performance.now();
+  }
+
+  // real user gestures only (isTrusted guard keeps the embed controller's
+  // programmatic setDay from resetting the idle timer)
+  const trackTrusted = (e: Event): void => {
+    if (e.isTrusted) onUserInput();
+  };
+  let lastMove = 0;
+  window.addEventListener(
+    'pointermove',
+    (e) => {
+      if (!e.isTrusted) return;
+      const now = performance.now();
+      if (now - lastMove >= 1000) {
+        lastMove = now;
+        onUserInput();
+      }
+    },
+    { capture: true },
+  );
+  window.addEventListener('pointerdown', trackTrusted, { capture: true });
+  window.addEventListener('wheel', trackTrusted, { capture: true, passive: true });
+  window.addEventListener('keydown', trackTrusted, { capture: true });
+  seasonInput?.addEventListener('input', trackTrusted);
+  if (skySelect) skySelect.addEventListener('change', trackTrusted);
+  // loop driver: arm the timeout check once a second (starts only after
+  // all preset buttons/handlers above exist)
+  window.setInterval(() => {
+    if (!loopActive && performance.now() - lastInput >= IDLE.TIMEOUT_S * 1000) {
+      startLoop();
+    }
+  }, 1000);
+  // tooling hook: drive the idle loop from verification scripts
+  (window as unknown as Record<string, unknown>).__scene3 = {
+    ...((window as unknown as Record<string, unknown>).__scene3 as object),
+    idle: {
+      start: startLoop,
+      stop: stopLoop,
+      /** reset the idle timer without moving the camera (tooling keepalive) */
+      touch: () => {
+        if (loopActive) stopLoop();
+        lastInput = performance.now();
+      },
+      get active() {
+        return loopActive;
+      },
+    },
+  };
 
   // sizing: standalone follows the window; embed follows the host element
   if (embed) {

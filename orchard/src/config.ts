@@ -249,10 +249,11 @@ export const CONFIG = {
     // user 2026-11-10: ~2 storm days per gewitter month (Apr = 91-120, Aug = 213-243)
     STRIKE_DAYS: [100, 112, 220, 232] as number[],
     // strike area in local metres (x = east of the site origin, z = south of it;
-    // negative z = NORTH). Validated box (commented out): behind the west tree
-    // line, ~48.9905-48.9910 N, 8.3861-8.3868 E (ideas/sparks, strike at -60,-95).
-    // BOX: { X_MIN: -85, X_MAX: -35, Z_MIN: -125, Z_MAX: -65 },
-    BOX: { X_MIN: -65, X_MAX: +15, Z_MIN: -65, Z_MAX: -45 },
+    // negative z = NORTH). Inside-the-orchard box (user 2026-11-11: bolts were
+    // too far west/left) — east half of the tree rows, trees span x -31..81,
+    // z -66..43. Earlier validated west box kept as reference:
+    // BOX: { X_MIN: -65, X_MAX: +15, Z_MIN: -65, Z_MAX: -45 },
+    BOX: { X_MIN: 0, X_MAX: 70, Z_MIN: -60, Z_MAX: -12 },
     TOP_Y: 300, // absolute metres (y is DHHN): above the cloud band 195-235 m
     SEGMENTS: 90,
     AMP: 55, FREQ: 2.2, OCTAVES: 4, TIME_SPEED: 0.7, RESTROKE_SNAP: 0.05,
@@ -282,6 +283,15 @@ export const CONFIG = {
     /** tree leaf wind sway shader (trees.ts/eztree) — off compiles the leaf
      *  materials without the sway injection, trees stay fully visible */
     TREE_WIND: true,
+  },
+
+  /** "Blitz" preset + idle demo loop (main.ts) */
+  IDLE: {
+    /** inactivity (s) until the preset demo loop starts */
+    TIMEOUT_S: 60,
+    /** dwell (s) per preset in the loop — counted after a running preset
+     *  animation (e.g. the Vogelflug) has finished */
+    DWELL_S: 20,
   },
 
   /** instanced grass blades (grass.ts) */

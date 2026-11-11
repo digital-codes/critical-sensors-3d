@@ -27,6 +27,8 @@ export type Sparks = {
   setCondition(key: string): void;
   /** deterministic strike for tests, independent of the day gate */
   trigger(seed?: number, pos?: [number, number]): void;
+  /** debug access for tooling: the bolt layers group (THREE.Line positions) */
+  readonly group: THREE.Group;
   get active(): boolean;
   dispose(): void;
 };
@@ -354,6 +356,10 @@ export function createSparks(
     setDay,
     setCondition,
     trigger,
+    /** debug access for tooling: the bolt layers (THREE.Line positions) */
+    get group() {
+      return group;
+    },
     get active() {
       return live !== null;
     },

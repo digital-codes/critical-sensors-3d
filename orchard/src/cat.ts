@@ -28,6 +28,9 @@ export type Cat = {
   /** advance the route; no-op while hidden or after stopping */
   update(dt: number): void;
   setVisible(v: boolean): void;
+  /** wind back to the very start: phase jump again, from the post top —
+   *  every new cat session starts with the same jump off the post */
+  restart(): void;
   /** the jug + apples still life at the stop point; visibility sync with the cat */
   stillLife: THREE.Group;
   /** current cat pose for the chase cam and verification probes */
@@ -428,6 +431,17 @@ const idleClip = gaitOct.find((c) => /idle/i.test(c.name));
     setVisible(v: boolean): void {
       group.visible = v;
       stillLife.visible = v;
+    },
+    restart(): void {
+      phase = 'jump';
+      jumpT = 0;
+      u = 0;
+      // back to the initial pose (on top of the post) facing the landing
+      if (postTop) place(postTop.x, postTop.y, postTop.z, Math.atan2(land.x - postTop.x, land.z - postTop.z));
+      else place(postGround.x, postGround.y, postGround.z, Math.atan2(land.x - postGround.x, land.z - postGround.z));
+      idle?.stop();
+      walk?.reset().play();
+      mixer.update(0);
     },
     followPose(): { position: THREE.Vector3; heading: number } {
       if (phase === 'jump') {
