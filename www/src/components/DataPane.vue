@@ -4,6 +4,7 @@ import { fetchSeries, todayIso, isoShift, type ChannelSeries, type ChannelKey } 
 import { useZoom } from '../store';
 import SeriesCard from './SeriesCard.vue';
 import LightCard from './LightCard.vue';
+import MapCard from './MapCard.vue';
 
 const loading = ref(true);
 const error = ref<string | null>(null);
@@ -158,4 +159,9 @@ const DESCS: Array<{ short: string; full: string }> = [
       <span>{{ d.full }}</span>
     </p>
   </div>
+
+  <!-- map card: after the descriptions on mobile (DOM order in the
+       scrolling tab pane); on desktop the grid lifts it next to the photo
+       streak (see .map-card rules in styles.css) -->
+  <MapCard class="map-card" />
 </template>

@@ -167,7 +167,10 @@ body {
 
 .main .pane3d { order: 1; }
 .main .data-pane { order: 2; }
-.main .streak-panel { order: 3; grid-column: 1 / -1; }
+/* lower panel row: photo streak left, map card right (the streak keeps
+ * its full-row height; the map card stretches to match) */
+.main .streak-panel { order: 3; grid-column: 1; grid-row: 2; }
+.main .map-card { order: 3; grid-column: 2; grid-row: 2; }
 
 .pane3d {
   position: relative;
@@ -512,20 +515,50 @@ body {
 /* ---------- responsive ---------- */
 
 @media (max-width: 1023px), (orientation: portrait) and (max-width: 1366px) {
-  /* single column: cards first (2×4 compact grid), 3D pane below at a
-   * fixed share of the window height — everything visible, no page scroll */
+  /* single column: cards first (2×4 compact grid at natural height), 3D pane
+   * below at a fixed share of the window height, streak + map card after.
+   * With the map row added the four sections no longer fit a short window
+   * uncompressed, so the column scrolls instead of crushing the cards.
+   * Flex column (like the ≤560px tab layout) — a grid here would let the
+   * min-height:0 items shrink below their content when the window is short */
   .main {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1fr) minmax(170px, 30dvh);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
   }
 
-  .pane3d {
+  .main .pane3d {
     order: 2;
-    height: auto;
+    flex: 0 0 auto;
+    height: 30dvh;
+    min-height: 170px;
   }
 
-  .data-pane {
+  .main .data-pane {
     order: 1;
+    flex: 0 0 auto;
+    height: auto; /* content-sized (the 1fr row would sit inside the scroll area) */
+    overflow: visible;
+    /* explicit card rows: the 1fr rows collapse under intrinsic sizing */
+    grid-template-rows: repeat(4, minmax(140px, auto));
+    align-content: start;
+  }
+
+  .main .streak-panel {
+    order: 3;
+    flex: 0 0 auto;
+  }
+
+  /* single-column layout (no tabs): the map gets its own full-width row
+   * below the photo streak, sized by content */
+  .main .map-card {
+    order: 4;
+    flex: 0 0 auto;
+    height: 200px;
+  }
+
+  .main .map-card .map-body {
+    min-height: 0;
   }
 
   .hdr h1 {

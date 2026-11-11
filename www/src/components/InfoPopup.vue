@@ -29,7 +29,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
       <div class="info-modal" role="dialog" aria-modal="true" aria-label="Informationen und Quellen">
         <button class="info-close" type="button" aria-label="Schließen" @click="open = false">×</button>
 
-        <h2>Katzenwedelwiesen</h2>
+        <div class="info-title">
+          <img class="info-logo" src="/site/logo.png" alt="Katzenwedelwiesen Logo" />
+          <h2>Katzenwedelwiesen</h2>
+        </div>
         <p class="info-lead">
           Umweltbeobachtung auf der Katzenwedelwiese: Live-Messwerte aus dem Sensornetz,
           eine jahreszeitliche 3D-Simulation der Streuobstwiese und die Wiesen-Fotoreihe
@@ -43,6 +46,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
           <li>Gelände &amp; Luftbilder: LGL Baden-Württemberg (dl-de/by-2-0)</li>
           <li>Baumkataster &amp; LoD2-Stadtmodell: Stadt Karlsruhe (CC BY 4.0)</li>
           <li>Gehölzbestand: OpenStreetMap-Mitwirkende (ODbL)</li>
+          <li>Karte: © GeoBasis-DE/BKG ({{ new Date().getFullYear() }}) CC BY 4.0
+              (<a href="https://www.bkg.bund.de/" target="_blank" rel="noopener">bkg.bund.de</a>)</li>
+          <li>ZKM-Kubus-Foto: © JOEXX, CC BY-SA 3.0, via
+              <a href="https://commons.wikimedia.org/wiki/File:ZKM_Kubus_.jpg" target="_blank"
+                rel="noopener">Wikimedia Commons</a></li>
           <li>Fotos: Projektarchiv Katzenwedelwiesen</li>
         </ul>
 
@@ -103,7 +111,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 .info-overlay {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  /* above Leaflet's controls/popups (z-index up to 1000 inside the map) */
+  z-index: 1100;
   background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
@@ -134,8 +143,20 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
   cursor: pointer;
   color: #222;
 }
+.info-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 28px;
+}
+.info-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
 .info-modal h2 {
-  margin: 0 28px 8px 0;
+  margin: 0;
   font-size: 22px;
   letter-spacing: 0.04em;
 }

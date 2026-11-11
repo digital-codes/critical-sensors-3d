@@ -17,6 +17,8 @@ import InfoPopup from './components/InfoPopup.vue';
 const TABS = ['Daten', '3D', 'Fotos'] as const;
 const tab = ref(1); // start on the 3D view
 
+const mapYear = new Date().getFullYear();
+
 let touchX = 0;
 let touchY = 0;
 function onTouchStart(e: TouchEvent): void {
@@ -29,7 +31,7 @@ function onTouchEnd(e: TouchEvent): void {
   // always available as the fallback)
   if (!window.matchMedia('(max-width: 560px)').matches) return;
   const t = e.target as HTMLElement | null;
-  if (t?.closest('input, button, select, a, canvas, .chart-wrap')) return;
+  if (t?.closest('input, button, select, a, canvas, .chart-wrap, .leaflet-container')) return;
   const dx = e.changedTouches[0].clientX - touchX;
   const dy = e.changedTouches[0].clientY - touchY;
   if (Math.abs(dx) < 60 || Math.abs(dy) > 60) return;
@@ -68,6 +70,7 @@ function onTouchEnd(e: TouchEvent): void {
   <footer class="sources-footer">
     Quellen: DWD (© Deutscher Wetterdienst) · ICOS ERIC AS_KIT (CC BY 4.0, PID je Diagramm) ·
     SensorCity, Stadt Karlsruhe · 3D: LGL-BW dl-de/by-2-0, Stadt KA (Baumkataster, LoD2) CC BY 4.0,
-    OSM ODbL · Fotos: Projektarchiv
+    OSM ODbL · Karte: © GeoBasis-DE/BKG ({{ mapYear }}) CC BY 4.0 ·
+    ZKM-Kubus-Foto © JOEXX, CC BY-SA 3.0, via Wikimedia Commons · Fotos: Projektarchiv
   </footer>
 </template>
