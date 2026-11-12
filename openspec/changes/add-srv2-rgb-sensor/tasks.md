@@ -45,6 +45,7 @@
 - [x] 8.1 LightCard.vue: single `lightToPct(light)` helper (log characteristic `100 × ln(1 + light) / ln(256)`) used by year bars, zoom bars and the readout; spec delta + design amended to the non-linear characteristic. Verify: `npm run build` green.
 - [x] 8.2 Browser re-verify: real-mode readout for Nov 12 (light 2.14) ≈ 20.6 %, bars visibly taller than the linear render; fallback mode unchanged. Verify: Playwright DOM assertions + screenshot.
 - [x] 8.3 Single colour indicator (user amendment): chart bars carry the hue-normalized colour themselves (`saturated()`, fill = `pure(saturated(rgb))`), the separate colour-bar strip and `barGradient` are removed; `convoluted()` remains only in the synthetic fallback bars. Spec delta gains MODIFIED "Data pane cards" + ADDED "Licht card single colour indicator". Verify: build green + Playwright (no .colorbar, saturated fills) + screenshot.
+- [x] 8.4 Continuous tiling (user amendment): year bars span their FULL day slot (x = day start, w = W/365, no 0.82 shrink / centre offset) and real zoom bars the full hour slot (no 0.8 shrink), so contiguous measured days render as one band; real data gaps stay. Spec scenario + design amended. Verify: build green + Playwright geometry assertions (all widths == W/365, 13 touching adjacencies) + screenshot.
 
 ## Workflow follow-up
 

@@ -102,6 +102,10 @@ stored CET convention. Analysis of the id-2 feed (datatools/analyze_srv2.py,
 - **Year view positioning**: bars sit at their day-of-year on the unchanged
   365-day axis (cursor/season context preserved); days without measurements
   simply have no bar. Colour per day = `convoluted([r,g,b], intensity)`.
+  (Amended: bars span their FULL day slot — x = day start, w = W/365, no
+  shrink factor and no centre offset — so contiguous measured days tile
+  into a continuous band; real data gaps, e.g. the Oct 5–Nov 11 outage,
+  stay as gaps.)
 - **Zoom view**: the existing hourly fetch (channel list extended) serves
   light per hour; dark hours have light rows but no rgb rows (NOT NULL
   filter), so their bars render black — the physically correct colour.

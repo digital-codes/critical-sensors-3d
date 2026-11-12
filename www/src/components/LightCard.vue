@@ -112,8 +112,8 @@ const realYearBars = computed<Bar[]>(() => {
   return measuredBars(
     light.days,
     rgbMap,
-    (W / 365) * 0.82,
-    (key) => ((isoToDoy(key) - 0.5) / 365) * W,
+    W / 365,
+    (key) => ((isoToDoy(key) - 1) / 365) * W,
   );
 });
 
@@ -131,7 +131,7 @@ function windowRows(rows: DayRow[]): DayRow[] {
  *  data the daily rows fill the window (same fallback as SeriesCard) */
 const realZoomBars = computed<Bar[]>(() => {
   const start = zoomStartMs();
-  const w = (W / (ZOOM_SPAN_MS / 3600000)) * 0.8; // one hour slot
+  const w = W / (ZOOM_SPAN_MS / 3600000); // one full hour slot (no gaps)
   const lightH = props.wieseH?.wieseLight;
   const useHourly = lightH !== undefined && lightH.days.length > 0;
   const src = useHourly && lightH ? lightH.days : props.wiese?.wieseLight?.days ?? [];

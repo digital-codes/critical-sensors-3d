@@ -73,7 +73,9 @@ semantics ("—" where no measurement exists).
 - **WHEN** the card renders with fresh feed data in the year view
 - **THEN** bars appear only for measured days, positioned at their
   day-of-year on the unchanged 365-day axis, with height = mapped
-  intensity and colour = the day's light colour at full saturation
+  intensity and colour = the day's light colour at full saturation;
+  contiguous measured days SHALL tile edge-to-edge without gaps (each bar
+  spans its full day slot) — gaps appear only where data is missing
 
 #### Scenario: Log characteristic spreads the operating range
 
