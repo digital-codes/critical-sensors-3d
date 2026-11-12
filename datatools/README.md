@@ -71,7 +71,8 @@ URL) plus licence and landing-page links.
 # database mode (default): append new rows to the 'sensors' MySQL table
 .venv/bin/python datatools/refSensors.py
 # offline mode: no database, writes ref_<ts>.csv + co2_<ts>.csv +
-# sc_<ts>.csv (SensorCity neighbours) next to the script
+# sc_<ts>.csv (SensorCity neighbours) + srv2_<ts>.csv (wiese node)
+# next to the script
 .venv/bin/python datatools/refSensors.py --csv
 ```
 
@@ -348,6 +349,39 @@ unqualified shared channels.
   idempotent `ALTER TABLE` immediately after the single-instance takeover
   and BEFORE opening any connection or transaction on `sensors` — while an
   old instance holds metadata locks on the table, `ALTER TABLE` fails.
+
+## Wiese node srv2.php — sensor id 2, RGB light colour (implemented 2026-11-12)
+
+The orchard's own node reports on `https://critical-sensors.de/srv2.php`
+(a JSON list of string-valued rows, all nodes in one response). refSensors
+fetches `?days=<N>` (N = 35 default, `REFSENSORS_SRV2_DAYS` env override for
+one-off backfills), filters sensor **id 2** ("Wiese2" registry slot), and
+appends **hourly means** under id 2: `temp/hum/co2/light/bat/rssi` plus the
+decoded light colour `r/g/b`.
+
+- `rfu` is the colour packed into 24 bits and transported as a float:
+  `int(round(float(rfu))) & 0xFFFFFF`, byte order **0xRRGGBB** (r = high
+  byte; `RFU_BYTE_ORDER` constant flips it if the physical LED ever
+  disagrees). The packed value itself is NOT stored — a mean over packed
+  values would be meaningless and the decode is lossless.
+- The node's two **white LEDs cannot be switched off**, so rgb with no
+  ambient light is self-illumination: samples with `light == 0` contribute
+  no rgb (NULL), an all-dark hour stores NULL r/g/b. This gate also removes
+  the node's r==45 night status blinks and boot artifacts. `light` itself is
+  8-bit (0–255, observed) and is NOT contaminated by the LEDs.
+- srv2 timestamps are **already in the stored CET convention** — no +1 h
+  shift (unlike the UTC-sourced SensorCity feeds); see Timezone convention.
+- Write + dedup identical to the SensorCity neighbours (gap-tolerant
+  per-id date-set, re-runs are no-ops); a failed fetch logs and leaves id 2
+  empty.
+- The virtual composite id 7 (Wiese-Verbund) sources `co2` and now
+  `r/g/b` from sensor 2 (`sensor_sources`); the dashboard reads the
+  composite.
+- Offline analysis/exploration tool: `datatools/analyze_srv2.py`
+  (`--days/--id/--gate light|sun|none/--csv`).
+- Migration for databases predating this change:
+  `datatools/migrate_add_rgb_sensor.py` (columns r/g/b + id-7 sources +
+  id-2 registry update; idempotent).
 
 ## Timezone convention
 

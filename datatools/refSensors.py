@@ -178,7 +178,8 @@ if not args.csv:
     with upgradeEngine.begin() as conn:
         for col in ("icosTemp","icosHum","icosWind","wind","mastWind","rain","mastRain",
                     "solar","soilMoist","soilTemp",
-                    "temp_006","hum_006","temp_116","hum_116"):
+                    "temp_006","hum_006","temp_116","hum_116",
+                    "r","g","b"):
             if col not in existingCols:
                 print("ALTER TABLE sensors ADD COLUMN",col)
                 conn.exec_driver_sql("ALTER TABLE sensors ADD COLUMN %s FLOAT" % col)
@@ -782,6 +783,69 @@ if scFrames:
     # current-era rows only - the pre-2020-10-25 CEST rule never applies)
     scNeighbours["date"] += pd.Timedelta(hours=1)
 
+# ######################################
+# wiese node feed (srv2.php): the orchard's own RGB node, stored under its
+# own sensor row (id 2) - NOT merged into the reference composition. The
+# endpoint answers a JSON LIST of dicts with STRING values; 'date' is
+# already in the stored CET convention, so NO timezone shift is applied
+# here. 'rfu' packs the three 8-bit RGB channels into one integer - packed
+# values must never be averaged, so rfu is unpacked per row and only r/g/b
+# are resampled.
+SRV2_URL = "https://critical-sensors.de/srv2.php"
+SRV2_DAYS = int(os.environ.get("REFSENSORS_SRV2_DAYS", "35"))
+RFU_BYTE_ORDER = "RRGGBB"
+
+checkShutdown("srv2 fetch")
+
+def srv2NodeFrame():
+    """Hourly means for the srv2 node (id 2): temp/hum/co2/light/bat/rssi
+    plus r/g/b unpacked from the packed 'rfu' integer."""
+    try:
+        r = requests.get(SRV2_URL, params={"days": SRV2_DAYS}, timeout=120)
+        r.raise_for_status()
+        rows = [row for row in r.json() if str(row.get("id")) == "2"]
+        if not rows:
+            print("srv2 node: no records returned for id 2")
+            return None
+        recs = []
+        for row in rows:
+            v = int(round(float(row.get("rfu") or 0))) & 0xFFFFFF
+            hi, mid, lo = v >> 16, (v >> 8) & 0xFF, v & 0xFF
+            r8, g8, b8 = (hi, mid, lo) if RFU_BYTE_ORDER == "RRGGBB" \
+                else (lo, mid, hi)
+            recs.append({
+                "date": datetime.strptime(row["date"], "%Y-%m-%d %H:%M:%S"),
+                "light": float(row.get("light") or 0),
+                "r": float(r8),
+                "g": float(g8),
+                "b": float(b8),
+                "temp": float(row["temp"]) if "temp" in row else float("nan"),
+                "hum": float(row["hum"]) if "hum" in row else float("nan"),
+                "co2": float(row["co2"]) if "co2" in row else float("nan"),
+                "bat": float(row["bat"]) if "bat" in row else float("nan"),
+                "rssi": float(row["rssi"]) if "rssi" in row else float("nan"),
+            })
+        n = pd.DataFrame(recs).sort_values("date")
+        # the node's white LEDs cannot be switched off: light == 0 rows are
+        # self-illumination, their RGB readings are meaningless -> no-data
+        n.loc[n.light <= 0, ["r", "g", "b"]] = float("nan")
+        h = n.set_index("date")[["temp", "hum", "co2", "light", "bat", "rssi",
+                                 "r", "g", "b"]] \
+             .resample("h").mean().dropna(how="all")
+        # r/g/b average lit samples only; an all-dark hour stays NaN
+        h["rssi"] = h["rssi"].round().astype("Int64")
+        h["id"] = 2
+        print("srv2 node: %d records -> %d hourly rows (id 2)"
+              % (len(n), len(h)))
+        return h.reset_index()[["date", "id", "temp", "hum", "co2", "light",
+                                "bat", "rssi", "r", "g", "b"]]
+    except Exception as exc:
+        print("srv2 node fetch failed:", exc, "- id 2 stays empty")
+        return None
+
+
+srv2Node = srv2NodeFrame()
+
 #print(icos)
 
 
@@ -850,6 +914,10 @@ if args.csv:
         scFile = os.path.join(scriptDir,"sc_" + ts + ".csv")
         scNeighbours.to_csv(scFile, index=False)
         print("wrote",scFile)
+    if srv2Node is not None and len(srv2Node):
+        srv2File = os.path.join(scriptDir,"srv2_" + ts + ".csv")
+        srv2Node.to_csv(srv2File, index=False)
+        print("wrote",srv2File)
     sys.exit(0)
 
 
@@ -990,7 +1058,10 @@ if len(ref):
             "temp_006":Float,
             "hum_006":Float,
             "temp_116":Float,
-            "hum_116":Float
+            "hum_116":Float,
+            "r":Float,
+            "g":Float,
+            "b":Float
         }
     )
 # the SensorCity neighbour rows land under their own ids (8/9/10) - same
@@ -1035,6 +1106,52 @@ if scNeighbours is not None and len(scNeighbours):
             index=False,
             chunksize=500,
             dtype=scDtype,
+        )
+
+# the srv2 node rows land under their own id (2) - same gap-tolerant dedup
+# as the SensorCity neighbours above: drop every hour ALREADY STORED for
+# id 2 within the fetch window (not just the newest boundary) so outage
+# gaps mid-window still backfill; nothing is ever deleted from the database
+if srv2Node is not None and len(srv2Node):
+    checkShutdown("srv2 node write")
+    srv2Cols = ["date", "id", "temp", "hum", "co2", "light", "bat",
+                "rssi", "r", "g", "b"]
+    srv2Node = srv2Node[srv2Cols]
+    rows = srv2Node[srv2Node.id == 2].copy()
+    winStart = (rows.date.min() - pd.Timedelta(hours=1)) \
+        .strftime("%Y-%m-%d %H:%M:%S")
+    stored = pd.read_sql(
+        "select date from sensors where id = 2 and date >= '%s'"
+        % winStart, db)
+    before = len(rows)
+    if len(stored):
+        have = set(pd.to_datetime(stored.date))
+        rows = rows[~rows.date.isin(have)]
+    print("srv2 node id 2: %d fetched, %d already stored, %d to add"
+          % (before, before - len(rows), len(rows)))
+    if rows.empty:
+        print("srv2 node id 2: no new data")
+    else:
+        rows = rows.reset_index(drop=True)
+        print("srv2 node id 2: adding %d rows" % len(rows))
+        rows.to_sql(
+            "sensors",
+            engine,
+            if_exists="append",
+            index=False,
+            chunksize=500,
+            dtype={
+                "id": SmallInteger,
+                "temp": Float,
+                "hum": Float,
+                "co2": Float,
+                "light": Float,
+                "bat": Float,
+                "rssi": SmallInteger,
+                "r": Float,
+                "g": Float,
+                "b": Float,
+            },
         )
 
 # compose the virtual sensors (id 7 Wiese-Verbund) from the new data the

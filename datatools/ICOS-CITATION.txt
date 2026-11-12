@@ -1,4 +1,4 @@
-Kubistin, D., Plaß-Dülmer, C., Kneuer, T., Lindauer, M., Müller-Williams, J., Zwerschke, E. (2026). ICOS ATC NRT CO2 growing time series from Karlsruhe (30.0 m), 2026-04-01–2026-11-10, ICOS RI, https://hdl.handle.net/11676/q8l9qqOpU89-DwlSg301jZqZ
-PID: 11676/q8l9qqOpU89-DwlSg301jZqZ
-Landing page: https://meta.icos-cp.eu/objects/q8l9qqOpU89-DwlSg301jZqZ
+Kubistin, D., Plaß-Dülmer, C., Kneuer, T., Lindauer, M., Müller-Williams, J., Zwerschke, E. (2026). ICOS ATC NRT CO2 growing time series from Karlsruhe (30.0 m), 2026-04-01–2026-11-11, ICOS RI, https://hdl.handle.net/11676/XwHIUUAuG8hlZMg-z0TCa6LJ
+PID: 11676/XwHIUUAuG8hlZMg-z0TCa6LJ
+Landing page: https://meta.icos-cp.eu/objects/XwHIUUAuG8hlZMg-z0TCa6LJ
 Licence: ICOS RI, licensed under CC BY 4.0 (https://www.icos-cp.eu/data-services/about-data-portal/data-license)

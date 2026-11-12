@@ -8,6 +8,8 @@ orchard/public/php/config.ini
 # --- generated test/measurement output ---
 co2_*.csv
 ref_*.csv
+sc_*.csv
+srv2_*.csv
 datatools/refsensors.lock
 
 # --- bulk imagery: keep out of git ---
