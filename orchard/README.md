@@ -283,6 +283,16 @@ Inputs: `geoimages/` (LGL-BW DGM/DOP GeoTIFFs + world files),
   Dec 1 through winter — winter renders bare (vendored-ez-tree tip-leaf
   gate, see above) and winter grass sits at 2 cm so blades do not speckle
   the snow surface.
+- Crown apples (`src/trees.ts`, `CONFIG.TREES.CROWN_APPLES`): instanced
+  squashed spheres (~3.5 cm) hanging at the outer branches/twigs of the
+  three trees beside the Hocksitz towers (site ids bk02600/02602/02801) —
+  only in the ripening window, day-of-year 268–285 (late September to
+  mid October), 100–250 apples per tree.
+- Static fallen-leaf litter around each rendered tree (`src/trees.ts`,
+  `CONFIG.TREES.GROUND_LEAVES`): flat leaf quads scattered in a small ring,
+  using the tree species' canopy leaf texture; first appears with the
+  midAutumn thinning and keeps its fall tint through the bare winter
+  variants (spring–earlyAutumn builds carry none).
 - Seasonal grass height (growth from late Feb, peak early summer, mowed
   late Aug, low winter) and a seasonal midday sun, so the generated trees
   cast the only, season-correct shadows.

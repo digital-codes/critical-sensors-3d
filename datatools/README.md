@@ -328,6 +328,27 @@ sourced from the `stations` rows `SC-N-002` / `SC-N-116` / `SC-SW-006`:
   transactions, prints before/after row counts; safe to re-run. Fresh
   databases already get everything from `create_tables.py`.
 
+## Station-qualified air channels on the reference row (implemented 2026-11-11)
+
+The reference row (id 0) carries the air temperature/humidity of the two
+nearest SensorCity air stations as first-class, station-qualified columns:
+`temp_006`/`hum_006` (006 Lützenhardtstraße, station key `SC-SW-006`) and
+`temp_116`/`hum_116` (116 Breite Straße, `SC-N-116`) — merged onto the
+reference frame with the same left-join-on-date pattern as
+`mastWind`/`mastRain`, following the reference row's CET time-base shift.
+Units °C and %RH. The per-id neighbour rows (ids 8–10) continue unchanged;
+the "never merged into the reference rows" rule now covers only the
+unqualified shared channels.
+
+- Live-database migration: `datatools/migrate_add_station_air_columns.py`
+  (idempotent — adds the four NULLable FLOAT columns, registers the channels
+  in `sensor_sources` for id 0; safe to re-run). Fresh databases get
+  everything from `create_tables.py`.
+- Schema-alteration ordering (fixed 2026-11-11): refSensors runs its
+  idempotent `ALTER TABLE` immediately after the single-instance takeover
+  and BEFORE opening any connection or transaction on `sensors` — while an
+  old instance holds metadata locks on the table, `ALTER TABLE` fails.
+
 ## Timezone convention
 
 Stored dates are **UTC+1 (CET)**; rows before 2020-10-25 02:00 (UTC+2) get an
