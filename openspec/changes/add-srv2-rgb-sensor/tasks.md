@@ -24,8 +24,24 @@
 - [x] 4.3 Second live run (default window) adds 0 id-2 rows. Verify: log shows "0 to add" for id 2.
 - [x] 4.4 Update datatools/README.md (srv2 source section: feed shape, decode, gate, REFSENSORS_SRV2_DAYS, migration note). Verify: README section present in the same commit train.
 
+## 5. Dashboard API: wiese channels
+
+- [ ] 5.1 api.php: add `wieseLight` => [2, 'light', '0–255', source label, licence] and `wieseR`/`wieseG`/`wieseB` => [7, 'r'/'g'/'b', '0–255', …] to the CHANNELS whitelist; add `'r','g','b'` to ALLOWED_COLUMNS. Verify: `php -l orchard/public/php/api.php` plus `curl 'http://127.0.0.1:9000/api.php?channels=wieseLight,wieseR&from=2026-11-12&to=2026-11-12'` (dev php server on 9000) returns 200 with days from sensors 2 and 7.
+
+## 6. Dashboard frontend: Licht card real data + fallback
+
+- [ ] 6.1 api.ts: extend ChannelKey and CHANNEL_LIST with `wieseLight`, `wieseR`, `wieseG`, `wieseB`. Verify: `npm run build` (root, builds both apps) green.
+- [ ] 6.2 LightCard.vue: accept the four channel series (daily + hourly) as props; when the light channel's daily `range.to` is within 31 days of today render measured bars (year view: per measured day at its day-of-year on the 365-day axis, height = light/255×100 %, colour = convoluted rgb; 7-day zoom: hourly values, black where no rgb), readout via the existing value-at-day semantics ("—" without data); otherwise keep the synthetic curves with the dummy label. Real mode labels the card `Wiese` instead of `Wiese (fake/geplant)`. Verify: build green + browser check below.
+- [ ] 6.3 DataPane.vue: pass the new series (daily + hourly) into LightCard; update the mobile `Wiese/Licht` description (real measurements + demo fallback note). Verify: build green.
+
+## 7. Dashboard verification (browser, sequential)
+
+- [ ] 7.1 Real mode: `php -S 127.0.0.1:9000` + `npm run dev` (port 5212), Playwright probe — LightCard shows bars only on measured days, header tag reads `Wiese`, day cursor on Nov 12 (doy 317) shows the measured intensity readout, colour bar present. Verify: screenshot + DOM assertions recorded.
+- [ ] 7.2 Fallback mode: Playwright route-intercept the api answer with a stale `range.to` (older than 31 days) — the card must switch to the synthetic demo rendering with the dummy label. Verify: screenshot + DOM assertions recorded.
+- [ ] 7.3 Full build `npm run build` green (both apps). Verify: exit 0.
+
 ## Workflow follow-up
 
 - Commit train per datatools conventions (one logical change per commit; no credentials; no generated artifacts).
 - `openspec validate add-srv2-rgb-sensor` stays green; archive the change only after the user accepts the final state (`openspec archive add-srv2-rgb-sensor -y` + commit the moved directory).
-- Dashboard wiring of the Licht & Lichtfarbe card (api.php $CHANNELS → id 7 / id 2 light+r/g/b) is a separate future change.
+- After archive, the www hard-reload note applies (Ctrl+Shift+R) — the Licht card changes are frontend code.

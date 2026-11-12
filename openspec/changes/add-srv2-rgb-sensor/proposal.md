@@ -30,9 +30,15 @@ are self-illumination, not sky colour — the ingestion must gate them.
   `since` = 2026-09-19 (first feed data).
 - srv2.php timestamps are already in the stored CET convention — no timezone
   shift is applied (unlike the SensorCity UTC epoch-ms sources).
+- Dashboard wiring: `api.php` exposes the four wiese channels (light from
+  sensor 2, r/g/b from the composite id 7) and the www Licht & Lichtfarbe
+  card renders the measured intensity (light 0–255 → 0–100 % linear) and
+  colour instead of its synthetic demo data.
+- Demo fallback: when the newest real value is older than 31 days (or
+  absent — feed outage), the card renders the previous synthetic demo data
+  instead, still labeled as dummy.
 
-Out of scope: dashboard/api.php wiring of the Licht & Lichtfarbe card to the
-new data, ingestion of the other srv2 ids (3, 11).
+Out of scope: ingestion of the other srv2 ids (3, 11).
 
 ## Capabilities
 
@@ -45,6 +51,10 @@ new data, ingestion of the other srv2 ids (3, 11).
 - `reference-sensor-pipeline`: new requirement for wiese node (srv2.php)
   ingestion — fetch, rfu→rgb decode, light gate, hourly rows under id 2 —
   plus the r/g/b columns requirement (fresh database + live migration).
+- `dashboard-web`: the Licht & Lichtfarbe card renders real measurements
+  (api channel whitelist gains the four wiese channels; card converts light
+  to 0–100 % and convolutes rgb) with a demo fallback when the feed is
+  stale for more than a month.
 
 ## Impact
 
@@ -58,5 +68,7 @@ new data, ingestion of the other srv2 ids (3, 11).
 - Pipeline database `wiese`: id-2 rows appear; virtual id-7 composition
   picks up co2/r/g/b from id 2. The old live site (`cz` DB, srv.php) is
   untouched; srv2.php itself is read-only for us.
+- Dashboard: `orchard/public/php/api.php` (channel whitelist + columns) and
+  `www/` (`api.ts` channel list, `DataPane.vue`, `LightCard.vue`).
 - Python >= 3.12 constraint unchanged; no new dependencies (requests is
   already required).

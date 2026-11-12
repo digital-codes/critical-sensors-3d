@@ -74,6 +74,34 @@ stored CET convention. Analysis of the id-2 feed (datatools/analyze_srv2.py,
   already tolerates unknown variables with a logged skip). The dashboard
   can read id 2's light directly when the Licht card gets wired.
 
+## Dashboard wiring (amendment 2026-11-12)
+
+- **Channel mapping**: `api.php` gains `wieseLight` (sensor **2**, column
+  `light`) and `wieseR/G/B` (sensor **7**, columns `r/g/b`). The split is
+  deliberate: id 7's `light` stays NULL by design (sourced only from the
+  unbuilt klx Wiesenstation), so the card takes intensity from the node
+  itself while the colour flows through the composite (future nodes are
+  averaged into it automatically). `$CHANNELS` remains the single switch
+  point.
+- **Intensity conversion**: linear `light / 255 × 100 %` in the card (the
+  0–255 range is the node's real output; no invented normalisation). The
+  api serves the raw column — the unit label documents `0–255`.
+- **Freshness / demo fallback**: the card derives freshness from the
+  UNPINNED daily response (`range.to` = absolute newest value date — the
+  hourly call pins its window, so only the daily one is authoritative). No
+  api schema change needed. `range.to >= today − 31 days` → real rendering;
+  otherwise the previous synthetic curves (current behaviour, dummy label
+  kept). 31 days ≈ "more than a month"; constant in LightCard.
+- **Year view positioning**: bars sit at their day-of-year on the unchanged
+  365-day axis (cursor/season context preserved); days without measurements
+  simply have no bar. Colour per day = `convoluted([r,g,b], intensity)`.
+- **Zoom view**: the existing hourly fetch (channel list extended) serves
+  light per hour; dark hours have light rows but no rgb rows (NOT NULL
+  filter), so their bars render black — the physically correct colour.
+- **Fresh-data labelling**: the header tag `Wiese (fake/geplant)` shows only
+  in fallback mode; with fresh data the card is labelled `Wiese` like the
+  real cards. Mobile description updated accordingly.
+
 ## Risks / Trade-offs
 
 - [srv2.php timestamps might not be CET-fixed] → the evidence above is
