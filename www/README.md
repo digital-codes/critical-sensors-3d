@@ -36,7 +36,7 @@ error state; the scene and streak still work.
 | `TimeSlider.vue` | the global "Zeit" slider; readout updates instantly from a local value, the store commit is debounced (~250 ms trailing, flush on touch-up); ±1 day buttons flank the slider |
 | `DataPane.vue` | six `SeriesCard`s fed by the PHP API (CO₂, Lufttemperatur, Luftfeuchte, Solar, Wind, Boden = Bodenfeuchte + Bodentemperatur), the `LightCard`, and the `MapCard` |
 | `SeriesCard.vue` | SVG curve over the full year **or** the shared 7-day zoom (last 7 days incl. today, hourly), red cursor at the global day, value readout, source subtitle + PID licence line |
-| `LightCard.vue` | the ONLY dummy card ("Wiese/Licht", planned station): mulberry32 intensity + RGB triplet, ONE combined colour bar |
+| `LightCard.vue` | wiese Licht card ("Wiese/Licht"): real measured light intensity + colour from the wiese node (api channels `wieseLight`, `wieseR/G/B`) — intensity via a log characteristic `100·ln(1+light)/ln(256)`, bars carry the day's/hour's light colour at full saturation (single indicator, contiguous days tile edge-to-edge), readout via value-at-day; when the newest real value is older than 31 days it falls back to the mulberry32 demo curves, labelled dummy |
 | `MapCard.vue` | leaflet site map (BKG tiles) with the orchard and the sensor stations |
 | `OrchardPane.vue` | mounts the 3D scene via `mountOrchard(host, { embed: true })` and wires store ↔ scene both ways (day events tagged by source) — see the embed section in `../orchard/README.md` |
 | `StreakPanel.vue` | the photo strip: six archived 2020/21 weekly photos, date markers with click-to-jump; image animation only — it does NOT move the simulation day |
