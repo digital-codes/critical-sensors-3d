@@ -20,7 +20,7 @@
 ## 4. Live run (user-gated production write)
 
 - [x] 4.1 Ask the user, then run `migrate_add_rgb_sensor.py` against the live DB (dburl.txt) and confirm the readback (columns exist, sources registered, registry updated). Verify: SQL readback printed.
-- [x] 4.2 Run the pipeline live once with `REFSENSORS_SRV2_DAYS=400` (backfill; PID-lock note: the server cron may overlap — date-ascending insert + latest-date dedup self-heals). Verify: DB readback — id-2 row count ≈ 936+, hourly, r/g/b NULL exactly in dark hours, spot values match datatools/analyze_srv2.py decode; id 7 gains co2/r/g/b.
+- [x] 4.2 Run the pipeline live once with `REFSENSORS_SRV2_DAYS=400` (backfill; PID-lock note: the server cron may overlap — date-ascending insert + latest-date dedup self-heals). Verify: DB readback — id-2 row count ≈ 936+, hourly, r/g/b NULL exactly in dark hours, spot values match datatools/analyze_srv2.py decode; id 7 gains co2/r/g/b. *(Actual: 281 hourly rows from 936 raw samples — the 936+ estimate was raw-count; hourly aggregation verified instead, all other criteria met.)*
 - [x] 4.3 Second live run (default window) adds 0 id-2 rows. Verify: log shows "0 to add" for id 2.
 - [x] 4.4 Update datatools/README.md (srv2 source section: feed shape, decode, gate, REFSENSORS_SRV2_DAYS, migration note). Verify: README section present in the same commit train.
 
