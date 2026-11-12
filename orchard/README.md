@@ -15,7 +15,7 @@ upstream recorded one leaf per tip unconditionally, so the bare winter
 variant (count 0) still carried ~280 green tufts. Re-apply that gate when
 updating the vendored copy.
 
-# Cat model
+## Cat model
 
 The walking cat (`public/models/cat.glb`) is **built procedurally** with
 trimesh — generator, method notes and regeneration instructions live in
@@ -72,6 +72,21 @@ npm run build    # tsc + vite build
   (`src/rng.ts`) — the same seed renders a pixel-identical scene, which is
   how refactors get verified by pixel comparison. Without the parameter the
   scene is randomised per load, as before.
+
+### Embed mode (the www dashboard)
+
+`src/main.ts` exports `mountOrchard(host, opts)`; the standalone app only
+auto-runs when `import.meta.env.VITE_WIESE_EMBED` is **not** set (www's Vite
+config defines it, so importing the module into the dashboard never
+double-mounts a scene). The dashboard's `OrchardPane.vue` calls
+`mountOrchard(host, { embed: true })`, which builds the in-scene chrome
+(preset row, day slider, sky select, cat toggle, compass) inside the host
+element — reusing the standalone element ids `#dayofyear` / `#seasonvalue` /
+`#treeprogress`, so capture-ready waits work on both apps — and returns a
+controller `{ setDay, onDay, rig, scene3 }`. `scene3` is a live getter:
+every `window.__scene3` merge replaces the object via spread, so never cache
+a captured reference. Compare panel, Kamera panel and footer remain
+standalone-only. Dashboard side: `../www/README.md`.
 
 ### Sky conditions
 
@@ -191,6 +206,10 @@ edges, z < −116.1) clamp to heightmap edge heights in the sampler.
 deterministic: re-running it produces byte-identical outputs (except the
 `generatedAt` date in `site.json`).
 
+The dashboard's live sensor data flows through the PHP API in
+`public/php/` — see [`public/php/README.md`](public/php/README.md)
+(channels, endpoints, deployment, security).
+
 Outputs:
 
 - `public/site/heightmap.png` — 16-bit PNG, mm above `hmin`, from the DGM
@@ -286,24 +305,28 @@ Inputs: `geoimages/` (LGL-BW DGM/DOP GeoTIFFs + world files),
 - 26 LoD2 buildings around the orchard (west residential row incl.
   St.-Florian-Str. 2/4/6/12): real wall/roof volumes casting shadows, DOP-
   textured roofs, photo-calibrated facade colours.
-- A walking cat (`src/cat.ts`, hidden by default): a real-size (~0.5 m)
-  low-poly cat patrols a seeded closed loop between the tree rows
-  (`CONFIG.CAT` — speed, seed, clearance), clamped to the terrain surface
-  each frame and casting real shadows. Enabled via the "Katze" checkbox in
-  the season panel; **Katze folgen** chases it with a smoothed follow cam
-  (cancels on user interaction, like the Vogelflug). The walk/idle clips
+- A walking cat (`src/cat.ts`, hidden by default): a real-size (~0.75 m)
+  low-poly cat plays a ONE-SHOT choreographed route (`CONFIG.CAT.ROUTE` —
+  user-tuned): it jumps off a Stückle fence post, walks west past the
+  stone-jug still life (procedural lathe jug with embossed MOST + apples,
+  visibility synced with the cat), turns back and stops facing the east
+  Hochsitz — clamped to the terrain surface each frame and casting real
+  shadows. Enabled via the "Katze" checkbox in the season panel;
+  **Katze folgen** starts the walk and snap-follows it with a chase cam
+  (re-snaps every render, so manual framing first cancels it; the pose also
+  cancels on user interaction, like the Vogelflug). The walk/idle clips
   come from the model's rigid-limb rig (body/tail/4 legs as animated
   nodes); huge frames are clamped so tab switches don't teleport it.
 - ~90k instanced grass blades with wind sway, clipped to the lawn mask.
 - Overcast sky dome with procedural clouds.
-- Camera presets matching the real photo vantages: **Südende** (south-west,
-  ground level, looking north-east — the classic weekly-photo spot),
-  **Erhöht** (same axis, ~5.5 m up — the slightly elevated 2026 shots),
-  **Nordwest** (meadow NW corner, ~5 m up, looking south-east at the
-  Hocksitzcafe — photo 20261022_125920) and **Fotostandpunkt** (south of
-  St.-Florian-Str. 1, eye height, looking at the north slope — the
-  Vergleich reference-photo vantage); heights are sampled from the
-  heightmap. Note: hedges/rows are painted on the terrain texture, so very
+- Camera presets as runtime CONFIG poses (`CONFIG.CAMERA`, registered in
+  `main.ts` — they replace the generated site.json vantages at startup):
+  **Süd** (`vergleich` — the initial photo-vantage pose, `CONFIG.CAMERA.START`),
+  **Nord** (`erhoeht` — elevated vantage on the rise NE of the meadow, eye
+  3.6 m above ground) and **Tafel** (the info board's reading side — the
+  startup view at ~1.5 m reading distance). Südende/Nordwest were dropped
+  per user decision; heights are sampled from the heightmap. Note: hedges/rows
+  are painted on the terrain texture, so very
   low oblique views from outside the meadow read them edge-on — stay inside
   the meadow boundary for ground-level shots.
 - Compare mode (**Vergleich**): 9 reference photos (weekly photos from the

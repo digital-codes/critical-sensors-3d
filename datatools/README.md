@@ -2,7 +2,8 @@
 
 `refSensors.py` feeds the **virtual reference sensor** (sensor id `0`) of
 [critical-sensors.de](https://critical-sensors.de). It merges data from
-three source groups into the `sensors` table of the `cz` MySQL database,
+three source groups into the `sensors` table of the `wiese` MySQL database
+(the old live site's database `cz` is separate),
 using the **exact same row format as the real IoT sensors** (`id = 0`, plus
 placeholder columns `rssi`, `bat`, `raw`, ...), so the dashboard treats it
 like any device.

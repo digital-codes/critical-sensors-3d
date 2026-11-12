@@ -1,6 +1,18 @@
 # Katzenwedelwiesen Dashboard — Design Plan (v0.1, for review)
 
-Status: **proposal** — written while away; nothing implemented yet.
+Status: **design record, largely implemented.** The dashboard was built through
+OpenSpec changes — start at
+`openspec/changes/archive/2026-11-10-dashboard-prototype/` and the later
+refinement changes (`www-dashboard-refinements`, `add-www-site-map`,
+`add-station-temperature-humidity-metrics`, …) it lists in the archive index;
+current state in the repo `README.md` and `www/README.md`. Deviations from this
+plan: data cards are live from the PHP sensor API (not a JSON cache — that
+replacement of the old site's `srv.php` is still open), the streak animates
+photos only (it does not move the simulation day, per user decision), and the
+live-render comparison phase (image B = 3D render) was not built. The design
+tokens in §2b still govern the dashboard's look.
+
+Original status: *proposal — written while away; nothing implemented yet.*
 Target: the new German-only dashboard for critical-sensors.de, integrating the
 Three.js orchard model, the imgsmear comparison bar ("Streak-Balken"), and
 ICOS ERIC time-series data.

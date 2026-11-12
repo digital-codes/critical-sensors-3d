@@ -14,31 +14,64 @@ driven through `opencode` for a complete change trace.
 | `datatools/` | `refSensors.py` — assembles a virtual reference sensor from DWD (Kollsberg 04177) + ICOS (KIT tower @30 m CO₂, @2.5 m meteo) + two wind sources (DWD 10-min wind, SensorCity mast) and writes it into the sensor DB. `sensorcity_pick.py`/`sensorcity_read.py` — SensorCity neighbour-station probe (exploratory). See `datatools/README.md`. |
 | `orchard/` | Three.js + ez-tree realtime 3D model of the orchard (terrain from LGL-BW DGM 0.25 m, aerial from DOP20 2024, 39 curated Baumkataster trees with photo-calibrated heights, LoD2 buildings, seasons, compare mode). See `orchard/README.md`. |
 | `orchard/public/php/` | `api.php` — sensor API for the dashboard: daily min/mean/max per channel from the `wiese.sensors` DB as JSON; channel→sensor map inside as the single switch point; credentials via `config.ini` (gitignored; template committed). Deployment + security notes: `orchard/public/php/README.md`. |
-| `www/` | New dashboard (Vue 3 + Vite, dev port 5212; `publicDir` → `orchard/public`): header with global day-of-year slider, data pane fed live by the PHP sensor API (six real channels + the dummy Licht & Lichtfarbe card), 3D pane + photo streak follow in later steps of `openspec/changes/dashboard-prototype`. |
+| `www/` | **The user-facing dashboard** (German; Vue 3 + Vite + TS, dev port 5212): header with the global day-of-year slider, data pane fed live by the PHP sensor API (six measured channels + the dummy Licht card + the site map card), the embedded 3D orchard scene (`mountOrchard` embed mode), the photo streak and a mobile tab layout. See `www/README.md`. |
 | `oldwww/` | Current live PHP site (https://critical-sensors.de/) + weekly orchard photos 2020–2022. Reference for the new dashboard. |
 | `newimages/` | New 2026 reference photos (Hocksitzcafe, other directions). Too large for git; 9 downscaled copies live in `orchard/public/photos/`. |
 | `geoimages/` | LGL-BW open geodata (DGM, DOP, nDOM). Too large for git — re-download from https://opengeodata.lgl-bw.de/; see `geoimages/info.txt`. |
-| `ideas/` | Experiments: `ez-tree` (upstream tree lib, vendored into `orchard/src/eztree/`), `imgsmear`, `perlin`. |
+| `ideas/` | Experiments: `ez-tree` (upstream tree lib, vendored into `orchard/src/eztree/`), `imgsmear` (submodule — the photo-streak effect), `perlin` (noise; source of the snow tile), `sparks` (lightning-bolt tests, graduated into `orchard/src/sparks.ts`). See `ideas/README.md` and `ideas/sparks/README.md`. |
+| `tools/` | `cat_model/` — the procedural trimesh generator for the walking-cat GLB (`orchard/public/models/cat.glb`). See `tools/cat_model/README.md`. |
+| `docs/` | Design documents — `dashboard-plan.md` (dashboard concept, data inventory, design tokens; status note at the top). |
 | `openspec/` | OpenSpec workspace: proposals, specs, designs, task lists, archive. The change trace. |
 | `.cache/opencode/` | OSM API/Overpass snapshots (tree positions, Hocksitzcafe footprints) used by `orchard/tools/prepare_site.py`. |
+
+## Documentation
+
+Every subfolder with its own README, in one map:
+
+| Doc | Covers |
+|---|---|
+| [`www/README.md`](www/README.md) | the dashboard app: run, components, global state, streak modes, Vite wiring |
+| [`orchard/README.md`](orchard/README.md) | the 3D scene: geodata pipeline, features, config, embed mode, licences |
+| [`orchard/public/php/README.md`](orchard/public/php/README.md) | the sensor API: channels, endpoints, deployment, security |
+| [`datatools/README.md`](datatools/README.md) | the reference-sensor pipeline: sources, DB schema, lock, cron, troubleshooting |
+| [`tools/cat_model/README.md`](tools/cat_model/README.md) | the procedural cat-model generator |
+| [`ideas/README.md`](ideas/README.md) · [`ideas/sparks/README.md`](ideas/sparks/README.md) | experiments and their status (imgsmear, perlin, sparks) |
+| [`ideas/imgsmear/README.md`](ideas/imgsmear/README.md) | the ImgSmear component (streak effect; git submodule) |
+| [`docs/dashboard-plan.md`](docs/dashboard-plan.md) | the original dashboard design plan + design tokens |
+| `openspec/` | the change trace: `changes/archive/` (completed work), `specs/` (merged capability specs) |
 
 ## Quick start
 
 ```bash
-# 3D orchard
-cd orchard && npm install && npm run dev
+npm install                     # once per app: run inside www/ and orchard/
 
-# reference sensor pipeline (needs .venv)
-python3 -m venv .venv && .venv/bin/pip install -r datatools/requirements.txt
-.venv/bin/python datatools/refSensors.py --csv   # offline test
-.venv/bin/python datatools/refSensors.py         # DB write, needs REFSENSORS_DB_URL or datatools/dburl.txt
+# the dashboard — what visitors see (http://localhost:5212)
+npm run dev                     # = npm run dev:www
+
+# the standalone 3D scene only (http://localhost:5199)
+npm run dev:scene
+
+# production build of both apps (www/dist/ is the deployable)
+npm run build
 ```
+
+Live data in dev additionally needs the PHP sensor API
+(`php -S 127.0.0.1:9000 -t orchard/public/php orchard/public/php/router.php`;
+see `orchard/public/php/README.md`).
 
 Site data pipeline (regenerates `orchard/public/site/` + `orchard/src/site.json`
 deterministically; needs the geoimages tifs locally):
 
 ```bash
 python3 orchard/tools/prepare_site.py
+```
+
+Reference sensor pipeline (needs .venv):
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r datatools/requirements.txt
+.venv/bin/python datatools/refSensors.py --csv   # offline test
+.venv/bin/python datatools/refSensors.py         # DB write, needs REFSENSORS_DB_URL or datatools/dburl.txt
 ```
 
 ## Data sources & licences
@@ -68,17 +101,27 @@ python3 orchard/tools/prepare_site.py
 
 ## Status
 
-- `update-refsensors-icos-access` — complete, live-verified (ICOS via `icoscp-core`,
-  DWD per-source staleness guard, SQLAlchemy 2.x, `--csv` mode). Archived
-  2026-11-07, deltas in `openspec/specs/reference-sensor-pipeline`.
-- `orchard-3d-model` — complete, browser-verified (terrain, trees, seasons,
-  structures, grass/sky, compare mode); visual tuning session open. Archived
-  2026-11-07, deltas in `openspec/specs/orchard-3d-view`.
-- Work after those two changes (LoD2 buildings, photo-calibrated tree heights,
-  refSensors meteo/wind columns, dashboard plan + design tokens, Vogelflug
-  camera flight, Kamera panel, Vergleich photo vantage) is traced via git
-  commits + `orchard/README.md` — no OpenSpec change proposals for that batch;
-  the next batch (dashboard implementation) returns to the OpenSpec workflow.
+The dashboard is implemented and iterated. **20 OpenSpec changes are archived**
+under `openspec/changes/archive/` — from the sensor-pipeline and 3D-model
+foundations (2026-11-07/08) through sky conditions, thicket, cat, sparks,
+Lochstein, the `dashboard-prototype` itself (2026-11-10) to the recent
+refinements (2026-11-11: `www-dashboard-refinements`, `add-www-site-map`,
+`blitz-preset-and-idle-loop`, `fallen-ground-leaves`, `orchard-tree-apples`,
+`add-station-temperature-humidity-metrics`). The merged capability specs live
+in `openspec/specs/` (`dashboard-web`, `orchard-3d-view`,
+`orchard-ground-leaves`, `orchard-tree-apples`,
+`reference-sensor-pipeline`); `openspec list --changes` shows the current
+state.
+
+Current dashboard state: live data via the PHP sensor API (six measured
+cards + the dummy Licht card + site map), photo streak in `cycle` mode by
+default, mobile tab layout, embedded 3D scene with seasons, sky presets,
+day-gated lightning, leaf-fall calendar and apples.
+
+Open for later phases: the orchard's own IoT sensors (the `api.php`
+`$CHANNELS` map is the switch point when they arrive), a JSON cache
+replacing the old site's `srv.php`, and deriving the 3D sky condition from
+real weather data.
 
 ## Agent skills created or updated in the 2026-11-06/07 session
 

@@ -29,9 +29,9 @@
 
 ## 3. imgsmear wrapped emit (submodule)
 
-- [ ] 3.1 Add optional `wrapped` emit to `ideas/imgsmear/src/components/
+- [x] 3.1 Add optional `wrapped` emit to `ideas/imgsmear/src/components/
       ImgSmear.vue` (both cpu + shader renderers, backward-compatible)
-- [ ] 3.2 Commit inside the submodule, then bump the gitlink in wiese
+- [x] 3.2 Commit inside the submodule, then bump the gitlink in wiese
       (nested-repo commit order)
 
 ## 4. www app skeleton
@@ -75,29 +75,32 @@
 
 ## 7. Menu + info page
 
-- [ ] 7.1 `MenuButton.vue` + `InfoPage.vue`: overlay with about text, link
-      to https://critical-sensors.de/, complete credits list, Capacitor
-      Device readout (platform/model/OS/screen); streak pauses while open
-- [ ] 7.2 Sources footer under the streak section
+- [x] 7.1 ~~`MenuButton.vue` + `InfoPage.vue`~~ implemented as the header "i"
+      button + `InfoPopup.vue` (www-dashboard-refinements): overlay modal
+      with about text, critical-sensors.de link, credits, impressum/privacy,
+      repo link. Dropped in the refinements: Capacitor Device readout (the
+      @capacitor/device dependency stays installed but unused) and the
+      streak pause — the scene intentionally keeps running behind the modal.
+- [x] 7.2 Sources footer under the streak section
 
 ## 8. Responsive + verification
 
-- [ ] 8.1 Breakpoints: ≥1024px landscape two-pane (3D ~60%/data ~40%);
+- [x] 8.1 Breakpoints: ≥1024px landscape two-pane (3D ~60%/data ~40%);
       portrait/narrow single column data → 3D → streak; touch targets ≥44px
-- [ ] 8.2 Playwright checks at 1920×1024, 1024×768, 768×1024, 390×844:
+- [x] 8.2 Playwright checks at 1920×1024, 1024×768, 768×1024, 390×844:
       pane geometry per breakpoint, slider→scene/cards/streak sync,
       streak→scene day jump, wrap advance, info overlay content + pause
-- [ ] 8.3 `npm run build` (www) + orchard `tsc && vite build` clean; no
+- [x] 8.3 `npm run build` (www) + orchard `tsc && vite build` clean; no
       console/page errors on any viewport
-- [ ] 8.4 Screenshots (all viewports, winter+summer) posted for the user's
+- [x] 8.4 Screenshots (all viewports, winter+summer) posted for the user's
       visual verdict against ideas/shot-001.png
-- [ ] 8.5 Task checkboxes ticked only after own verification of each
+- [x] 8.5 Task checkboxes ticked only after own verification of each
 
 ## 9. Docs + trace
 
-- [ ] 9.1 Update `orchard/README.md` (embed mode, php endpoint) + root
+- [x] 9.1 Update `orchard/README.md` (embed mode, php endpoint) + root
       `README.md` layout table (www/, orchard/public/php rows) +
       dashboard-plan.md status note
-- [ ] 9.2 Commit; archive the change after final verification
+- [x] 9.2 Commit; archive the change after final verification
       (`openspec archive dashboard-prototype -y`) with the archive in the
       same commit
