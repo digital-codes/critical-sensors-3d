@@ -1,6 +1,47 @@
 # dashboard-web Delta
 
+## MODIFIED Requirements
+
+### Requirement: Data pane cards
+
+The data pane SHALL show seven cards, in this order: CO₂, Lufttemperatur,
+Luftfeuchte, Solar, Wind, Boden, Licht & Lichtfarbe. The first six SHALL
+render real measurements fetched from the PHP sensor endpoint; each shows a
+curve over the data range, a red cursor at the global day and the value at
+that day (or "—" where no data exists). The Licht & Lichtfarbe card's
+rendering is specified in the Licht card requirements. Card subtitles name
+the measuring source delivered by the endpoint.
+
+#### Scenario: Cursor follows the day
+
+- **WHEN** the global day changes to 105
+- **THEN** every card's cursor moves to mid-April and the value readouts
+  show that day's measured values (the dummy card: its synthetic values)
+
+#### Scenario: Real data with sources
+
+- **WHEN** the page loads with the pipeline database populated
+- **THEN** the six real cards render curves from the endpoint (CO₂/temp/hum/
+  wind from the Referenz sensor, solar from SensorCity 116, soil from
+  SensorCity 002) and each card names its source station
+
 ## ADDED Requirements
+
+### Requirement: Licht card single colour indicator
+
+The Licht & Lichtfarbe card SHALL render ONE chart only: bars above the
+x-axis whose height is the light intensity and whose colour is the light
+colour at full saturation — each day's/hour's rgb triplet scaled to its
+brightest channel (hue-preserving; a missing triplet stays black). There
+SHALL be no separate colour bar below the chart and never the three
+channels as separate strips; the demo fallback follows the same
+single-chart layout.
+
+#### Scenario: No second indicator
+
+- **WHEN** the card renders in measured or demo mode
+- **THEN** the chart bars carry the colour themselves and no colour-bar
+  strip exists below the ticks
 
 ### Requirement: Wiese channels on the sensor API endpoint
 
@@ -21,18 +62,25 @@ and error handling).
 ### Requirement: Licht card renders real measurements
 
 When the wiese feed has fresh data, the Licht & Lichtfarbe card SHALL render
-measured values instead of the synthetic demo curves: intensity as the
-linear conversion of the measured light (0–255 → 0–100 %) and plotted
-colour as the RGB value convoluted with that intensity (ONE combined colour
-bar — never three separate strips). The day-cursor readout SHALL follow the
-existing value-at-day semantics ("—" where no measurement exists).
+measured values instead of the synthetic demo curves: intensity via a
+monotonic non-linear characteristic of the measured light — logarithmic,
+`100 × ln(1 + light) / ln(256)` (0 → 0 %, 255 → 100 %). The day-cursor
+readout SHALL show the mapped intensity and follow the existing value-at-day
+semantics ("—" where no measurement exists).
 
 #### Scenario: Measured days on the year axis
 
 - **WHEN** the card renders with fresh feed data in the year view
 - **THEN** bars appear only for measured days, positioned at their
-  day-of-year on the unchanged 365-day axis, with height = converted
-  intensity and colour = the day's rgb × intensity
+  day-of-year on the unchanged 365-day axis, with height = mapped
+  intensity and colour = the day's light colour at full saturation
+
+#### Scenario: Log characteristic spreads the operating range
+
+- **WHEN** a day's mean light is 30 (raw 0–255; a bright measured day at
+  the shaded sensor)
+- **THEN** the plotted intensity is ≈ 62 %, not the linear 12 %, while 0
+  still maps to 0 % and 255 to 100 %
 
 #### Scenario: Seven-day zoom uses hourly data
 

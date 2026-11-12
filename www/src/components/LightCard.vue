@@ -11,7 +11,6 @@ import {
 
 const W = 320;
 const H = 92;
-const BAR_H = 10;
 
 const intensity = lightIntensity();
 const rgb = lightRgb();
@@ -70,8 +69,21 @@ function rgbLookup(
   return out;
 }
 
-/** measured bars: one per row, height = light/255 × 100 % of the chart,
- *  colour = the row's rgb convoluted with that percentage */
+/** measured light (0-255) -> displayed intensity 0-100 %, log characteristic */
+function lightToPct(light: number): number {
+  return (100 * Math.log(1 + light)) / Math.log(256);
+}
+
+/** light colour at full saturation: scale the triplet to its brightest
+ *  channel (hue-preserving); a missing/dark triplet stays black */
+function saturated(rgb: [number, number, number]): [number, number, number] {
+  const f = 255 / Math.max(1, ...rgb);
+  return [Math.min(255, rgb[0] * f), Math.min(255, rgb[1] * f), Math.min(255, rgb[2] * f)];
+}
+
+/** measured bars: one per row, height = mapped intensity (log
+ *  characteristic) of the chart, colour = the row's rgb at full
+ *  saturation (hue-preserving) */
 function measuredBars(
   rows: DayRow[],
   rgbMap: Map<string, [number, number, number]>,
@@ -79,14 +91,14 @@ function measuredBars(
   xOf: (key: string) => number,
 ): Bar[] {
   return rows.map((row) => {
-    const pct = (row[1] / 255) * 100;
+    const pct = lightToPct(row[1]);
     const h = Math.max(1, (pct / 100) * (H - 2));
     return {
       x: xOf(row[0]),
       w,
       h,
       y: H - h,
-      fill: convoluted(rgbMap.get(row[0]) ?? [0, 0, 0], pct),
+      fill: pure(saturated(rgbMap.get(row[0]) ?? [0, 0, 0])),
     };
   });
 }
@@ -185,30 +197,13 @@ const bars = computed<Bar[]>(() => {
   });
 });
 
-/** ONE combined colour bar: the day's RGB colour (all three channels
- *  blended per day — never R/G/B as separate strips); real mode places one
- *  stop per measured day at its doy position */
-const barGradient = computed(() => {
-  if (real.value) {
-    const light = props.wiese?.wieseLight;
-    if (!light) return '';
-    const rgbMap = rgbLookup(props.wiese?.wieseR, props.wiese?.wieseG, props.wiese?.wieseB);
-    const stops = light.days.map(
-      (row) => `${pure(rgbMap.get(row[0]) ?? [0, 0, 0])} ${((isoToDoy(row[0]) - 0.5) / 365) * 100}%`,
-    );
-    return `linear-gradient(to right, ${stops.join(',')})`;
-  }
-  const stops = rgb.map((c, i) => `${pure(c)} ${(i / DAYS) * 100}%`);
-  return `linear-gradient(to right, ${stops.join(',')})`;
-});
-
 const doy = computed(() => time.day + 1);
 const tag = computed(() => (real.value ? 'Wiese' : 'Wiese (fake/geplant)'));
 const readout = computed(() => {
   if (real.value) {
     const light = props.wiese?.wieseLight;
     const v = light ? valueAtDoy(light.days, time.day) : null;
-    return v === null ? '—' : `${((v.avg / 255) * 100).toFixed(1)} %`;
+    return v === null ? '—' : `${lightToPct(v.avg).toFixed(1)} %`;
   }
   return `${intensity[Math.max(0, Math.min(DAYS - 1, time.day))]} %`;
 });
@@ -251,9 +246,6 @@ const ticks = computed(() => {
         <line :x1="cursorX" y1="0" :x2="cursorX" :y2="H" stroke="#f93822" stroke-width="1.5" />
       </svg>
     </div>
-
-    <!-- the single RGB colour bar (from the three colour channels, combined) -->
-    <div class="colorbar" :style="{ background: barGradient }" :title="`Farbskala ${BAR_H}px`"></div>
 
     <div class="ticks" :class="{ z7: zoomed }">
       <span

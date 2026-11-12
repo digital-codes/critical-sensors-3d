@@ -83,9 +83,16 @@ stored CET convention. Analysis of the id-2 feed (datatools/analyze_srv2.py,
   itself while the colour flows through the composite (future nodes are
   averaged into it automatically). `$CHANNELS` remains the single switch
   point.
-- **Intensity conversion**: linear `light / 255 × 100 %` in the card (the
-  0–255 range is the node's real output; no invented normalisation). The
-  api serves the raw column — the unit label documents `0–255`.
+- **Intensity conversion (amended: log characteristic)**: the shaded
+  sensor's real daytime values (≤ 10–30 of 255) mapped linearly to ≤ 12 %
+  and rendered near-invisible bars, so the card uses a monotonic
+  non-linear characteristic: `pct = 100 × ln(1 + light) / ln(256)` —
+  0 → 0 %, 255 → 100 %, 30 → ≈ 62 %, today's 2.14 → ≈ 21 %. Readout and
+  bar colour both use the mapped value (visual consistency); the raw
+  0–255 values stay untouched in DB and api (unit label `0–255`).
+  Alternatives: sqrt/gamma 0.5 (30 → 34 %, weaker spread) or a fixed
+  winter/summer gain (invented normalisation) — log chosen per user
+  decision. One helper (`lightToPct`) is the single conversion point.
 - **Freshness / demo fallback**: the card derives freshness from the
   UNPINNED daily response (`range.to` = absolute newest value date — the
   hourly call pins its window, so only the daily one is authoritative). No
@@ -98,6 +105,14 @@ stored CET convention. Analysis of the id-2 feed (datatools/analyze_srv2.py,
 - **Zoom view**: the existing hourly fetch (channel list extended) serves
   light per hour; dark hours have light rows but no rgb rows (NOT NULL
   filter), so their bars render black — the physically correct colour.
+- **Bars carry the colour (amended: single indicator)**: the user removed
+  the second indicator — no separate colour-bar strip. The chart bars
+  themselves are the colour indicator: fill = the day's/hour's rgb triplet
+  scaled to full saturation (`f = 255 / max(r,g,b,1)`, hue-preserving —
+  the raw measured values are too dark to read as colour), height = the
+  log-mapped intensity. `convoluted()` stays ONLY in the synthetic
+  fallback bars (bright by design); `barGradient` and the `.colorbar` div
+  are removed. Missing triplets stay black.
 - **Fresh-data labelling**: the header tag `Wiese (fake/geplant)` shows only
   in fallback mode; with fresh data the card is labelled `Wiese` like the
   real cards. Mobile description updated accordingly.

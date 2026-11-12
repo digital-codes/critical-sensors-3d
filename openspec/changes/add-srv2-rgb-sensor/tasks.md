@@ -40,6 +40,12 @@
 - [x] 7.2 Fallback mode: Playwright route-intercept the api answer with a stale `range.to` (older than 31 days) — the card must switch to the synthetic demo rendering with the dummy label. Verify: screenshot + DOM assertions recorded.
 - [x] 7.3 Full build `npm run build` green (both apps). Verify: exit 0.
 
+## 8. Non-linear light characteristic (user amendment)
+
+- [x] 8.1 LightCard.vue: single `lightToPct(light)` helper (log characteristic `100 × ln(1 + light) / ln(256)`) used by year bars, zoom bars and the readout; spec delta + design amended to the non-linear characteristic. Verify: `npm run build` green.
+- [x] 8.2 Browser re-verify: real-mode readout for Nov 12 (light 2.14) ≈ 20.6 %, bars visibly taller than the linear render; fallback mode unchanged. Verify: Playwright DOM assertions + screenshot.
+- [x] 8.3 Single colour indicator (user amendment): chart bars carry the hue-normalized colour themselves (`saturated()`, fill = `pure(saturated(rgb))`), the separate colour-bar strip and `barGradient` are removed; `convoluted()` remains only in the synthetic fallback bars. Spec delta gains MODIFIED "Data pane cards" + ADDED "Licht card single colour indicator". Verify: build green + Playwright (no .colorbar, saturated fills) + screenshot.
+
 ## Workflow follow-up
 
 - Commit train per datatools conventions (one logical change per commit; no credentials; no generated artifacts).
