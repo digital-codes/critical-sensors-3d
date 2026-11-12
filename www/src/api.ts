@@ -7,7 +7,11 @@ export type ChannelKey =
   | 'solar'
   | 'wind'
   | 'soilMoist'
-  | 'soilTemp';
+  | 'soilTemp'
+  | 'wieseLight'
+  | 'wieseR'
+  | 'wieseG'
+  | 'wieseB';
 
 /** [date 'YYYY-MM-DD', avg, min, max] */
 export type DayRow = [string, number, number, number];
@@ -37,6 +41,10 @@ const CHANNEL_LIST: ChannelKey[] = [
   'wind',
   'soilMoist',
   'soilTemp',
+  'wieseLight',
+  'wieseR',
+  'wieseG',
+  'wieseB',
 ];
 
 /** In production the endpoint lives at /files/wiese3d/api.php; in dev the

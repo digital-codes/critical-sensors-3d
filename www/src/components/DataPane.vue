@@ -72,7 +72,7 @@ const DESCS: Array<{ short: string; full: string }> = [
   { short: 'City/Solar', full: 'SensorCity 116 Breite Straße (212 m N), Stadt Karlsruhe — Solar in W/m²' },
   { short: 'DWD/Wind', full: 'DWD Klimastation Rheinstetten (FF_10) — Wind in m/s' },
   { short: 'City/Boden', full: 'SensorCity 002 Hohenzollernstraße (457 m N), Stadt Karlsruhe — Bodenfeuchte in % und Bodentemperatur in °C' },
-  { short: 'Wiese/Licht', full: 'Wiesenstation (geplant) — Dummy-Daten: Lichtintensität und Lichtfarbe' },
+  { short: 'Wiese/Licht', full: 'Wiese2 (eigene Wiese) — gemessene Lichtintensität (0–255) und Lichtfarbe; ohne frische Messwerte (über einen Monat) Demo-Daten' },
 ];
 </script>
 
@@ -147,7 +147,21 @@ const DESCS: Array<{ short: string; full: string }> = [
           label: 'Bodentemperatur',
         }"
       />
-      <LightCard short="Wiese/Licht" />
+      <LightCard
+        short="Wiese/Licht"
+        :wiese="{
+          wieseLight: series.wieseLight,
+          wieseR: series.wieseR,
+          wieseG: series.wieseG,
+          wieseB: series.wieseB,
+        }"
+        :wiese-h="{
+          wieseLight: hourly.wieseLight,
+          wieseR: hourly.wieseR,
+          wieseG: hourly.wieseG,
+          wieseB: hourly.wieseB,
+        }"
+      />
     </template>
   </aside>
 

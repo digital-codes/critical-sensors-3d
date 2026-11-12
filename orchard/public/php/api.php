@@ -44,11 +44,15 @@ const CHANNELS = [
     'soilMoist'     => [8, 'soilMoist', '%',    'SensorCity 002 Hohenzollernstraße (457 m N)', 'Stadt Karlsruhe'],
     'soilTemp'      => [8, 'soilTemp',  '°C',   'SensorCity 002 Hohenzollernstraße (457 m N)', 'Stadt Karlsruhe'],
     // SW later: orchard channels -> id 7 (Wiese-Verbund) once installed.
+    'wieseLight' => [2, 'light', '0-255', 'Wiese2 Lichtsensor (eigene Wiese)', '(c) critical-sensors.de'],
+    'wieseR'     => [7, 'r', '0-255', 'Wiese-Verbund (Wiese2)', '(c) critical-sensors.de'],
+    'wieseG'     => [7, 'g', '0-255', 'Wiese-Verbund (Wiese2)', '(c) critical-sensors.de'],
+    'wieseB'     => [7, 'b', '0-255', 'Wiese-Verbund (Wiese2)', '(c) critical-sensors.de'],
 ];
 
 // defence in depth: columns eligible for interpolation into SQL
 const ALLOWED_COLUMNS = ['temp', 'hum', 'pres', 'light', 'rain', 'wind',
-    'mastWind', 'mastRain', 'solar', 'soilMoist', 'soilTemp', 'co2'];
+    'mastWind', 'mastRain', 'solar', 'soilMoist', 'soilTemp', 'co2', 'r', 'g', 'b'];
 
 const MAX_SPAN_DAYS = 800;
 // hourly rows are only served for small windows (168 rows per channel-day)
