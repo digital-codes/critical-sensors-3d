@@ -34,6 +34,38 @@ RFU_BYTE_ORDER = "RRGGBB"
 DEFAULT_CSV = Path(__file__).resolve().parent.parent / "tmp" / "srv2_analysis" / "srv2_decoded.csv"
 
 
+def daylight(rows, mode):
+    """Gate rows to sensible rgb readings. The node's two white LEDs cannot be
+    switched off, so rgb with no ambient light is self-illumination, not sky
+    colour. 'light' = require the onboard lux channel > 0 (all blink/LED rows
+    have light == 0); 'sun' = solar elevation > 0 at the site (keeps dim
+    light==0 rows); 'none' = everything."""
+    if mode == "none":
+        return rows
+    if mode == "light":
+        return [r for r in rows if r["light"] > 0]
+    if mode == "sun":
+        from datetime import timezone
+        from zoneinfo import ZoneInfo
+        LAT, LON = 48.98990, 8.38730  # orchard site (create_tables.py station seed)
+        TZ = ZoneInfo("Europe/Berlin")
+
+        def solar_elev(dt):
+            utc = dt.replace(tzinfo=TZ).astimezone(timezone.utc)
+            doy = utc.timetuple().tm_yday
+            hour = utc.hour + utc.minute / 60 + utc.second / 3600
+            B = math.radians(360 * (doy - 81) / 365)
+            eot = 9.87 * math.sin(2 * B) - 7.53 * math.cos(B) - 1.5 * math.sin(B)
+            decl = 23.44 * math.sin(math.radians(360 * (284 + doy) / 365))
+            ha = math.radians((hour * 60 + eot + 4 * LON) / 4 - 180)
+            lat, d = math.radians(LAT), math.radians(decl)
+            cosz = math.sin(lat) * math.sin(d) + math.cos(lat) * math.cos(d) * math.cos(ha)
+            return math.degrees(math.asin(max(-1, min(1, cosz))))
+
+        return [r for r in rows if solar_elev(r["date"]) > 0]
+    raise ValueError(f"unknown gate {mode!r}")
+
+
 def fetch_srv2(days, timeout=120):
     """Fetch up to `days` days of rows from srv2.php (raw dicts, all strings)."""
     r = requests.get(SRV2_URL, params={"days": int(days)}, timeout=timeout)
@@ -170,6 +202,8 @@ def main():
     ap = argparse.ArgumentParser(description="srv2.php sensor analysis (rfu -> RGB, light)")
     ap.add_argument("--days", type=int, default=400, help="days of history to request (default 400)")
     ap.add_argument("--id", default="2", help="sensor id to analyse (default 2)")
+    ap.add_argument("--gate", choices=("light", "sun", "none"), default="none",
+                    help="restrict to sensible rgb rows (default: no gate)")
     ap.add_argument("--csv", action="store_true", help=f"write decoded CSV to {DEFAULT_CSV}")
     args = ap.parse_args()
 
@@ -179,6 +213,9 @@ def main():
     rows = to_rows(raw, args.id)
     if not rows:
         sys.exit(f"no rows for id {args.id} in the last {args.days} days")
+    ungated = rows
+    rows = daylight(rows, args.gate)
+    print(f"gate={args.gate}: {len(rows)}/{len(ungated)} rows kept")
     analyze(rows)
     if args.csv:
         write_csv(rows, DEFAULT_CSV)
