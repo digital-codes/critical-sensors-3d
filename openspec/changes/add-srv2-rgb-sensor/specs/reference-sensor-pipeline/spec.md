@@ -9,8 +9,7 @@ each run (N bounded, default 35, overridable via `REFSENSORS_SRV2_DAYS`),
 filter the JSON rows to sensor id 2, aggregate the ~20-minute samples to
 hourly means of `temp`, `hum`, `co2`, `light`, `bat` and `rssi`, and append
 them to the `sensors` table under sensor id 2 with the same gap-tolerant
-per-id date-set dedup used for the SensorCity neighbour rows. A failed fetch
-SHALL log and continue without writing rows for id 2.
+per-id date-set dedup used for the SensorCity neighbour rows.
 
 #### Scenario: Successful run
 
@@ -25,12 +24,18 @@ SHALL log and continue without writing rows for id 2.
 - **THEN** only the last N days are requested, so the request size stays
   bounded; older rows are never re-fetched
 
+### Requirement: Wiese node fetch failure isolation
+
+A failed srv2.php fetch (unreachable, HTTP error, unparsable JSON) SHALL log
+the failure and write nothing for id 2, while the rest of the pipeline
+(reference rows, SensorCity neighbours, virtual composition) continues
+normally.
+
 #### Scenario: Fetch failure
 
 - **WHEN** srv2.php is unreachable or returns unparsable data
 - **THEN** the run logs the failure, writes nothing for id 2, and the rest
-  of the pipeline (reference rows, SensorCity neighbours, virtual
-  composition) continues normally
+  of the pipeline continues normally
 
 ### Requirement: Wiese node time base
 
